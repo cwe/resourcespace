@@ -50,7 +50,7 @@ if (is_int_loose($usersearchfilter) && $usersearchfilter > 0) {
     if (!$search_filter_sql) {
         exit($lang["error_search_filter_invalid"]);
     }
-    if (is_a($search_filter_sql, "PreparedStatementQuery")) {
+    if (is_a($search_filter_sql, "PreparedStatementQuery") && $search_filter_sql->sql != "") {
         if ($sql_filter->sql != "") {
             $sql_filter->sql .= " AND ";
         }

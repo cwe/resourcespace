@@ -1969,6 +1969,10 @@ function get_filter_sql($filterid)
         $filterrules = $modfilterrules;
     }
 
+    if (empty($filterrules)) {
+        return new PreparedStatementQuery();
+    }
+
     $filtercondition = $filter["filter_condition"];
     $filters = array();
     $filter_ors = array(); // Allow filters to be overridden in certain cases
