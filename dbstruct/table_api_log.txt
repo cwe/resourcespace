@@ -1,0 +1,4 @@
+ref,int(11),NO,PRI,,auto_increment
+logged,datetime,NO,,,
+user,varchar(50),NO,,,
+function,varchar(255),NO,,,

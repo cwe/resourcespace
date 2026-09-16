@@ -6790,7 +6790,6 @@ function process_collection_download(array $dl_data): array
         }
     }
 
-    db_begin_transaction("collection_download"); // Ensure all log updates are committed at once
     for ($n = 0; $n < $rescount; $n++) {
         // Set a flag to indicate whether file should be included
         $skipresource = false; 
@@ -7125,8 +7124,6 @@ function process_collection_download(array $dl_data): array
     collection_download_process_collection_download_name($filename, $collection, $size, $suffix, $collectiondata);
     $completed = collection_download_process_archive_command($dl_data, $zip, $filename, $zipfile);
     collection_download_clean_temp_files($dl_data['deletion_array']);
-
-    db_end_transaction("collection_download");
 
     // Reset global 
     $exiftool_write_option = $saved_exiftool_write_option;

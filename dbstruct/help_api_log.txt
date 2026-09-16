@@ -1,0 +1,5 @@
+Log of external API usage.
+ref,int(11),Unique ID of the API log entry.
+logged,datetime,Date and time of the API request.
+user,varchar(50),Username making the API request.
+function,varchar(255),API function requested.

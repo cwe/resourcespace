@@ -731,7 +731,7 @@ function save_user($ref, array $data=[])
         }
 
         // Enabling a disabled account but at the user limit?
-        if (user_limit_reached() && $current_user_data["approved"] != 1 && $approved == 1) {
+        if (user_limit_reached() && !is_approved_user($current_user_data) && $approved == 1) {
             return $lang["userlimitreached"]; // Return error message
         }
 
@@ -3896,3 +3896,12 @@ function load_site_text_for_usergroup(int|null $group): void
     }
 }
 
+/**
+ * Check if the user is approved
+ *
+ * @param array{'approved': int, ...} $user User data structure
+ */
+function is_approved_user(array $user): bool
+{
+    return $user['approved'] === 1;
+}

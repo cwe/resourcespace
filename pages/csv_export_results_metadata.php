@@ -13,7 +13,7 @@ $offline    = getval("process_offline", "") != "";
 $submitted  = getval("submit", "") != "";
 $personaldata   = (getval('personaldata', '') != '');
 $allavailable    = (getval('allavailable', '') != '');
-$search_count = (getval('count', 0));
+$search_count = (getval('count', '', false, 'is_positive_or_zero_int_loose'));
 
 if ($submitted) {
 

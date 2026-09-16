@@ -3539,7 +3539,7 @@ input[type="text"]#iconpicker-input {
     width: 100%;
     position: relative;
     display: flex;
-    aspect-ratio: 3 / 1;
+    aspect-ratio: 3.5 / 1;
     max-height: 600px;
 }
 

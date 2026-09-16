@@ -317,3 +317,48 @@ function api_get_daily_stat_summary(int $days = 30)
         GROUP BY activity_type
             ", ["i",$days]);
 }
+
+/**
+ * Delete API log entries older than the configured retention period.
+ *
+ * The minimum retention period is 7 days. Configured values below this
+ * are treated as 7 days.
+ *
+ * @return void
+ */
+function truncate_api_log(): void
+{
+    global $api_log_retention_period;
+
+    $retention_period = max(7, (int) $api_log_retention_period);
+
+    ps_query(
+        "DELETE FROM api_log
+         WHERE logged < (NOW() - INTERVAL ? DAY)",
+        ["i", $retention_period]
+    );
+}
+
+/**
+ * Record an external API request in the API log.
+ *
+ * Requests from usernames configured in $api_log_excluded_usernames are not logged.
+ *
+ * @param string $user     Username making the API request.
+ * @param string $function API function requested.
+ *
+ * @return void
+ */
+function log_api_request(string $user, string $function): void
+{
+    global $api_log_excluded_usernames;
+
+    if (in_array($user, $api_log_excluded_usernames, true)) {
+        return;
+    }
+
+    ps_query(
+        "INSERT INTO api_log (logged, user, `function`) VALUES (NOW(), ?, ?)",
+        ["s", $user, "s", $function]
+    );
+}

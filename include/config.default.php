@@ -2150,6 +2150,12 @@ $enable_remote_apis = true;
 // Default scramble key (never used as a new one is written to config.php during system install)
 $api_scramble_key = "abcdef123";
 
+// Number of days to retain API log entries. Minimum value is 7 days. Values below 7 will be treated as 7.
+$api_log_retention_period = 14;
+
+// Usernames to exclude from API logging.
+$api_log_excluded_usernames = [];
+
 // Allow users capable of deleting a full collection (of resources) to do so from the Collection Manage page.
 $collection_purge = false;
 

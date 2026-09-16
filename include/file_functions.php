@@ -678,12 +678,13 @@ function delete_temp_files(): void
     // Set up array of folders to exclude
     $excludepaths = [];
 
-    $excludepaths[] = get_temp_dir() . "offline_job_logs";
+    $excludepaths[] = get_temp_dir() . "/offline_job_logs";
+    $excludepaths[] = get_temp_dir() . "/querycache"; # purge_query_cache() is used instead
 
     if (isset($GLOBALS["geo_tile_cache_directory"])) {
         $excludepaths[] = $GLOBALS["geo_tile_cache_directory"];
     } else {
-        $excludepaths[] = get_temp_dir() . "tiles";
+        $excludepaths[] = get_temp_dir() . "/tiles";
     }
     if (DOWNLOAD_FILE_LIFETIME > $GLOBALS["purge_temp_folder_age"]) {
         $excludepaths[] = get_temp_dir(false, "user_downloads");
@@ -708,10 +709,11 @@ function delete_temp_files(): void
                 if ($object->isDot()) {
                     continue;
                 }
+
                 foreach ($excludepaths as $excludepath) {
                     if (
                         ($tmpfilename == $excludepath)
-                        || strpos($object->getRealPath(), $excludepath) == 0
+                        || $object->getRealPath() === realpath($excludepath)
                     ) {
                         continue 2;
                     }

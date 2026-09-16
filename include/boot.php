@@ -72,6 +72,17 @@ if (!(file_exists(__DIR__ . "/config.php") && filesize(__DIR__ . "/config.php") 
 }
 include __DIR__ . "/config.php";
 
+// Allow automated HTTP tests to use isolated test configuration.
+if (defined("RS_TEST_MODE")) {
+    if (isset($rs_test_mysql_db)) {
+        $mysql_db = $rs_test_mysql_db;
+    }
+
+    if (isset($rs_test_api_scramble_key)) {
+        $api_scramble_key = $rs_test_api_scramble_key;
+    }
+}
+
 // Set exception_ignore_args so that if $log_error_messages_url is set it receives all the necessary
 // information to perform troubleshooting
 ini_set("zend.exception_ignore_args", "Off");

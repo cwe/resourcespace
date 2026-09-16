@@ -52,6 +52,12 @@ if (!in_array($authmode, $validauthmodes)) {
     $authmode = "userkey";
 }
 $function = getval("function", $query_params['function'] ?? "");
+
+// Log all API requests using userkey authentication, including failed attempts.
+if ($authmode === "userkey") {
+    log_api_request($user, $function);
+}
+
 if ($function != "login") {
     if ($authmode == "native") {
         debug("API: Native authmode, authenticating");
@@ -67,7 +73,8 @@ if ($function != "login") {
         }
 
         # Log user in (if permitted)
-        $validuser = setup_user(get_user(get_user_by_username($user)));
+        $user_data = get_user(get_user_by_username($user));
+        $validuser = $user_data !== false && is_approved_user($user_data) && setup_user($user_data);
         if (!$validuser) {
             ajax_send_response(
                 401,

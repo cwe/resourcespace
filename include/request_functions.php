@@ -959,7 +959,7 @@ function email_resource_request($ref, $details)
     $userconfirmmessage->append_text($adddetails . $c);
     $key_str = ($k != "") ? "&k=" . $k : "";
 
-    if (isset($userref)) {
+    if (isset($userref) && !$user_is_anon) {
         $userconfirmmessage->url = $baseurl . "/?r=" . $ref . $key_str;
         send_user_notification([$userref], $userconfirmmessage);
     } else {

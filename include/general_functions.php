@@ -3504,6 +3504,22 @@ function get_total_approved_users(): int
 }
 
 /**
+ * Return the number of API requests logged within the specified number of days.
+ *
+ * @param int $days Number of days to look back.
+ *
+ * @return int
+ */
+function get_api_use_count(int $days): int
+{
+    return ps_value(
+        "SELECT COUNT(*) value FROM api_log WHERE logged >= (NOW() - INTERVAL ? DAY)",
+        ["i", $days],
+        0
+    );
+}
+
+/**
  * Return the number of resources in the system with optional filter by archive state
  *
  * @param  int|bool $status     Archive state to filter by if required
@@ -5142,6 +5158,12 @@ function get_system_status(bool $basic = false)
         'info' => get_recent_users(7),
         'within_year' => get_recent_users(365),
         'total_approved' => get_total_approved_users()
+    ];
+
+    // Return API usage count (last 7 days)
+    $return['results']['api_use_count_last_7_days'] = [
+        'status' => 'OK',
+        'total' => get_api_use_count(7),
     ];
 
     // Return current number of resources including count of 
