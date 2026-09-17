@@ -895,10 +895,10 @@ function get_unsafe_mime_types(): array
 /**
  * Convert the permitted resource type extension to MIME type. Used by upload_batch.php
  *
- * @param  string $extension    File extension
+ * @param  string $allowedtype  File extension
  * @return string               MIME type e.g. image/jpeg
  */
-function allowed_type_mime($allowedtype)
+function allowed_type_mime($allowedtype): string
 {
     if (strpos($allowedtype, "/") === false) {
         // Get extended list of mime types to convert legacy extensions to Uppy mime type syntax.

@@ -1502,7 +1502,7 @@ hook("editbefresmetadata"); ?>
 
             foreach (get_resource_types() as $type) {
                 $allowed_mime_types = trim((string) $type['allowed_extensions']) != ''
-                    ? explode(',',strtolower($type['allowed_extensions']))
+                    ? array_map(allowed_type_mime(...), explode(',', mb_strtolower($type['allowed_extensions'])))
                     : [];
                 if (
                     (
@@ -1516,9 +1516,9 @@ hook("editbefresmetadata"); ?>
                     || (
                         trim((string) $resource["file_extension"]) != ""
                         && count($allowed_mime_types) > 0 
-                        && !in_array(allowed_type_mime(strtolower($resource["file_extension"])), $allowed_mime_types)
+                        && !in_array(allowed_type_mime(mb_strtolower($resource["file_extension"])), $allowed_mime_types)
+                        && $resource['resource_type'] != $type['ref']
                     )
-                    && $resource['resource_type'] != $type['ref']
                 ) {
                     continue;
                 }

@@ -72,7 +72,7 @@ function AddResourceToCollection(event, ui, resource, size, collection_id) {
     if(event.type=="click")
         {
         try {
-            artc_csrf=JSON.parse(event.currentTarget.dataset.apiNativeCsrf);
+            artc_csrf=JSON.parse(event.target.dataset.apiNativeCsrf);
             }
         catch {
               console.debug('Click csrf not found');

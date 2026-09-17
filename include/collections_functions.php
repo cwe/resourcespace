@@ -4608,14 +4608,15 @@ function collection_download_process_text_file(array $dl_data, int $ref, string 
 /**
  * Update the resource log to show the download during a collection download.
  *
- * @param  array    $dl_data                Array of collection download data passed from process_collection_download() 
+ * @param  array    $dl_data                Array of collection download data passed from process_collection_download()
+ *                                          (passed by reference so can be added to)
  * @param  string   $tmpfile                Temp download file path
  * @param  integer  $ref                    The resource ID
  * @param  string   $email                  Email address of downloader
  *
  * @return void
  */
-function collection_download_log_resource_ready(array $dl_data, $tmpfile, $ref, string $email = "")
+function collection_download_log_resource_ready(array &$dl_data, $tmpfile, $ref, string $email = "")
 {
     // Build an array of paths so we can clean up any exiftool-modified files.
     if ($tmpfile !== false && file_exists($tmpfile)) {
@@ -4636,11 +4637,12 @@ function collection_download_log_resource_ready(array $dl_data, $tmpfile, $ref, 
 /**
  * Add PDFs for "data only" types to a zip file during creation.
  *
- * @param  array $dl_data                       Array of collection download data
+ * @param  array   $dl_data                     Array of collection download data
+ *                                              (passed by reference so can be added to)
  * @param  object  $zip                         Collection zip file
  * @return void
  */
-function collection_download_process_data_only_types(array $dl_data, &$zip)
+function collection_download_process_data_only_types(array &$dl_data, &$zip)
 {
     $result = $dl_data['collection_resources'] ?? [];
 
@@ -6790,6 +6792,8 @@ function process_collection_download(array $dl_data): array
         }
     }
 
+    $resources_for_log_update = array();
+
     for ($n = 0; $n < $rescount; $n++) {
         // Set a flag to indicate whether file should be included
         $skipresource = false; 
@@ -7100,8 +7104,14 @@ function process_collection_download(array $dl_data): array
                 }
             }
         }
-        collection_download_log_resource_ready($dl_data, $tmpfile, $ref);
+        $resources_for_log_update[$ref] = $tmpfile;
     }
+
+    db_begin_transaction("collection_download"); // Ensure all log updates are committed at once
+    foreach ($resources_for_log_update as $resource_to_log_update => $tmpfile) {
+       collection_download_log_resource_ready($dl_data, $tmpfile, $resource_to_log_update);
+    }
+    db_end_transaction("collection_download");
 
     if (0 < $count_data_only_types) {
         collection_download_process_data_only_types($dl_data, $zip);

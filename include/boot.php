@@ -521,5 +521,8 @@ if (isset($tempdir)) {
     $valid_upload_paths[] = $tempdir;
 }
 
+// Set internal character encoding to UTF-8
+mb_internal_encoding('UTF-8');
+
 // IMPORTANT: make sure the upgrade.php is the last line in this file
 include_once __DIR__ . '/../upgrade/upgrade.php';

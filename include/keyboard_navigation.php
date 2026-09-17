@@ -54,7 +54,7 @@ jQuery(document).ready(function() {
                     jQuery('.nextPageLink').click();
                     break;
                 } 
-            case <?php echo $keyboard_navigation_add_resource; ?>: if (jQuery('.addToCollection').length > 0) jQuery('.addToCollection:not(.ResourcePanelIcons .addToCollection)').click();
+            case <?php echo $keyboard_navigation_add_resource; ?>: if (jQuery('.addToCollection').length > 0) jQuery('.addToCollection:not(.resource-card-tools .addToCollection)').click();
                      break;
             case <?php echo $keyboard_navigation_prev_page; ?>: if (jQuery('.prevLink').length > 0) jQuery('.prevLink').click();
                      break;
