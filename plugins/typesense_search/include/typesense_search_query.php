@@ -485,10 +485,21 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
 
             if ($field !== null) {
                 if (in_array($field['type'], (array)$FIXED_LIST_FIELD_TYPES, true)) {
-                    continue; // already in $node_bucket
+                    continue; // fixed-list already resolved into $node_bucket by core
                 }
-                $plan->markUnsupported('field-scoped search on non-fixed-list field "' . $parts[0] . '"');
-                return '';
+                // Never scope a search to a field the user can't view (would probe hidden data).
+                if (!metadata_field_view_access((int)$field['ref'])) {
+                    $plan->markUnsupported('field-scoped search on a non-viewable field');
+                    return '';
+                }
+                // Text/date field:value -> a bare-colon (word-contains) or _q filter clause.
+                $clause = typesense_search_fieldvalue_filter($field, $parts[1]);
+                if ($clause === null) {
+                    $plan->markUnsupported('field-scoped search on field "' . $parts[0] . '" not supported');
+                    return '';
+                }
+                $plan->addFilter($clause);
+                continue; // consumed as a filter; not free-text
             }
 
             $keyword = str_replace(':', ' ', $keyword); // incidental colon
@@ -607,6 +618,58 @@ function typesense_search_field_by_shortname(string $name): ?array
         : null;
 
     return $cache[$key];
+}
+
+
+/**
+ * Build a Typesense filter_by clause for a `field:value` search on a non-fixed-list field,
+ * mirroring RS's word-level, field-scoped keyword match:
+ *   - text fields  -> bare-colon word-contains on the field's string (`_s` / `_text`);
+ *   - date fields  -> bare-colon on the `_q` representation array.
+ * Returns null for a field type that isn't supported (caller falls back to MySQL). Fixed-list
+ * fields never reach here (they are resolved into $node_bucket by core).
+ *
+ * @param array{ref:int,type:int} $field
+ */
+function typesense_search_fieldvalue_filter(array $field, string $value): ?string
+{
+    $prefix = 'field_' . (int)$field['ref'];
+
+    switch ((int)$field['type']) {
+        case FIELD_TYPE_TEXT_BOX_SINGLE_LINE:
+        case FIELD_TYPE_WARNING_MESSAGE:
+            $key = $prefix . '_s';
+            break;
+        case FIELD_TYPE_TEXT_BOX_MULTI_LINE:
+        case FIELD_TYPE_TEXT_BOX_LARGE_MULTI_LINE:
+        case FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE:
+            $key = $prefix . '_text';
+            break;
+        case FIELD_TYPE_DATE:
+        case FIELD_TYPE_DATE_AND_OPTIONAL_TIME:
+        case FIELD_TYPE_EXPIRY_DATE:
+        case FIELD_TYPE_DATE_RANGE:
+            $key = $prefix . '_q';
+            break;
+        default:
+            return null;
+    }
+
+    // Bare colon (":") is a tokenised word-contains match honouring the field's tokenizer/stemming.
+    return $key . ':' . typesense_search_filter_value($value);
+}
+
+
+/**
+ * Escape a filter_by value: simple word tokens (optionally with a trailing wildcard) are left as
+ * is; anything containing spaces or punctuation is backtick-quoted.
+ */
+function typesense_search_filter_value(string $value): string
+{
+    if (preg_match('/[^\p{L}\p{N}_*]/u', $value)) {
+        return '`' . str_replace('`', '', $value) . '`';
+    }
+    return $value;
 }
 
 

@@ -10,4 +10,5 @@ $typesense_search_global_filter=""; // String to append to the filter - will app
 
 $typesense_search_enabled = true;  // Master toggle. When false, searches use the standard ResourceSpace (MySQL) search - useful for disabling Typesense without deactivating the plugin.
 $typesense_search_only = false;    // Testing aid. When true, searches Typesense cannot handle return no results instead of falling back to the standard MySQL search - so you only ever see Typesense results.
+$typesense_search_show_indicator = true; // Show a badge next to the search title indicating whether results came from Typesense or the standard search.
 
