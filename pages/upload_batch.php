@@ -444,35 +444,40 @@ if (substr($order_by,0,5)=="field"){$default_sort_direction="ASC";}
 $sort=getval("sort",$default_sort_direction);
 
 $allowed_extensions="";
-if(($upload_then_edit || $replace ) && !$alternative)
-    {
-    $all_allowed_extensions_holder = array();
-    foreach ($all_resource_types as $type)
-        {
-        if(get_allowed_extensions_by_type($type["ref"]) == "")
-            {
-            $all_allowed_extensions_holder = array();
-            break;
-            }
-        else
-            {
-            $extensions = explode(",", get_allowed_extensions_by_type($type["ref"]));
-            foreach ($extensions as $extension)
-                {
-                if ($extension != "")
-                    {
-                    array_push($all_allowed_extensions_holder, trim(strtolower($extension)));
-                    }
-                }
-            }
-        }
-    $all_allowed_extensions_holder = array_unique($all_allowed_extensions_holder);
-    $allowed_extensions = implode(",", $all_allowed_extensions_holder);
+if (($upload_then_edit || $replace) && !$alternative) {
+    $rt_allowed_type_map = array_diff_key(
+        array_column($all_resource_types, 'allowed_extensions', 'ref'),
+        // Drop resource types which should never have a file uploaded to them (i.e. are data only)
+        array_flip($GLOBALS['data_only_resource_types']),
+        isset($GLOBALS['metadata_template_resource_type']) ? [$GLOBALS['metadata_template_resource_type'] => null] : []
+    );
+
+    if ($replace_resource > 0) {
+        $allowed_extensions = $rt_allowed_type_map[get_resource_data($replace_resource)['resource_type']];
+    } else if (array_filter($rt_allowed_type_map) === $rt_allowed_type_map) {
+        // All resource types have a defined allow list so merge those lists => nothing else should be allowed
+        $allowed_extensions = implode(
+            ',',
+            array_unique(
+                array_reduce(
+                    $rt_allowed_type_map,
+                    static fn($list, $allowed_types): array => array_merge(
+                        $list,
+                        trim_array(explode(',', mb_strtolower($allowed_types))),
+                    ),
+                    [],
+                ),
+            ),
+        );
+    } else {
+        // Can't restrict yet, we only know what resource type it will be after upload (when it can be detected or
+        // changed by the user during refine result)
+        $allowed_extensions = '';
     }
-elseif ($resource_type!="" && !$alternative)
-    {
-    $allowed_extensions=get_allowed_extensions_by_type($resource_type);
-    }
+} else if ($resource_type != '' && !$alternative) {
+    // Handle "edit then upload" mode
+    $allowed_extensions = get_allowed_extensions_by_type($resource_type);
+}
 
 //  Process completed upload
 if ($processupload)

@@ -686,9 +686,15 @@ function delete_temp_files(): void
     } else {
         $excludepaths[] = get_temp_dir() . "/tiles";
     }
+
     if (DOWNLOAD_FILE_LIFETIME > $GLOBALS["purge_temp_folder_age"]) {
         $excludepaths[] = get_temp_dir(false, "user_downloads");
+    } else {
+        # user_downloads folder is a special case. Folder will be modified regularly.
+        # Scan within to find old files that need to be deleted.
+        $folderstoscan[] = get_temp_dir(false, "user_downloads");
     }
+
     $excludeplugindirs = hook('temp_block_deletion');
     if (is_array($excludeplugindirs)) {
         $excludepaths[] = array_merge($excludepaths, $excludeplugindirs);

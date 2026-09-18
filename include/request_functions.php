@@ -263,7 +263,8 @@ function get_requests($excludecompleted = false, $excludeassigned = false, $retu
 function email_collection_request($ref, $details, $external_email): bool
 {
     global $applicationname,$email_from,$baseurl,$username,$useremail,$lang,$userref,$resource_type_request_emails,
-    $resource_request_reason_required,$resource_type_request_emails_and_email_notify,$admin_resource_access_notifications;
+    $resource_request_reason_required,$resource_type_request_emails_and_email_notify,$admin_resource_access_notifications,
+    $user_is_anon;
 
     if (trim($details) == "" && $resource_request_reason_required) {
         return false;
@@ -409,13 +410,13 @@ function email_collection_request($ref, $details, $external_email): bool
 
     # $userref and $useremail will be that of the internal requestor
     # - We need to send the $userconfirmmessage to the internal requestor saying that their request has been submitted
-    if (isset($userref)) {
+    if (isset($userref) && !$user_is_anon) {
         send_user_notification([$userref], $userconfirmmessage);
     }
 
     # $userref and $useremail will be null for external requestor
     # - We can only send an email to the email address provided on the external request
-    if (!isset($userref) && filter_var($external_email, FILTER_VALIDATE_EMAIL)) {
+    if ((!isset($userref) || $user_is_anon) && filter_var($external_email, FILTER_VALIDATE_EMAIL)) {
         send_mail($external_email, $applicationname . ": " . $lang["requestsent"] . " - $ref", $userconfirmmessage->get_text(), $email_from, null, "emailusercollectionrequest", $templatevars);
     }
 
@@ -836,7 +837,7 @@ function email_resource_request($ref, $details)
     if (isset($resourcedata["field" . $view_title_field])) {
         $templatevars["title"] = $resourcedata["field" . $view_title_field];
     }
-    $templatevars['username'] = $username . " (" . $useremail . ")";
+    $templatevars['username'] = $username . (!empty($useremail) ? " (" . $useremail . ")" : "");
     $templatevars['formfullname'] = getval("fullname", "");
     $templatevars['formemail'] = getval("email", "");
     $templatevars['formtelephone'] = getval("contact", "");
@@ -892,10 +893,7 @@ function email_resource_request($ref, $details)
         }
     }
     $templatevars["requestreason"] = $lang["requestreason"] . ": " . $templatevars['details'] . $c . "";
-    if (isset($username)) {
-        $message->append_text("lang_username");
-        $message->append_text(": " . $username . " (" . $useremail . ")<br />");
-    }
+
     if (!empty($templatevars["formfullname"])) {
         $message->append_text("lang_fullname");
         $message->append_text(": " . $templatevars["formfullname"] . "<br />");
@@ -907,6 +905,25 @@ function email_resource_request($ref, $details)
     if (!empty($templatevars["formtelephone"])) {
         $message->append_text("lang_contacttelephone");
         $message->append_text(": " . $templatevars["formtelephone"] . "<br />");
+    }
+
+    // Create the requester copy before adding the internal username.
+    $userconfirmmessage = clone $message;
+
+    if (isset($username)) {
+        $username_text = [
+            ["lang_username"],
+            [": " . $templatevars["username"] . "<br />"],
+        ];
+
+        // Admin notifications should always include the internal username.
+        $message->prepend_text_multi($username_text);
+
+        // Logged-in requesters retain the existing username information,
+        // but anonymous requesters should not see their internal account identity.
+        if (!$user_is_anon) {
+            $userconfirmmessage->prepend_text_multi($username_text);
+        }
     }
 
     $notification_message = clone $message;
@@ -951,7 +968,6 @@ function email_resource_request($ref, $details)
         }
     }
 
-    $userconfirmmessage = clone $message;
     $userconfirmmessage->set_subject($applicationname . ": ");
     $userconfirmmessage->append_subject(" - "  . $ref);
     $userconfirmmessage->prepend_text("<br /><br />");
