@@ -72,11 +72,12 @@ do {
 
 
 // Collection membership Indexing
-$after = 0;
+$after_collection = 0;
+$after_resource = 0;
 do {
     $batch_start = microtime(true);
 
-    $result = typesense_search_reindex_resource_collection_memberships($batch_size, $after);
+    $result = typesense_search_reindex_resource_collection_memberships($batch_size, $after_collection, $after_resource);
 
     $batch_time = microtime(true) - $batch_start;
 
@@ -95,7 +96,8 @@ do {
         . ' | Failed this batch: ' . $result['failed']
         . ' | Total indexed: ' . $total_indexed
         . ' | Total failed: ' . $total_failed
-        . ' | Last ref: ' . $result['last']
+        . ' | Last collection: ' . $result['last_collection']
+        . ' | Last resource: ' . $result['last_resource']
         . ' | Batch time: ' . round($batch_time, 2) . 's'
         . ' | Rate: ' . $rate . ' resource collection memberships/sec'
         . ' | Memory: ' . round(memory_get_usage(true) / 1024 / 1024, 2) . 'MB'
@@ -104,7 +106,8 @@ do {
     ob_flush();
     flush();
 
-    $after = (int) $result['last'];
+    $after_collection = (int) $result['last_collection'];
+    $after_resource = (int) $result['last_resource'];
 } while (!$result['complete']);
 
 
@@ -114,7 +117,8 @@ $after = 0;
 do {
     $batch_start = microtime(true);
 
-    $result = typesense_search_reindex_resource_attributes(100, $after);
+    // 500 resources per SQL batch; the import auto-chunks to keep each POST bounded.
+    $result = typesense_search_reindex_resource_attributes(500, $after);
 
     $batch_time = microtime(true) - $batch_start;
 
