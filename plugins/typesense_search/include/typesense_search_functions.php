@@ -235,15 +235,34 @@ function typesense_search_hydrate_refs(
 
         $query->parameters = $ref_params;
     } else {
+        // For non-'v' users, $select (built by do_search) references the rca/rca2 custom-access
+        // columns (group_access/user_access/resultant_access). Reproduce the resource_custom_access
+        // joins from do_search so those columns resolve; otherwise MySQL errors on unknown columns.
+        // Placeholder order in the SQL: SELECT (select params) -> JOIN (rca params) -> WHERE (refs).
+        $custom_access_join = '';
+        $custom_access_params = array();
+        if (strpos($select->sql, 'rca.') !== false || strpos($select->sql, 'rca2.') !== false) {
+            global $userref, $usergroup;
+            $custom_access_join =
+                ' LEFT OUTER JOIN resource_custom_access rca2'
+                . ' ON r.ref = rca2.resource AND rca2.user = ?'
+                . ' AND (rca2.user_expires IS NULL OR rca2.user_expires > now()) AND rca2.access <> 2'
+                . ' LEFT OUTER JOIN resource_custom_access rca'
+                . ' ON r.ref = rca.resource AND rca.usergroup = ? AND rca.access <> 2';
+            $custom_access_params = array('i', (int)$userref, 'i', (int)$usergroup);
+        }
+
         $query->sql =
             'SELECT r.hit_count score, ' . $select->sql
             . ' FROM resource r'
             . ' JOIN resource_type AS rty ON r.resource_type = rty.ref'
+            . $custom_access_join
             . ' WHERE r.ref IN (' . $ref_placeholders . ')'
             . ' AND r.ref > 0';
 
         $query->parameters = array_merge(
             $select->parameters,
+            $custom_access_params,
             $ref_params
         );
     }
@@ -425,6 +444,7 @@ function typesense_search_ensure_collection(): bool
                 array('name' => 'resource_type', 'type' => 'int32', 'facet' => true, 'sort' => true),
                 array('name' => 'archive', 'type' => 'int32', 'facet' => true),
                 array('name' => 'created_by', 'type' => 'int32', 'facet' => true),
+                array('name' => 'access', 'type' => 'int32', 'facet' => true),
                 array('name' => 'created_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
                 array('name' => 'modified_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
                 
@@ -550,7 +570,32 @@ function typesense_search_ensure_collection(): bool
 
     // }
 
-    return (bool) ($existing_resource_collection || (bool) $created_resource_collection) && ($existing_rcm_collection || (bool) $created_rcm_collection);
+    // Grants collection - one doc per non-confidential resource_custom_access row, joined at
+    // query time by the access restriction for confidential/custom resources.
+    $existing_grants_collection = typesense_search_request('GET', '/collections/' . rawurlencode($typesense_search_collection_prefix . 'resource_access_grants'));
+
+    if ($existing_grants_collection === false) {
+        $schema_grants = array(
+            'name' => $typesense_search_collection_prefix . 'resource_access_grants',
+            'fields' => array(
+                array('name' => 'resource_id', 'type' => 'string', 'reference' => $typesense_search_collection_prefix . 'resources.id'),
+                array('name' => 'user', 'type' => 'int32', 'facet' => true),
+                array('name' => 'usergroup', 'type' => 'int32', 'facet' => true),
+                array('name' => 'access', 'type' => 'int32'),
+                array('name' => 'expires', 'type' => 'int64', 'range_index' => true),
+            ),
+        );
+
+        $created_grants_collection = typesense_search_request('POST', '/collections', false, $schema_grants);
+        if (!$created_grants_collection) {
+            debug('typesense_search_ensure_collection(): resource_access_grants collection creation FAILED');
+            return false;
+        }
+    }
+
+    return (bool) ($existing_resource_collection || (bool) $created_resource_collection)
+        && ($existing_rcm_collection || (bool) $created_rcm_collection)
+        && ($existing_grants_collection || (bool) ($created_grants_collection ?? false));
 }
 
 
@@ -735,11 +780,12 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
         "SELECT 
             r.ref,
             COALESCE(TRIM(t.name), '') AS title,
-            r.resource_type, 
-            r.archive, 
+            r.resource_type,
+            r.archive,
             r.created_by,
+            r.access,
             r.field" . (int) $date_field . " AS created_date,
-            r.modified AS modified_date 
+            r.modified AS modified_date
             FROM resource r
             LEFT JOIN (
                         SELECT 
@@ -1282,6 +1328,135 @@ function typesense_search_index_attributes_batch(array $documents): bool
         . '/documents/import?action=update&return_id=true';
 
     return typesense_search_request('POST', $endpoint, true, $documents) !== false;
+}
+
+
+/**
+ * Build a Typesense grant document from a resource_custom_access row (access <> 2 only).
+ * Group grants never expire (mirroring the rca join); user grants honour user_expires.
+ *
+ * @param array $row resource_custom_access row (resource, user, usergroup, access, user_expires).
+ *
+ * @return array Grant document.
+ */
+function typesense_search_grant_document(array $row): array
+{
+    $resource = (int) $row['resource'];
+    $user = (int) ($row['user'] ?? 0);
+    $usergroup = (int) ($row['usergroup'] ?? 0);
+    $expires = ($user > 0 && !empty($row['user_expires'])) ? (int) strtotime($row['user_expires']) : 0;
+
+    return array(
+        'id' => $user > 0 ? $resource . '_u' . $user : $resource . '_g' . $usergroup,
+        'resource_id' => (string) $resource,
+        'user' => $user,
+        'usergroup' => $usergroup,
+        'access' => (int) $row['access'],
+        'expires' => $expires,
+    );
+}
+
+
+/**
+ * Batch-import grant documents into the grants collection.
+ *
+ * @param array $documents Grant documents.
+ *
+ * @return bool
+ */
+function typesense_search_index_grants_batch(array $documents): bool
+{
+    global $typesense_search_collection_prefix;
+
+    if (count($documents) === 0) {
+        return true;
+    }
+
+    $endpoint =
+        '/collections/'
+        . rawurlencode($typesense_search_collection_prefix . "resource_access_grants")
+        . '/documents/import?action=upsert&return_id=true';
+
+    return typesense_search_request('POST', $endpoint, true, $documents) !== false;
+}
+
+
+/**
+ * Reindex resource_custom_access grants in batches (access <> 2 only). Used by the reindex CLI.
+ *
+ * @param int $limit Batch size.
+ * @param int $after Only grants for resources with ref greater than this.
+ *
+ * @return array Batch summary.
+ */
+function typesense_search_reindex_grants(int $limit = 1000, int $after = 0): array
+{
+    $rows = ps_query(
+        "SELECT resource, user, usergroup, access, user_expires
+           FROM resource_custom_access
+          WHERE access <> 2 AND resource > ?
+       ORDER BY resource ASC
+          LIMIT ?",
+        array('i', $after, 'i', $limit)
+    );
+
+    $count = count($rows);
+
+    if ($count === 0) {
+        return array('indexed' => 0, 'failed' => 0, 'last' => $after, 'content_length' => 0, 'complete' => true);
+    }
+
+    $documents = array();
+    $last = $after;
+    foreach ($rows as $row) {
+        $last = (int) $row['resource'];
+        $documents[] = typesense_search_grant_document($row);
+    }
+
+    $ok = typesense_search_index_grants_batch($documents);
+
+    return array(
+        'indexed' => $ok ? $count : 0,
+        'failed' => $ok ? 0 : $count,
+        'last' => $last,
+        'content_length' => 0,
+        'complete' => $count < $limit,
+    );
+}
+
+
+/**
+ * (Re)index all grants for a single resource: delete its existing grant docs, then add the
+ * current non-confidential ones. For future incremental sync from custom-access hooks.
+ *
+ * @param int $resource Resource ID.
+ *
+ * @return bool
+ */
+function typesense_search_index_grants(int $resource): bool
+{
+    global $typesense_search_collection_prefix;
+
+    $collection = $typesense_search_collection_prefix . 'resource_access_grants';
+
+    // Remove existing grant docs for this resource.
+    typesense_search_request(
+        'DELETE',
+        '/collections/' . rawurlencode($collection) . '/documents?filter_by=' . rawurlencode('resource_id:=' . $resource)
+    );
+
+    $rows = ps_query(
+        "SELECT resource, user, usergroup, access, user_expires FROM resource_custom_access WHERE access <> 2 AND resource = ?",
+        array('i', $resource)
+    );
+
+    if (count($rows) === 0) {
+        return true;
+    }
+
+    $documents = array_map('typesense_search_grant_document', $rows);
+
+    return typesense_search_index_grants_batch($documents);
 }
 
 

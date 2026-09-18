@@ -656,6 +656,8 @@ function typesense_search_restrictions(): array
     $restrictions = array(
         new TypesenseStandardRestrictions(),
         new TypesenseFeaturedCollectionsRestriction(),
+        new TypesenseGroupFilterRestriction(),
+        new TypesenseAccessRestriction(),
     );
 
     $extra = hook('typesense_search_restrictions');
@@ -851,3 +853,5 @@ require_once __DIR__ . '/modes/user_pending.php';
 require_once __DIR__ . '/modes/unsupported_special.php';
 require_once __DIR__ . '/restrictions/standard.php';
 require_once __DIR__ . '/restrictions/featured_collections.php';
+require_once __DIR__ . '/restrictions/group_filter.php';
+require_once __DIR__ . '/restrictions/access.php';
