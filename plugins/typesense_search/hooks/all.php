@@ -92,9 +92,12 @@ function HookTypesense_searchAllExternal_search(
 
     $results = typesense_search_run($ctx);
     if ($results !== false) {
-        // Record that Typesense served a results search this request (used by the UI indicator).
-        // Only the main display search, not internal refs-only lookups.
-        if (!$ctx->return_refs_only) {
+        // Record that Typesense served the *main results grid* this request (used by the UI
+        // indicator). The grid uses a chunked [offset, count] fetchrows; incidental searches on
+        // the page (the selection-collection bar, counts, refs-only lookups) use -1 and must not
+        // flip the flag - otherwise e.g. a fallback !locked search shows the Typesense badge
+        // because the selection-collection !collection search was served.
+        if (!$ctx->return_refs_only && is_array($ctx->fetchrows)) {
             $GLOBALS['typesense_search_served'] = true;
         }
         return $results;
