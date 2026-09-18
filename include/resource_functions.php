@@ -7836,6 +7836,38 @@ function get_fields($field_refs, bool $order_by_passed_refs = false)
     return $return;
 }
 
+function get_visible_indexed_fields()
+{
+    global $visible_indexed_fields_cache;
+
+    if (is_array($visible_indexed_fields_cache)) {
+        return $visible_indexed_fields_cache;
+    }
+
+    $fields = ps_query(
+        "SELECT ref
+           FROM resource_type_field
+          WHERE active = 1
+            AND (keywords_index = 1 OR partial_index = 1 OR complete_index = 1)
+            AND LENGTH(name) > 0",
+        [],
+        "schema"
+    );
+
+    $visible = [];
+
+    foreach ($fields as $field) {
+        if (metadata_field_view_access($field["ref"])) {
+            $visible[] = (int) $field["ref"];
+        }
+    }
+
+    $visible_indexed_fields_cache = $visible;
+
+    return $visible;
+
+}
+
 function get_hidden_indexed_fields()
 {
     # Return an array of indexed fields to which the current user does not have access

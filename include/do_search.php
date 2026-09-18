@@ -331,17 +331,7 @@ function do_search(
         $sql_join->sql = $collection_join . $sql_join->sql;
     }
 
-    # --------------------------------------------------------------------------------
-    # Special Searches (start with an exclamation mark)
-    # --------------------------------------------------------------------------------
-    $sql_select = clone $select;
-    $special_results = search_special($search, $sql_join, $fetchrows, $sql_prefix, $sql_suffix, $order_by, $orig_order, $sql_select, $sql_filter, $archive, $return_disk_usage, $return_refs_only, $returnsql);
-    if ($special_results !== false) {
-        log_keyword_usage($keywords_used, $special_results);
-        return $special_results;
-    }
-
-    # -------------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------
     # Standard Searches
     # -------------------------------------------------------------------------------------
  
@@ -377,9 +367,22 @@ function do_search(
         ]
         );
 
-    if ($external_search_results !== false) {
-        log_keyword_usage($keywords_used, $external_search_results);
-        return $external_search_results;
+    // if ($external_search_results !== false) {
+    //     log_keyword_usage($keywords_used, $external_search_results);
+    //     return $external_search_results;
+    // } 
+    // else {
+    //     return [];
+    // }
+
+    # --------------------------------------------------------------------------------
+    # Special Searches (start with an exclamation mark)
+    # --------------------------------------------------------------------------------
+    $sql_select = clone $select;
+    $special_results = search_special($search, $sql_join, $fetchrows, $sql_prefix, $sql_suffix, $order_by, $orig_order, $sql_select, $sql_filter, $archive, $return_disk_usage, $return_refs_only, $returnsql);
+    if ($special_results !== false) {
+        log_keyword_usage($keywords_used, $special_results);
+        return $special_results;
     }
 
     # Construct and perform the standard search query.
