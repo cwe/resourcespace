@@ -146,6 +146,40 @@ do {
 } while (!$result['complete']);
 
 
+
+// Access grant Indexing
+$after = 0;
+do {
+    $batch_start = microtime(true);
+
+    $result = typesense_search_reindex_grants(1000, $after);
+
+    $batch_time = microtime(true) - $batch_start;
+
+    $total_indexed += $result['indexed'];
+    $total_failed += $result['failed'];
+
+    $overall_time = microtime(true) - $overall_start;
+    $rate = $overall_time > 0 ? round($total_indexed / $overall_time, 2) : 0;
+
+    echo '[' . date('Y-m-d H:i:s') . '] '
+        . 'Indexed this batch: ' . $result['indexed']
+        . ' | Failed this batch: ' . $result['failed']
+        . ' | Total indexed: ' . $total_indexed
+        . ' | Total failed: ' . $total_failed
+        . ' | Last ref: ' . $result['last']
+        . ' | Batch time: ' . round($batch_time, 2) . 's'
+        . ' | Rate: ' . $rate . ' access grants/sec'
+        . ' | Memory: ' . round(memory_get_usage(true) / 1024 / 1024, 2) . 'MB'
+        . PHP_EOL;
+
+    ob_flush();
+    flush();
+
+    $after = (int) $result['last'];
+} while (!$result['complete']);
+
+
 echo PHP_EOL
     . 'Reindex complete'
     . ' | Total indexed: ' . $total_indexed
