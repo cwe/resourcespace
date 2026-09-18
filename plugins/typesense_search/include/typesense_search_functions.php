@@ -321,11 +321,17 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
         . $typesense_search_port
         . $endpoint;
 
-    $curl = curl_init($url);
-
-    if ($curl === false) {
-        debug('typesense_search_request(): Failed to initialise cURL');
-        return false;
+    // Reuse a single cURL handle across calls so the connection is kept alive - a reindex makes
+    // thousands of requests and would otherwise open a new connection each time.
+    static $curl = null;
+    if (!($curl instanceof CurlHandle) && $curl === null) {
+        $curl = curl_init();
+        if ($curl === false) {
+            debug('typesense_search_request(): Failed to initialise cURL');
+            return false;
+        }
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TCP_KEEPALIVE, 1);
     }
 
     $headers = array(
@@ -333,29 +339,27 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
         'X-TYPESENSE-API-KEY: ' . $typesense_search_api_key,
     );
 
+    curl_setopt($curl, CURLOPT_URL, $url);
     curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $typesense_search_timeout);
     curl_setopt($curl, CURLOPT_TIMEOUT, $typesense_search_timeout);
 
+    // Always set the body (empty when no payload) so a stale body from a previous reused request
+    // is never resent.
+    $body = '';
     if ($payload !== null) {
-
         if ($batch) {
-
-            // JSONL format
-            $lines = [];
-
+            $lines = array();
             foreach ($payload as $row) {
-               $lines[] = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $lines[] = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             }
-
-            curl_setopt($curl, CURLOPT_POSTFIELDS, implode("\n", $lines) . "\n");
-
+            $body = implode("\n", $lines) . "\n";
         } else {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($payload));
-        }        
+            $body = json_encode($payload);
+        }
     }
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
 
     $response = curl_exec($curl);
 
@@ -868,26 +872,32 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
     );
 }
 
-function typesense_search_reindex_resource_collection_memberships(int $limit = 100, int $after = 0): array
+/**
+ * Reindex collection memberships in batches. A collection can hold more resources than one batch,
+ * so pagination uses a keyset cursor on the composite (collection, resource) key - paging by
+ * collection alone would skip the rest of a collection that straddles a batch boundary.
+ *
+ * @param int $limit           Batch size.
+ * @param int $after_collection Cursor: last collection processed.
+ * @param int $after_resource   Cursor: last resource processed within $after_collection.
+ *
+ * @return array Batch summary incl. last_collection / last_resource for the next call.
+ */
+function typesense_search_reindex_resource_collection_memberships(int $limit = 100, int $after_collection = 0, int $after_resource = 0): array
 {
-
-    $indexed = 0;
-    $failed = 0;
-    $last = $after;
-
     $rcms = ps_query(
         "SELECT CONCAT_WS(':', cr.collection, cr.resource) AS id,
             cr.resource as resource_id,
             cr.collection as collection_ref,
             cr.sortorder as sortorder,
-            UNIX_TIMESTAMP(cr.date_added ) as date_added,
+            UNIX_TIMESTAMP(cr.date_added) as date_added,
             c.type as collection_type
             FROM collection_resource cr
-            INNER JOIN collection c on cr.collection = c.ref 
-            WHERE cr.collection > ? 
+            INNER JOIN collection c ON cr.collection = c.ref
+            WHERE cr.collection > ? OR (cr.collection = ? AND cr.resource > ?)
             ORDER BY cr.collection ASC, cr.resource ASC
             LIMIT ?;",
-        array('i', $after, 'i', $limit)
+        array('i', $after_collection, 'i', $after_collection, 'i', $after_resource, 'i', $limit)
     );
 
     $rcm_count = count($rcms);
@@ -896,27 +906,29 @@ function typesense_search_reindex_resource_collection_memberships(int $limit = 1
         return array(
             'indexed' => 0,
             'failed' => 0,
-            'last' => $last,
+            'last_collection' => $after_collection,
+            'last_resource' => $after_resource,
             'content_length' => 0,
             'complete' => true,
         );
-    }   
+    }
+
+    $last_collection = $after_collection;
+    $last_resource = $after_resource;
 
     foreach ($rcms as $key => $rcm) {
-        $last = (int) $rcm['resource_id'];
+        $last_collection = (int) $rcm['collection_ref'];
+        $last_resource = (int) $rcm['resource_id'];
         $rcms[$key]['resource_id'] = (string) $rcm['resource_id'];
     }
 
-    if (typesense_search_index_rcms_batch($rcms)) {
-        $indexed += $rcm_count;
-    } else {
-        $failed += $rcm_count;
-    }
+    $ok = typesense_search_index_rcms_batch($rcms);
 
     return array(
-        'indexed' => $indexed,
-        'failed' => $failed,
-        'last' => $last,
+        'indexed' => $ok ? $rcm_count : 0,
+        'failed' => $ok ? 0 : $rcm_count,
+        'last_collection' => $last_collection,
+        'last_resource' => $last_resource,
         'content_length' => 0,
         'complete' => $rcm_count < $limit,
     );
@@ -969,73 +981,57 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         $param_array
     );
 
-    $resource_attributes_count = count($resource_attributes);
-
-    //nodes and populated_field_ids 
+    // Paginate by resource ref (the resource_list is ordered ASC), so the cursor always advances
+    // past every resource in the batch - not just the last one that happened to have attributes.
+    $resource_list_count = count($resource_list);
+    $last = (int) $resource_list[$resource_list_count - 1];
 
     $resource_array_info = array();
-
     $date_range_info = array();
 
-    foreach ($resource_attributes as $key => $resource_attribute) {
-        
+    // nodes[] and populated_field_ids[] are built from ALL of the resource's nodes - every field
+    // type, whether or not the field is keyword-indexed - so node_bucket filters and !hasdata work
+    // for fields that aren't keyword-indexed. (field_*_* below drive keyword matching and so stay
+    // limited to indexed fields.)
+    $all_nodes = ps_query(
+        "SELECT rn.resource AS resource_ref, rn.node AS node_ref, n.resource_type_field AS field_ref
+            FROM resource_node rn
+            INNER JOIN node n ON n.ref = rn.node
+            WHERE rn.resource IN (" . ps_param_insert(count($resource_list)) . ")",
+        $param_array
+    );
 
-        $last = $resource_attribute['resource_ref'];
-        $resource_array_info[(int) $resource_attribute['resource_ref']]['nodes'][] = (int) $resource_attributes[$key]['node_ref'];
-        $resource_array_info[(int) $resource_attribute['resource_ref']]['populated_field_ids'][] =  (int) $resource_attributes[$key]['field_ref'];
+    foreach ($all_nodes as $all_node) {
+        $rref = (int) $all_node['resource_ref'];
+        $resource_array_info[$rref]['nodes'][] = (int) $all_node['node_ref'];
+        $resource_array_info[$rref]['populated_field_ids'][] = (int) $all_node['field_ref'];
+    }
 
-        // Set document ID as string of resource reference
-        $resource_attributes[$key]['id'] = (string) $resource_attribute['resource_ref'];
+    // Merge every indexed attribute row for a resource into a single per-resource entry, so the
+    // import sends one document per resource instead of one per field value.
+    foreach ($resource_attributes as $resource_attribute) {
+        $rref = (int) $resource_attribute['resource_ref'];
+        $fref = (int) $resource_attribute['field_ref'];
+        $prefix = 'field_' . $fref;
+        $value = $resource_attribute['node_value'];
 
-
-        // Determine which Typesense field to store the value in
-        /**
-            //string or float
-            FIELD_TYPE_TEXT_BOX_SINGLE_LINE
-            
-            // string
-            FIELD_TYPE_WARNING_MESSAGE
-
-            // string or text (depending on index settings?)
-            FIELD_TYPE_TEXT_BOX_MULTI_LINE
-            FIELD_TYPE_TEXT_BOX_LARGE_MULTI_LINE
-            FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE
-
-            // string array
-            FIELD_TYPE_DYNAMIC_KEYWORDS_LIST
-            FIELD_TYPE_CHECK_BOX_LIST
-            FIELD_TYPE_DROP_DOWN_LIST
-            FIELD_TYPE_CATEGORY_TREE
-            FIELD_TYPE_RADIO_BUTTONS
-            
-            // timestamp
-            FIELD_TYPE_DATE_AND_OPTIONAL_TIME
-            FIELD_TYPE_EXPIRY_DATE
-            FIELD_TYPE_DATE
-
-            // timestamp array
-            FIELD_TYPE_DATE_RANGE
-        */
-
-        switch ($resource_attributes[$key]['field_type']) {
+        switch ((int) $resource_attribute['field_type']) {
             case FIELD_TYPE_TEXT_BOX_SINGLE_LINE:
             case FIELD_TYPE_WARNING_MESSAGE:
-                if ($resource_attribute['node_value'] == 1) {
+                if ($value == 1) {
                     // numeric type
-                    $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_f'] = (float) $resource_attribute['node_value'];
-                    // store string representation for searching
-                    $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_q'][] = $resource_attribute['node_value'];
+                    $resource_array_info[$rref][$prefix . '_f'] = (float) $value;
+                    $resource_array_info[$rref][$prefix . '_q'][] = (string) $value;
                 } else {
                     // string type
-                    $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_s'] = (string) $resource_attribute['node_value'];
+                    $resource_array_info[$rref][$prefix . '_s'] = (string) $value;
                 }
                 break;
-            
+
             case FIELD_TYPE_TEXT_BOX_MULTI_LINE:
             case FIELD_TYPE_TEXT_BOX_LARGE_MULTI_LINE:
             case FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE:
-                $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_text'] = (string) $resource_attribute['node_value'];
-
+                $resource_array_info[$rref][$prefix . '_text'] = (string) $value;
                 break;
 
             case FIELD_TYPE_DYNAMIC_KEYWORDS_LIST:
@@ -1043,111 +1039,45 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
             case FIELD_TYPE_DROP_DOWN_LIST:
             case FIELD_TYPE_CATEGORY_TREE:
             case FIELD_TYPE_RADIO_BUTTONS:
-                $resource_array_info[(int) $resource_attribute['resource_ref']]['field_' . (int) $resource_attribute['field_ref'] . '_ss'][] = (string) $resource_attribute['node_value'];
+                $resource_array_info[$rref][$prefix . '_ss'][] = (string) $value;
                 break;
 
             case FIELD_TYPE_DATE:
             case FIELD_TYPE_DATE_AND_OPTIONAL_TIME:
             case FIELD_TYPE_EXPIRY_DATE:
-
-                // date processing
-                if ($resource_attribute['node_value'] !== '') {
-                    $parsed = typesense_parse_date(
-                        $resource_attribute['node_value']
-                    );
-
+                if ($value !== '') {
+                    $parsed = typesense_parse_date($value);
                     if ($parsed !== null) {
-                        $prefix =
-                            'field_' .
-                            (int) $resource_attribute['field_ref'];
-
-                        // Text representations for normal Typesense q matching
                         if (!empty($parsed['representations'])) {
-                            $resource_attributes[$key][
-                                $prefix . '_q'
-                            ] = $parsed['representations'];
+                            $resource_array_info[$rref][$prefix . '_q'] = $parsed['representations'];
                         }
-
-                        // Only present for a complete date / datetime
                         if ($parsed['timestamp'] !== null) {
-                            $resource_attributes[$key][
-                                $prefix . '_ts'
-                            ] = $parsed['timestamp'];
+                            $resource_array_info[$rref][$prefix . '_ts'] = $parsed['timestamp'];
                         }
-
-                        // Present for any date that maps to an absolute interval
                         if ($parsed['range_start'] !== null) {
-                            $resource_attributes[$key][
-                                $prefix . '_range_start'
-                            ] = $parsed['range_start'];
+                            $resource_array_info[$rref][$prefix . '_range_start'] = $parsed['range_start'];
                         }
-
                         if ($parsed['range_end'] !== null) {
-                            $resource_attributes[$key][
-                                $prefix . '_range_end'
-                            ] = $parsed['range_end'];
+                            $resource_array_info[$rref][$prefix . '_range_end'] = $parsed['range_end'];
                         }
                     }
                 }
                 break;
 
-
-
-                // if (strlen($resource_attribute['node_value']) > 0) {
-                //     $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_ts'] = (int) strtotime($resource_attribute['node_value']);
-                // }
-                // break;
-
             case FIELD_TYPE_DATE_RANGE:
-                // if (strlen($resource_attribute['node_value']) > 0) {
-                //     $resource_array_info[(int) $resource_attribute['resource_ref']]['field_' . (int) $resource_attribute['field_ref'] . '_tss'][] = (int) strtotime($resource_attribute['node_value']);
-                // }
-                // break;
-                    if ($resource_attribute['node_value'] !== '') {
-                        $parsed = typesense_parse_date(
-                            $resource_attribute['node_value']
-                        );
-
-                        if ($parsed !== null) {
-                            $resource_ref =
-                                (int) $resource_attribute['resource_ref'];
-
-                            $field_ref =
-                                (int) $resource_attribute['field_ref'];
-
-                            $date_range_info[
-                                $resource_ref
-                            ][
-                                $field_ref
-                            ][] = $parsed;
-                        }
+                if ($value !== '') {
+                    $parsed = typesense_parse_date($value);
+                    if ($parsed !== null) {
+                        $date_range_info[$rref][$fref][] = $parsed;
                     }
-                    break;
-            
+                }
+                break;
+
             default:
                 // string default
-                $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_s'] = (string) $resource_attribute['value_s'];
+                $resource_array_info[$rref][$prefix . '_s'] = (string) $value;
                 break;
         }
-
-        // $resource_attributes[$key]['field_' . (int) $resource_attribute['field_ref'] . '_s'] = (string) $resource_attribute['value_s'];
-
-        unset($resource_attributes[$key]['resource_ref']);
-        unset($resource_attributes[$key]['field_ref']);
-        unset($resource_attributes[$key]['field_type']);
-        unset($resource_attributes[$key]['field_constraint']);
-        unset($resource_attributes[$key]['node_value']);
-        unset($resource_attributes[$key]['node_ref']);
-
-        // Populate the title field
-        // $resources[$key]['title'] = trim((string) get_data_by_field($resource['ref'], (int) $GLOBALS['view_title_field']));
-
-        // Process dates to integers
-        // $resource_attributes[$key]['indexed_at_ts'] = (int) strtotime('now');
-
-        // if (strlen($resource['modified_date']) > 0) {
-        //    $resources[$key]['modified_date'] = (int) strtotime($resource['modified_date']);
-        // }
     }
 
     foreach ($date_range_info as $resource_ref => $fields) {
@@ -1230,38 +1160,36 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         }
     }
     
-    // Add in extra rows to update extra field info TO BE OPTIMISED
-    foreach ($resource_array_info as $resource_array_info_key => $resource_array_info_value) {
+    // Build one document per resource from the merged attribute info.
+    $documents = array();
+    foreach ($resource_array_info as $resource_ref => $info) {
+        $document = array('id' => (string) $resource_ref);
 
-        foreach ($resource_array_info_value as $key => $value) {
-            if (in_array($key, ['nodes','populated_field_ids'])) {
+        foreach ($info as $field => $value) {
+            if ($field === 'nodes' || $field === 'populated_field_ids') {
+                // Unique, plus the intentional 0 sentinel so the array field always exists.
                 $values = array_values(array_unique($value));
                 array_unshift($values, 0);
+                $values = array_values(array_unique($values));
                 sort($values, SORT_NUMERIC);
+                $document[$field] = $values;
+            } elseif (is_array($value) && (substr($field, -2) === '_q' || substr($field, -3) === '_ss')) {
+                // De-duplicate multi-value string fields.
+                $document[$field] = array_values(array_unique($value));
             } else {
-                $values = $value;
+                $document[$field] = $value;
             }
-            
-            $resource_attributes[] = array('id' => (string) $resource_array_info_key, 
-                                       $key => $values);
-
         }
 
-        // $nodes = array_values(array_unique($resource_array_info_value['nodes']));
-        // sort($nodes, SORT_NUMERIC);
-
-        // $populated_field_ids = array_values(array_unique($resource_array_info_value['populated_field_ids']));
-        // sort($populated_field_ids, SORT_NUMERIC);
-
-        // $resource_attributes[] = array('id' => (string) $resource_array_info_key, 
-        //                                'nodes' => $nodes,
-        //                                'populated_field_ids' => $populated_field_ids);
+        $documents[] = $document;
     }
 
-    if (typesense_search_index_attributes_batch($resource_attributes)) {
-        $indexed += $resource_attributes_count;
+    $document_count = count($documents);
+
+    if (typesense_search_index_attributes_batch($documents)) {
+        $indexed += $document_count;
     } else {
-        $failed += $resource_attributes_count;
+        $failed += $document_count;
     }
 
     return array(
@@ -1269,7 +1197,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         'failed' => $failed,
         'last' => $last,
         'content_length' => 0,
-        'complete' => $resource_attributes_count < $limit,
+        'complete' => $resource_list_count < $limit,
     );
 
 }
@@ -1294,40 +1222,74 @@ function typesense_search_index_document(array $document): bool
     return typesense_search_request('POST', $endpoint, false, $document) !== false;
 }
 
-function typesense_search_index_document_batch(array $documents): bool
+/**
+ * Import documents into a collection, splitting into chunks that never exceed a maximum document
+ * count or byte size per HTTP POST (so a large batch cannot produce an oversized request).
+ * Caps are overridable via $typesense_search_import_max_docs / _max_bytes.
+ *
+ * @param string $collection_suffix Collection name after the prefix (e.g. "resources").
+ * @param array  $documents         Documents to import.
+ * @param string $action            Typesense import action (upsert / update / create).
+ *
+ * @return bool True if every chunk imported successfully.
+ */
+function typesense_search_import(string $collection_suffix, array $documents, string $action): bool
 {
     global $typesense_search_collection_prefix;
+    global $typesense_search_import_max_docs, $typesense_search_import_max_bytes;
+
+    if (count($documents) === 0) {
+        return true;
+    }
+
+    $max_docs = (isset($typesense_search_import_max_docs) && (int) $typesense_search_import_max_docs > 0)
+        ? (int) $typesense_search_import_max_docs : 500;
+    $max_bytes = (isset($typesense_search_import_max_bytes) && (int) $typesense_search_import_max_bytes > 0)
+        ? (int) $typesense_search_import_max_bytes : 4 * 1024 * 1024;
 
     $endpoint =
         '/collections/'
-        . rawurlencode($typesense_search_collection_prefix . "resources")
-        . '/documents/import?action=upsert&return_id=true';
+        . rawurlencode($typesense_search_collection_prefix . $collection_suffix)
+        . '/documents/import?action=' . rawurlencode($action) . '&return_id=true';
 
-    return typesense_search_request('POST', $endpoint, true, $documents) !== false;
+    $ok = true;
+    $chunk = array();
+    $chunk_bytes = 0;
+
+    foreach ($documents as $doc) {
+        $len = strlen(json_encode($doc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) + 1;
+
+        // Flush the current chunk before it would exceed a cap (always keep >= 1 doc per chunk).
+        if (count($chunk) > 0 && (count($chunk) >= $max_docs || ($chunk_bytes + $len) > $max_bytes)) {
+            $ok = (typesense_search_request('POST', $endpoint, true, $chunk) !== false) && $ok;
+            $chunk = array();
+            $chunk_bytes = 0;
+        }
+
+        $chunk[] = $doc;
+        $chunk_bytes += $len;
+    }
+
+    if (count($chunk) > 0) {
+        $ok = (typesense_search_request('POST', $endpoint, true, $chunk) !== false) && $ok;
+    }
+
+    return $ok;
+}
+
+function typesense_search_index_document_batch(array $documents): bool
+{
+    return typesense_search_import('resources', $documents, 'upsert');
 }
 
 function typesense_search_index_rcms_batch(array $documents): bool
 {
-    global $typesense_search_collection_prefix;
-
-    $endpoint =
-        '/collections/'
-        . rawurlencode($typesense_search_collection_prefix . "resource_collection_memberships")
-        . '/documents/import?action=upsert&return_id=true';
-
-    return typesense_search_request('POST', $endpoint, true, $documents) !== false;
+    return typesense_search_import('resource_collection_memberships', $documents, 'upsert');
 }
 
 function typesense_search_index_attributes_batch(array $documents): bool
 {
-    global $typesense_search_collection_prefix;
-
-    $endpoint =
-        '/collections/'
-        . rawurlencode($typesense_search_collection_prefix . "resources")
-        . '/documents/import?action=update&return_id=true';
-
-    return typesense_search_request('POST', $endpoint, true, $documents) !== false;
+    return typesense_search_import('resources', $documents, 'update');
 }
 
 
@@ -1366,18 +1328,7 @@ function typesense_search_grant_document(array $row): array
  */
 function typesense_search_index_grants_batch(array $documents): bool
 {
-    global $typesense_search_collection_prefix;
-
-    if (count($documents) === 0) {
-        return true;
-    }
-
-    $endpoint =
-        '/collections/'
-        . rawurlencode($typesense_search_collection_prefix . "resource_access_grants")
-        . '/documents/import?action=upsert&return_id=true';
-
-    return typesense_search_request('POST', $endpoint, true, $documents) !== false;
+    return typesense_search_import('resource_access_grants', $documents, 'upsert');
 }
 
 
