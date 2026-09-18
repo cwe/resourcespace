@@ -49,7 +49,33 @@ $page_def[] = config_add_text_input(
 
 $page_def[] = config_add_text_input(
     'typesense_search_timeout',
-    $lang['typesense_search_timeout'] 
+    $lang['typesense_search_timeout']
+);
+
+$page_def[] = config_add_section_header($lang['typesense_search_options']);
+
+$page_def[] = config_add_boolean_select(
+    'typesense_search_enabled',
+    $lang['typesense_search_enabled'],
+    '',
+    420,
+    null,
+    false,
+    null,
+    false,
+    $lang['typesense_search_enabled_help']
+);
+
+$page_def[] = config_add_boolean_select(
+    'typesense_search_only',
+    $lang['typesense_search_only'],
+    '',
+    420,
+    null,
+    false,
+    null,
+    false,
+    $lang['typesense_search_only_help']
 );
 
 config_gen_setup_post($page_def, $plugin_name);
