@@ -43,7 +43,7 @@ $page_def[] = config_add_text_input(
 );
 
 $page_def[] = config_add_text_input(
-    'typesense_search_collection',
+    'typesense_search_collection_prefix',
     $lang['typesense_search_collection'] 
 );
 
