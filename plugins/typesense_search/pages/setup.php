@@ -78,6 +78,18 @@ $page_def[] = config_add_boolean_select(
     $lang['typesense_search_only_help']
 );
 
+$page_def[] = config_add_boolean_select(
+    'typesense_search_show_indicator',
+    $lang['typesense_search_show_indicator'],
+    '',
+    420,
+    null,
+    false,
+    null,
+    false,
+    $lang['typesense_search_show_indicator_help']
+);
+
 config_gen_setup_post($page_def, $plugin_name);
 
 include '../../../include/header.php';

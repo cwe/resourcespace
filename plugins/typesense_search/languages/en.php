@@ -13,3 +13,7 @@ $lang['typesense_search_enabled'] = 'Enable Typesense searching';
 $lang['typesense_search_enabled_help'] = 'When disabled, the standard ResourceSpace search is used. Lets you turn Typesense off without deactivating the plugin.';
 $lang['typesense_search_only'] = 'Only use Typesense for searching';
 $lang['typesense_search_only_help'] = 'For testing. When enabled, a search that Typesense cannot handle returns no results instead of falling back to the standard ResourceSpace search.';
+$lang['typesense_search_show_indicator'] = 'Show search engine indicator';
+$lang['typesense_search_show_indicator_help'] = 'Show a badge next to the search title indicating whether the displayed results came from Typesense or the standard search.';
+$lang['typesense_search_served_typesense'] = 'Typesense';
+$lang['typesense_search_served_mysql'] = 'Standard search';

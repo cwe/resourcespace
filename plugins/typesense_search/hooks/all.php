@@ -92,6 +92,11 @@ function HookTypesense_searchAllExternal_search(
 
     $results = typesense_search_run($ctx);
     if ($results !== false) {
+        // Record that Typesense served a results search this request (used by the UI indicator).
+        // Only the main display search, not internal refs-only lookups.
+        if (!$ctx->return_refs_only) {
+            $GLOBALS['typesense_search_served'] = true;
+        }
         return $results;
     }
 
@@ -168,4 +173,34 @@ function HookTypesense_searchAllAfter_save_related_keywords(string $keyword, str
     typesense_search_sync_related_keywords();
 
     return false;
+}
+
+
+/**
+ * Show a small badge next to the search title indicating which engine served the results -
+ * Typesense or the standard (MySQL) search. Enable/disable via $typesense_search_show_indicator.
+ *
+ * @return void
+ */
+function HookTypesense_searchAllAftersearchtitle(): void
+{
+    global $typesense_search_show_indicator, $lang;
+
+    if (isset($typesense_search_show_indicator) && !$typesense_search_show_indicator) {
+        return;
+    }
+
+    $served = !empty($GLOBALS['typesense_search_served']);
+
+    $label = $served
+        ? ($lang['typesense_search_served_typesense'] ?? 'Typesense')
+        : ($lang['typesense_search_served_mysql'] ?? 'Standard search');
+    $colour = $served ? '#2e7d32' : '#757575';
+    $icon = $served ? '&#9889;' : '&#9679;'; // ⚡ vs ●
+
+    echo '<span title="Search engine that produced these results" style="'
+        . 'display:inline-block;margin-left:10px;padding:1px 8px;border-radius:10px;'
+        . 'font-size:11px;font-weight:bold;vertical-align:middle;color:#fff;background:' . $colour . ';">'
+        . $icon . ' ' . htmlspecialchars($label)
+        . '</span>';
 }

@@ -1308,8 +1308,19 @@ function typesense_search_grant_document(array $row): array
     $usergroup = (int) ($row['usergroup'] ?? 0);
     $expires = ($user > 0 && !empty($row['user_expires'])) ? (int) strtotime($row['user_expires']) : 0;
 
+    // A row is either a user grant or a group grant. Store -1 (never a real ref) in the unused
+    // field so the query filter's user:=<userref> / usergroup:=<usergroup> can never match the
+    // placeholder for an anonymous / no-group user (whose userref or usergroup is 0).
+    if ($user > 0) {
+        $id = $resource . '_u' . $user;
+        $usergroup = -1;
+    } else {
+        $id = $resource . '_g' . $usergroup;
+        $user = -1;
+    }
+
     return array(
-        'id' => $user > 0 ? $resource . '_u' . $user : $resource . '_g' . $usergroup,
+        'id' => $id,
         'resource_id' => (string) $resource,
         'user' => $user,
         'usergroup' => $usergroup,
