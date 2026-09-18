@@ -367,13 +367,13 @@ function do_search(
         ]
         );
 
-    // if ($external_search_results !== false) {
-    //     log_keyword_usage($keywords_used, $external_search_results);
-    //     return $external_search_results;
-    // } 
-    // else {
-    //     return [];
-    // }
+    // An external search provider (e.g. the typesense_search plugin) may handle the search. It
+    // returns a result set to use (including an empty one, to deliberately show no results), or
+    // false to let ResourceSpace continue with its own search below.
+    if ($external_search_results !== false) {
+        log_keyword_usage($keywords_used, $external_search_results);
+        return $external_search_results;
+    }
 
     # --------------------------------------------------------------------------------
     # Special Searches (start with an exclamation mark)

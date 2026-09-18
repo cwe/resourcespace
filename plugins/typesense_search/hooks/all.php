@@ -55,31 +55,48 @@ function HookTypesense_searchAllExternal_search(
     PreparedStatementQuery $sql_join,
     PreparedStatementQuery $select
 ) {
-    if (
-        !typesense_search_supported(
-            $search,
-            $keywords,
-            $node_bucket,
-            $node_bucket_not,
-            $return_disk_usage,
-            $editable_only,
-            $returnsql,
-            $smartsearch
-        )
-    ) {
+    global $typesense_search_enabled;
+
+    // Master toggle - use the standard ResourceSpace search when Typesense is disabled.
+    if (isset($typesense_search_enabled) && !$typesense_search_enabled) {
         return false;
     }
 
-    return typesense_search_do_search(
-        $search,
-        $restypes,
-        $archive,
-        $fetchrows,
-        $return_refs_only,
-        $select,
-        $order_by,
-        $sort
-    );
+    $ctx = TypesenseSearchContext::fromHookArgs(array(
+        'search' => $search,
+        'keywords' => $keywords,
+        'node_bucket' => $node_bucket,
+        'node_bucket_not' => $node_bucket_not,
+        'restypes' => $restypes,
+        'order_by' => $order_by,
+        'archive' => $archive,
+        'fetchrows' => $fetchrows,
+        'sort' => $sort,
+        'access_override' => $access_override,
+        'ignore_filters' => $ignore_filters,
+        'return_disk_usage' => $return_disk_usage,
+        'recent_search_daylimit' => $recent_search_daylimit,
+        'return_refs_only' => $return_refs_only,
+        'editable_only' => $editable_only,
+        'returnsql' => $returnsql,
+        'access' => $access,
+        'smartsearch' => $smartsearch,
+        'select' => $select,
+    ));
+
+    // Special request modes (SQL passthrough, disk usage totals, editable-only, smart search)
+    // are not results Typesense produces - always let core handle them.
+    if ($ctx->returnsql || $ctx->return_disk_usage || $ctx->editable_only || $ctx->smartsearch) {
+        return false;
+    }
+
+    $results = typesense_search_run($ctx);
+    if ($results !== false) {
+        return $results;
+    }
+
+    // Typesense could not handle this search: empty result in Typesense-only mode, else fall back.
+    return typesense_search_fallback_result($ctx);
 }
 
 /**
