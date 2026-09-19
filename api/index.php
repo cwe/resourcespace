@@ -25,7 +25,7 @@ define("API_CALL", true);
 # Get parameters
 $user = getval("user", "");
 $sign = getval("sign", "");
-$query = $_SERVER["QUERY_STRING"];
+$query = $_SERVER["QUERY_STRING"] ?? '';
 $pretty = filter_var(getval('pretty', ''), FILTER_VALIDATE_BOOLEAN); # Should response be prettyfied?
 
 # Support POST request where 'query' is POSTed and is the full query string.

@@ -4786,6 +4786,69 @@ function render_featured_collection_category_selector(int $parent, array $contex
     render_featured_collection_category_selector($next_level_parent, $context);
     }
 
+/**
+ * Generate the HTML used to display images on a featured collection tile.
+ *
+ * @param array $theme_images Featured collection image data.
+ * @param array $fc Featured collection data.
+ *
+ * @return string HTML for the featured collection tile image area.
+ */
+function generate_featured_collection_image_html(array $theme_images, array $fc): string
+    {
+    global $FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS;
+
+    if (
+        isset($fc['thumbnail_selection_method']) 
+        && $fc['thumbnail_selection_method'] == $FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS['most_popular_images']
+    ) {
+        $theme_images = array_pad($theme_images, 3, null);
+    }
+
+    // Ensure two images use the multi-image layout rather than falling back to a placeholder.
+    if (count($theme_images) === 2) {
+        $theme_images = array_pad($theme_images, 3, null);
+    }
+
+    if (count($theme_images) === 0) {
+        $image_html = "<div class=\"tile-placeholder\">
+                                <div class=\"thumbs-tile-image\"></div>
+                           </div>";
+    } elseif (count($theme_images) === 1) {
+            $image_html = sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", 
+                        $theme_images[0]['path'], escape($theme_images[0]['alt_text'] ?? ""));
+    } elseif (count($theme_images) >= 3) {
+        if ($theme_images[0] === null) {
+            $image_html = "<div class=\"tile-placeholder\">
+                                <div class=\"thumbs-tile-image\"></div>
+                           </div>
+                           <div class=\"tile-sub-multi\">
+                               <div></div>
+                               <div></div>
+                           </div> 
+                           ";
+        } else {
+            $image_html = sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", 
+            $theme_images[0]['path'], escape($theme_images[0]['alt_text'] ?? ""));
+            $image_html .= "<div class=\"tile-sub-multi\">";
+            $image_html .= $theme_images[1] === null ? 
+                "<div></div>" : 
+                sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", $theme_images[1]['path'], escape($theme_images[1]['alt_text'] ?? ""));
+            $image_html .= $theme_images[2] === null ? 
+                "<div></div>" : 
+                sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", $theme_images[2]['path'], escape($theme_images[2]['alt_text'] ?? ""));
+            $image_html .= "</div>";
+        }
+        
+        $image_html = sprintf("<div class=\"tile-multi\">%s</div>", $image_html);
+    } else {
+        $image_html = "<div class=\"tile-placeholder\">
+                           <div class=\"thumbs-tile-image\"></div>
+                       </div>";
+    }
+
+    return $image_html;
+}
 
 /**
 * Render featured collections (as tiles on the collections_featured.php page)
@@ -4795,7 +4858,7 @@ function render_featured_collection_category_selector(int $parent, array $contex
 */
 function render_featured_collections(array $ctx, array $items)
     {
-    global $baseurl_short, $lang, $k, $themes_simple_images, $FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS,$show_theme_collection_stats;
+    global $baseurl_short, $lang, $k, $themes_simple_images, $FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS,$show_theme_collection_stats, $smart_featured_collection_ajax_loading;
 
     $is_smart_featured_collection = (isset($ctx["smart"]) ? (bool) $ctx["smart"] : false);
     $general_url_params = (isset($ctx["general_url_params"]) && is_array($ctx["general_url_params"]) ? $ctx["general_url_params"] : array());
@@ -4857,21 +4920,23 @@ function render_featured_collections(array $ctx, array $items)
         unset($fc_resources);
         if($themes_simple_images && $show_images)
             {
-            $fc_resources = get_featured_collection_resources(
-                $fc,
-                array(
-                    "smart" => $is_smart_featured_collection,
-                    "use_thumbnail_selection_method" => !$is_smart_featured_collection,
-                    "all_fcs" => $all_fcs,
-                ));
-            $fc_images = generate_featured_collection_image_urls($fc_resources);
-
-            if(!empty($fc_images))
+            if (!$is_smart_featured_collection || !$smart_featured_collection_ajax_loading)
                 {
-                $render_ctx["images"] = $fc_images;
+                $fc_resources = get_featured_collection_resources(
+                    $fc,
+                    array(
+                        "smart" => $is_smart_featured_collection,
+                        "use_thumbnail_selection_method" => !$is_smart_featured_collection,
+                        "all_fcs" => $all_fcs,
+                    ));
+                $fc_images = generate_featured_collection_image_urls($fc_resources);
+
+                if(!empty($fc_images))
+                    {
+                    $render_ctx["images"] = $fc_images;
+                    }
                 }
             }
-
         // Featured collection default tools
         if ($is_featured_collection && checkPermission_dashmanage()) {
             $render_ctx["tools"][] = array(
@@ -5020,9 +5085,10 @@ function render_featured_collection(array $ctx, array $fc)
         return;
         }
 
-    global $baseurl_short, $lang, $flag_new_themes, $flag_new_themes_age, $view_title_field, $FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS;
+    global $baseurl_short, $lang, $flag_new_themes, $flag_new_themes_age, $view_title_field, $smart_featured_collection_ajax_loading;
 
     $is_smart_featured_collection = (isset($ctx["smart"]) ? (bool) $ctx["smart"] : false);
+    $load_smart_fc_image = $is_smart_featured_collection && $smart_featured_collection_ajax_loading && !is_null($fc["parent"]);
     $general_url_params = (isset($ctx["general_url_params"]) && is_array($ctx["general_url_params"]) ? $ctx["general_url_params"] : array());
     $show_resources_count = (isset($ctx["show_resources_count"]) ? (bool) $ctx["show_resources_count"] : false);
     $reorder = (bool) ($ctx['reorder'] ?? false);
@@ -5085,49 +5151,7 @@ function render_featured_collection(array $ctx, array $fc)
 
     $tools = (isset($ctx["tools"]) && is_array($ctx["tools"]) ? $ctx["tools"] : array());
 
-    if (
-        isset($fc['thumbnail_selection_method']) 
-        && $fc['thumbnail_selection_method'] == $FEATURED_COLLECTION_BG_IMG_SELECTION_OPTIONS['most_popular_images']
-    ) {
-        $theme_images = array_pad($theme_images, 3, null);
-    }
-
-    if (count($theme_images) === 0) {
-        $image_html = "<div class=\"tile-placeholder\">
-                                <div class=\"thumbs-tile-image\"></div>
-                           </div>";
-    } elseif (count($theme_images) === 1) {
-            $image_html = sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", 
-                        $theme_images[0]['path'], escape($theme_images[0]['alt_text'] ?? ""));
-    } elseif (count($theme_images) >= 3) {
-        if ($theme_images[0] === null) {
-            $image_html = "<div class=\"tile-placeholder\">
-                                <div class=\"thumbs-tile-image\"></div>
-                           </div>
-                           <div class=\"tile-sub-multi\">
-                               <div></div>
-                               <div></div>
-                           </div> 
-                           ";
-        } else {
-            $image_html = sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", 
-            $theme_images[0]['path'], escape($theme_images[0]['alt_text'] ?? ""));
-            $image_html .= "<div class=\"tile-sub-multi\">";
-            $image_html .= $theme_images[1] === null ? 
-                "<div></div>" : 
-                sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", $theme_images[1]['path'], escape($theme_images[1]['alt_text'] ?? ""));
-            $image_html .= $theme_images[2] === null ? 
-                "<div></div>" : 
-                sprintf("<img class=\"thmbs-tile-img\" src=\"%s\" alt=\"%s\" loading=\"lazy\">", $theme_images[2]['path'], escape($theme_images[2]['alt_text'] ?? ""));
-            $image_html .= "</div>";
-        }
-        
-        $image_html = sprintf("<div class=\"tile-multi\">%s</div>", $image_html);
-    } else {
-        $image_html = "<div class=\"tile-placeholder\">
-                           <div class=\"thumbs-tile-image\"></div>
-                       </div>";
-    }
+    $image_html = generate_featured_collection_image_html($theme_images, $fc);
 
     // DEVELOPER NOTE: anything past this point should be set. All logic is handled above
     ?>
@@ -5140,9 +5164,14 @@ function render_featured_collection(array $ctx, array $fc)
             class="HomePanel featured-tile"
             id="featured_tile_<?php echo md5($fc['ref']); ?>"
             <?php echo $html_container_data; ?> >
-            <?php
-            echo $image_html;
-            ?>
+            <div class="featured-tile-image-container">
+                <?php echo $image_html; ?>
+                <?php if ($load_smart_fc_image) { ?>
+                    <div class="smart-fc-image-loading">
+                        <?php echo escape($lang["loading"]); ?>
+                    </div>
+                <?php } ?>
+            </div>
             <div class="tile-desc">
                 <h2><?php echo $html_contents_h2; ?></h2>
                 <?php
@@ -5162,6 +5191,59 @@ function render_featured_collection(array $ctx, array $fc)
             let tileonclick; //Used to switch off and on tile link to stop issue clicking on tool bar but opening tile link
 
             let fcactionsid = ".top-right-menu > i";
+
+            <?php if ($load_smart_fc_image) { ?>
+            const smartFcTile = document.getElementById(
+                "featured_tile_<?php echo md5($fc["ref"]); ?>"
+            );
+
+            if (smartFcTile) {
+                let smartFcLoadTimeout = null;
+
+                const smartFcObserver = new IntersectionObserver(
+                    function(entries, observer) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                if (smartFcLoadTimeout !== null) {
+                                    return;
+                                }
+
+                                smartFcLoadTimeout = setTimeout(function() {
+                                    observer.unobserve(entry.target);
+
+                                    jQuery.ajax({
+                                        url: "<?php echo $baseurl_short; ?>pages/ajax/smart_fc_image.php",
+                                        data: {
+                                            node: <?php echo (int) $fc["ref"]; ?>
+                                        },
+                                        success: function(html) {
+                                            if (html.trim() !== "") {
+                                                jQuery(
+                                                    "#featured_tile_<?php echo md5($fc["ref"]); ?> .featured-tile-image-container"
+                                                ).html(html);
+                                            }
+                                        },
+                                        error: function() {
+                                            jQuery(
+                                                "#featured_tile_<?php echo md5($fc["ref"]); ?> .smart-fc-image-loading"
+                                            ).remove();
+                                        }
+                                    });
+                                }, 200);
+                            } else if (smartFcLoadTimeout !== null) {
+                                clearTimeout(smartFcLoadTimeout);
+                                smartFcLoadTimeout = null;
+                            }
+                        });
+                    },
+                    {
+                        rootMargin: "300px"
+                    }
+                );
+
+                smartFcObserver.observe(smartFcTile);
+            }
+            <?php } ?>
 
             jQuery(`${fctilename} ${fcactionsid}, #<?php echo md5($fc['ref']); ?>`).hover(
                 function(e) {

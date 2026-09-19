@@ -697,6 +697,17 @@ div.tile-select {
     cursor: pointer;
     position: relative;
 }
+.featured-tile-image-container {
+    position: relative;
+}
+.smart-fc-image-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    pointer-events: none;
+}
 .HomePanel.DashTile {
     display: flex;
 }

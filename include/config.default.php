@@ -2127,6 +2127,9 @@ $allow_smart_collections = false;
 // This may not be appropriate for usergroups that depend on live updates in workflows based on smart collections.
 $smart_collections_async = false;
 
+// Load smart featured collection tile images asynchronously.
+$smart_featured_collection_ajax_loading = false;
+
 // Allow each user only one rating per resource (can be edited). Note this will remove all accumlated ratings/weighting on newly rated items.
 $user_rating_only_once = true;
 // if user_rating_only_once, allow a log view of user's ratings (link is in the rating count on the View page):

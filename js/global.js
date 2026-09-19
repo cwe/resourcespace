@@ -1560,9 +1560,7 @@ function api(name, params, callback, post_data_extra = {}, options = {})
             })
         .fail(function(jqXHR, textStatus, errorThrown)
             {
-            let response = typeof jqXHR.responseJSON.data.message !== 'undefined'
-                ? jqXHR.responseJSON.data.message
-                : textStatus;
+            let response = jqXHR.responseJSON?.data?.message ?? textStatus;
             console.error("API Error: %s - %s", errorThrown, response);
             })
         .always(function() {
@@ -1655,19 +1653,32 @@ function CentralSpace_ProcessingDisplayTimer()
         }
     }
 
+var ProcessingAPIRequestActive = false;
 function CentralSpace_ProcessingAPITimer()
-    {
-    // Use the API to fetch any new processing messages.       
-    api("get_processing_message", null, function(response) {
-    console.log ("API execution");
-    console.log(response);
-    if(response!= false && Array.isArray(response))
-        {
-        ProcessingMessages=ProcessingMessages.concat(response);
-        console.debug('ProcessingMessages = %o', ProcessingMessages);
-        }
-    }, ProcessingCSRF);
+{
+    if (ProcessingAPIRequestActive) {
+        return;
     }
+
+    ProcessingAPIRequestActive = true;
+
+    api(
+        'get_processing_message',
+        null,
+        function(response) {
+            if (response != false && Array.isArray(response)) {
+                ProcessingMessages = ProcessingMessages.concat(response);
+                console.debug('ProcessingMessages = %o', ProcessingMessages);
+            }
+        },
+        ProcessingCSRF,
+        {
+            onEnd: function() {
+                ProcessingAPIRequestActive = false;
+            }
+        }
+    );
+}
 
 
 
