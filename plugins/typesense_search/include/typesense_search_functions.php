@@ -1018,7 +1018,11 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         switch ((int) $resource_attribute['field_type']) {
             case FIELD_TYPE_TEXT_BOX_SINGLE_LINE:
             case FIELD_TYPE_WARNING_MESSAGE:
-                if ($value == 1) {
+                // A single-line field flagged numeric in RS (field_constraint == 1) is indexed as a
+                // float so numeric range/sort work; the value string still goes into _q for exact/
+                // word matching. Everything else (incl. a non-numeric value in a numeric field) is
+                // indexed as a plain string in _s.
+                if ((int) $resource_attribute['field_constraint'] === 1 && is_numeric($value)) {
                     // numeric type
                     $resource_array_info[$rref][$prefix . '_f'] = (float) $value;
                     $resource_array_info[$rref][$prefix . '_q'][] = (string) $value;

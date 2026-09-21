@@ -493,6 +493,17 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
 
         $is_quoted = substr($keyword, 0, 1) === '"' || substr($keyword, 0, 2) === '-"';
 
+        // Full-text boolean search ("@FULL_TEXT…") relies on MySQL boolean-mode operators that
+        // Typesense has no equivalent for -> veto to core.
+        if ($is_quoted) {
+            $ft_prefix = defined('FULLTEXT_SEARCH_PREFIX') ? FULLTEXT_SEARCH_PREFIX : '@FULL_TEXT';
+            $inner = substr($keyword, 0, 1) === '-' ? substr($keyword, 2) : substr($keyword, 1);
+            if ($ft_prefix !== '' && strpos($inner, $ft_prefix) === 0) {
+                $plan->markUnsupported('full-text boolean search not handled by Typesense');
+                return '';
+            }
+        }
+
         if (!$is_quoted && strpos($keyword, ':') !== false) {
             if (substr($keyword, 0, 1) === '-') {
                 $plan->markUnsupported('negative field-scoped search not handled by Typesense');
@@ -511,7 +522,12 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
                     $plan->markUnsupported('field-scoped search on a non-viewable field');
                     return '';
                 }
-                // Text/date field:value -> a bare-colon (word-contains) or _q filter clause.
+                // OR-groups (";") can't be reproduced in a single Typesense field filter -> veto.
+                if (strpos($parts[1], ';') !== false) {
+                    $plan->markUnsupported('OR-group (";") in a field-scoped search not handled by Typesense');
+                    return '';
+                }
+                // Text/date field:value -> a bare-colon (word-contains), date range, or _q clause.
                 $clause = typesense_search_fieldvalue_filter($field, $parts[1]);
                 if ($clause === null) {
                     $plan->markUnsupported('field-scoped search on field "' . $parts[0] . '" not supported');
@@ -522,6 +538,13 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
             }
 
             $keyword = str_replace(':', ' ', $keyword); // incidental colon
+        }
+
+        // OR-groups ("red;green") have no clean Typesense equivalent (no term-level OR across
+        // query_by in one query) -> veto to core, which ORs them correctly.
+        if (strpos($keyword, ';') !== false) {
+            $plan->markUnsupported('OR-group (";") not handled by Typesense');
+            return '';
         }
 
         if (substr($keyword, -1) === '*') {
@@ -644,17 +667,43 @@ function typesense_search_field_by_shortname(string $name): ?array
  * Build a Typesense filter_by clause for a `field:value` search on a non-fixed-list field,
  * mirroring RS's word-level, field-scoped keyword match:
  *   - text fields  -> bare-colon word-contains on the field's string (`_s` / `_text`);
- *   - date fields  -> bare-colon on the `_q` representation array.
- * Returns null for a field type that isn't supported (caller falls back to MySQL). Fixed-list
- * fields never reach here (they are resolved into $node_bucket by core).
+ *   - date fields  -> bare-colon on the `_q` representation array (partial-date match);
+ *   - date range   -> an epoch-interval filter on `_range_start` (typesense_search_daterange_filter).
+ * Returns null for anything not supported (caller falls back to MySQL): fixed-list fields never
+ * reach here (resolved into $node_bucket by core); numeric `numrange` can't be served because the
+ * indexer does not currently populate the `_f` numeric representation reliably; date-range
+ * (start/end) fields need overlap semantics we don't reproduce.
  *
  * @param array{ref:int,type:int} $field
  */
 function typesense_search_fieldvalue_filter(array $field, string $value): ?string
 {
     $prefix = 'field_' . (int)$field['ref'];
+    $type = (int)$field['type'];
 
-    switch ((int)$field['type']) {
+    // Numeric range (e.g. mynumberfield:numrange1|1234). The `_f` numeric representation is not
+    // reliably indexed today (see typesense_search_reindex_resource_attributes), so we can't serve
+    // this correctly -> veto to core.
+    if (strpos($value, 'numrange') === 0) {
+        return null;
+    }
+
+    $is_date = in_array($type, array(
+        FIELD_TYPE_DATE,
+        FIELD_TYPE_DATE_AND_OPTIONAL_TIME,
+        FIELD_TYPE_EXPIRY_DATE,
+        FIELD_TYPE_DATE_RANGE,
+    ), true);
+
+    // Date range (e.g. eventdate:rangestart2020-01-01end2020-12-31). Matched as an interval overlap
+    // against the resource's indexed [_range_start, _range_end): the date at its own precision (a
+    // year/month is an interval, a full date a one-day interval) and, for a DATE_RANGE field, the
+    // span between its two endpoints. Works for every date field type.
+    if ($is_date && strpos($value, 'range') === 0) {
+        return typesense_search_daterange_filter($prefix, $value);
+    }
+
+    switch ($type) {
         case FIELD_TYPE_TEXT_BOX_SINGLE_LINE:
         case FIELD_TYPE_WARNING_MESSAGE:
             $key = $prefix . '_s';
@@ -676,6 +725,59 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
 
     // Bare colon (":") is a tokenised word-contains match honouring the field's tokenizer/stemming.
     return $key . ':' . typesense_search_filter_value($value);
+}
+
+
+/**
+ * Build an interval-overlap filter for a date `field:value` range search. RS encodes these as
+ * "range" + "start<A>" + "end<B>" (either endpoint optional), where <A>/<B> are (possibly partial)
+ * dates like "2020-00-00". We reuse typesense_parse_date() so the query window aligns exactly with
+ * the `_range_start`/`_range_end` epochs the indexer stored, then test whether the resource's
+ * indexed interval [_range_start, _range_end) overlaps the query window [A.range_start, B.range_end):
+ *   start A present -> resource must extend past A:   field_<ref>_range_end   > A.range_start
+ *   end   B present -> resource must begin before B:  field_<ref>_range_start < B.range_end
+ * A resource whose date has no epoch interval (e.g. a bare "August" with no year) simply has no
+ * `_range_*` and is excluded, as it can't be placed on the timeline. Returns null if neither
+ * endpoint parses (caller falls back to MySQL).
+ */
+function typesense_search_daterange_filter(string $prefix, string $value): ?string
+{
+    $body = substr($value, strlen('range')); // strip leading "range"
+    $start_pos = strpos($body, 'start');
+    $end_pos = strpos($body, 'end');
+
+    $start_date = null;
+    $end_date = null;
+
+    if ($start_pos !== false) {
+        $from = $start_pos + strlen('start');
+        $length = ($end_pos !== false && $end_pos > $from) ? $end_pos - $from : null;
+        $start_date = $length === null ? substr($body, $from) : substr($body, $from, $length);
+    }
+    if ($end_pos !== false) {
+        $end_date = substr($body, $end_pos + strlen('end'));
+    }
+
+    $clauses = array();
+
+    if (is_string($start_date) && trim($start_date) !== '') {
+        $parsed = typesense_parse_date(str_replace(' ', '-', trim($start_date)));
+        if ($parsed !== null && $parsed['range_start'] !== null) {
+            $clauses[] = $prefix . '_range_end:>' . (int)$parsed['range_start'];
+        }
+    }
+    if (is_string($end_date) && trim($end_date) !== '') {
+        $parsed = typesense_parse_date(str_replace(' ', '-', trim($end_date)));
+        if ($parsed !== null && $parsed['range_end'] !== null) {
+            $clauses[] = $prefix . '_range_start:<' . (int)$parsed['range_end'];
+        }
+    }
+
+    if (count($clauses) === 0) {
+        return null;
+    }
+
+    return implode(' && ', $clauses);
 }
 
 
