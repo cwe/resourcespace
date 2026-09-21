@@ -55,8 +55,22 @@ class TypesenseCollectionMode implements TypesenseSearchComponent
             $plan->addFilter('archive:!=2');
         }
 
-        // Order by the stored collection sort order.
+        // Ordering. The collection's own stored order (RS "collection" sort) can only be expressed
+        // via the memberships reference join - the standard sort mapping can't handle a
+        // "c.sortorder ..." fragment. So apply the reference-collection sort here ONLY when the
+        // search is using the default collection order; for any explicit sort (Resource ID, Date,
+        // Modified, Relevance, ...) leave sort_by unset so the standard mapping applies the user's
+        // choice, or vetoes to core for sorts Typesense can't do. This mirrors core's !collection,
+        // whose outer query re-sorts the members by the requested order_by.
         global $typesense_search_collection_prefix;
-        $plan->addRawSort('$' . $typesense_search_collection_prefix . 'resource_collection_memberships(sortorder:asc)');
+        $order_by = trim((string)$ctx->order_by);
+        if ($order_by === '' || strpos($order_by, 'c.sortorder') === 0) {
+            // Honour the sort direction (default collection order is ascending).
+            $direction = strtolower($ctx->sort) === 'desc' ? 'desc' : 'asc';
+            $plan->addRawSort(
+                '$' . $typesense_search_collection_prefix
+                . 'resource_collection_memberships(sortorder:' . $direction . ')'
+            );
+        }
     }
 }

@@ -177,6 +177,15 @@ class TypesenseQueryPlan
     /** @var int|null Hard cap on the total number of results (e.g. !last<num>). */
     public ?int $result_limit = null;
 
+    /**
+     * @var int|null "Most-recent N" selection (e.g. !last<num>): the result set is the N
+     * highest-ref resources matching the other criteria, but the display order is still the
+     * user's chosen sort. Resolved to a `ref:>=<cutoff>` filter at execute time. This mirrors
+     * core's !last, whose inner query picks the newest N (ref desc) and whose outer query
+     * re-sorts them by the requested order_by.
+     */
+    public ?int $recent_selection = null;
+
     /** @var array<string,bool> Restrictions a mode has opted out of. */
     public array $suppressed = array();
 
@@ -269,6 +278,16 @@ class TypesenseQueryPlan
 
     public function setResultLimit(int $limit): void
     {
+        $this->result_limit = $limit;
+    }
+
+    /**
+     * Select the N most-recent resources (highest refs) as the result set, while leaving the
+     * display sort to the normal sort mapping. See $recent_selection.
+     */
+    public function setRecentSelection(int $limit): void
+    {
+        $this->recent_selection = $limit;
         $this->result_limit = $limit;
     }
 
@@ -800,6 +819,58 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
 
 
 /**
+ * Resolve the ref cutoff for a "most-recent N" (!last<num>) selection: the Nth-highest ref among
+ * the resources matching the plan's current filters/keywords. Runs one Typesense query sorted by
+ * ref desc, reusing the plan's filter_by/q/query_by so the recent set matches the same resources
+ * the main query will (e.g. "!last50 sunset" -> newest 50 matching "sunset").
+ *
+ * Returns the cutoff ref, or null when there are N or fewer matches (no cutoff needed) or on error.
+ */
+function typesense_search_recent_cutoff(TypesenseQueryPlan $plan, int $n): ?int
+{
+    global $typesense_search_collection_prefix;
+
+    if ($n < 1) {
+        return null;
+    }
+
+    $per_page = min($n, 250); // Typesense caps per_page at 250
+    $page = (int)ceil($n / $per_page);
+
+    $params = $plan->compileParams();
+    // Override sort/paging to walk to the Nth newest; only the ref is needed.
+    $params['sort_by'] = 'ref:desc';
+    $params['per_page'] = $per_page;
+    $params['page'] = $page;
+    $params['include_fields'] = 'ref';
+
+    $endpoint =
+        '/collections/'
+        . rawurlencode($typesense_search_collection_prefix . $plan->collection)
+        . '/documents/search?'
+        . http_build_query($params);
+
+    $result = typesense_search_request('GET', $endpoint);
+    if ($result === false || !isset($result['hits']) || !is_array($result['hits'])) {
+        return null;
+    }
+
+    // Fewer than (or exactly) N matches: the whole set is the result, no cutoff required.
+    if ((int)($result['found'] ?? 0) <= $n) {
+        return null;
+    }
+
+    // The Nth newest overall sits at this index within the fetched page.
+    $index = ($n - 1) - ($page - 1) * $per_page;
+    if (!isset($result['hits'][$index]['document']['ref'])) {
+        return null;
+    }
+
+    return (int)$result['hits'][$index]['document']['ref'];
+}
+
+
+/**
  * Execute a compiled query plan against Typesense and return ordered refs + total.
  *
  * @return array{refs:int[],total:int}|false
@@ -807,6 +878,18 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
 function typesense_search_execute(TypesenseQueryPlan $plan)
 {
     global $typesense_search_collection_prefix;
+
+    // "Most-recent N" selection (!last<num>): restrict the set to the N highest-ref matches via a
+    // ref cutoff, then let the plan's own (user-chosen) sort order them. Mirrors core's !last,
+    // where the inner query picks the newest N and the outer query re-sorts them.
+    if ($plan->recent_selection !== null) {
+        $cutoff = typesense_search_recent_cutoff($plan, $plan->recent_selection);
+        if ($cutoff !== null) {
+            // ref >= the Nth-highest ref == exactly the newest N matches (refs are unique).
+            $plan->addFilter('ref:>=' . $cutoff);
+        }
+        // else: fewer than N matches - the whole set already qualifies, no cutoff needed.
+    }
 
     $params = $plan->compileParams();
 
