@@ -51,7 +51,24 @@ $validauthmodes = array("userkey", "native", "sessionkey");
 if (!in_array($authmode, $validauthmodes)) {
     $authmode = "userkey";
 }
-$function = getval("function", $query_params['function'] ?? "");
+
+// Check API binding function (i.e. endpoint)
+$getval_fct = getval('function', '');
+$query_param_fct = $query_params['function'] ?? '';
+if (($getval_fct !== '' || $query_param_fct !== '') && $getval_fct !== $query_param_fct) {
+    http_response_code(400);
+    debug(
+        sprintf(
+            'API: Conflicting function binding requested: %s vs %s',
+            encode_js_value($getval_fct),
+            encode_js_value($query_param_fct)
+        )
+    );
+    exit('Conflicting function binding requested');
+}
+
+// Prefer function to be based on the query (consistent with execute_api_call())
+$function = $query_param_fct !== '' ? $query_param_fct : $getval_fct;
 
 // Log all API requests using userkey authentication, including failed attempts.
 if ($authmode === "userkey") {

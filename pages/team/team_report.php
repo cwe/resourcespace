@@ -10,7 +10,14 @@ include "../../include/boot.php";
 unset($anonymous_login);
 include "../../include/authenticate.php";
 
-if (getval('unsubscribe', '') == '' && !checkperm("t")) {
+$can_access_admin_area = checkperm('t');
+
+// Actions possible on this page
+$create_email = getval('createemail', '') !== '';
+$delete = (int) getval('delete', 0, false, is_int_loose(...));
+$unsubscribe = (int) getval('unsubscribe', 0, false, is_int_loose(...));
+
+if ($unsubscribe === 0 && !$can_access_admin_area) {
     exit("Permission denied.");
 }
 
@@ -42,25 +49,24 @@ if ("{$baseurl_short}pages/search.php" === $backurl_path) {
     parse_str($backurl_query, $search_params);
 }
 
-# Execute report.
-if ($report != "" && (getval("createemail", "") == "")) {
+if ($report != "" && !$create_email && $delete === 0 && $unsubscribe === 0) {
     $download = getval("download", "") != "";
     list($from_y, $from_m, $from_d, $to_y, $to_m, $to_d) = array_values(report_process_period([
             'period' => $period,
-            'period_days' => getval('period_days', ''),
-            'from-y' => getval('from-y', ''),
-            'from-m' => getval('from-m', ''),
-            'from-d' => getval('from-d', ''),
-            'to-y' => getval('to-y', ''),
-            'to-m' => getval('to-m', ''),
-            'to-d' => getval('to-d', ''),
+            'period_days' => getval('period_days', '', false, is_int_loose(...)),
+            'from-y' => getval('from-y', '', false, is_int_loose(...)),
+            'from-m' => getval('from-m', '', false, is_int_loose(...)),
+            'from-d' => getval('from-d', '', false, is_int_loose(...)),
+            'to-y' => getval('to-y', '', false, is_int_loose(...)),
+            'to-m' => getval('to-m', '', false, is_int_loose(...)),
+            'to-d' => getval('to-d', '', false, is_int_loose(...)),
         ]));
     $output = do_report($report, $from_y, $from_m, $from_d, $to_y, $to_m, $to_d, $download, false, false, $search_params);
 }
 
 include "../../include/header.php";
 
-if (getval('createemail', '') != '' && enforcePostRequest(getval("ajax", false))) {
+if ($create_email && $can_access_admin_area && enforcePostRequest(getval("ajax", false))) {
     if ($report != "") {
         $report_receiver      = getval('report_receiver', '');
         $user_group_selection = array();
@@ -87,9 +93,7 @@ if (getval('createemail', '') != '' && enforcePostRequest(getval("ajax", false))
     }
 }
 
-$delete = getval('delete', '');
-
-if ($delete != '') {
+if ($delete > 0 && $can_access_admin_area) {
     if ('yes' == getval('delete_confirmed', '') && enforcePostRequest(getval("ajax", false))) {
         delete_periodic_report($delete);
         ?>
@@ -121,9 +125,7 @@ if ($delete != '') {
     exit();
 }
 
-$unsubscribe = getval('unsubscribe', '');
-
-if ($unsubscribe != '') {
+if ($unsubscribe > 0) {
     if ('yes' == getval('unsubscription_confirmed', '') && enforcePostRequest(getval("ajax", false))) {
         $unsubscribe_user = getval("unsubscribe_user", $userref, true);
         unsubscribe_user_from_periodic_report($unsubscribe_user, $unsubscribe);

@@ -87,6 +87,26 @@ $use_cases = [
             'to_day' => 16,
         ],
     ],
+    [
+        'name' => 'Specific date range supports numeric looking values',
+        'input' => [
+            'period' => -1,
+            'from-y' => '2026',
+            'from-m' => 03,
+            'from-d' => 06,
+            'to-y' => 'not a number',
+            'to-m' => 03,
+            'to-d' => 16,
+        ],
+        'expected' => [
+            'from_year' => 2026,
+            'from_month' => 3,
+            'from_day' => 6,
+            'to_year' => 0,
+            'to_month' => 3,
+            'to_day' => 16,
+        ],
+    ],
 ];
 foreach ($use_cases as $use_case) {
     if ($use_case['expected'] !== report_process_period($use_case['input'])) {

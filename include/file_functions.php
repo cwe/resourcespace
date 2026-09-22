@@ -1,31 +1,30 @@
 <?php
 
 /**
- * Ensures the filename cannot leave the directory set.
- * Only to be used for internal ResourceSpace paths as only a limited character set is supported
+ * Ensures the file name cannot leave the directory set. Returns a file name stripped of all non alphanumeric values.
+ * Spaces are replaced with underscores. A maximum of 250 characters will be returned to stay below 255 limit for filename and extension.
+ * By default only these characters are allowed: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'
+ * Set $extended to true to allow any letter or number from any language (non ascii characters) plus _ and -
+ * Only to be used for internal ResourceSpace paths as only a limited character set is supported.
  *
- * @param string $name
- * @return string
+ * @param  string   $name       Filename to process. Do not include file extension.
+ * @param  bool     $extended   (Optional - default false) Allow any character or number from any language.
+ * 
+ * @return  string   File name modified by processing to remove invalid characters.
  */
-function safe_file_name($name)
+function safe_file_name(string $name, bool $extended = false) : string
 {
-    // Returns a file name stripped of all non alphanumeric values
-    // Spaces are replaced with underscores
-    $alphanum = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
     $name = str_replace(' ', '_', $name);
-    $newname = '';
 
-    for ($n = 0; $n < strlen($name); $n++) {
-        $c = substr($name, $n, 1);
-        if (strpos($alphanum, $c) !== false) {
-            $newname .= $c;
-        }
+    if ($extended) {
+        $allowed_characters = '/[^\p{L}\p{N}_-]/u';
+    } else {
+        $allowed_characters = '/[^a-zA-Z0-9_-]/'; 
     }
 
-    // Set to 250 to allow for total length to be below 255 limit including filename and extension
-    $newname = mb_substr($newname, 0, 250);
+    $newname = preg_replace($allowed_characters, '', $name);
 
-    return $newname;
+    return mb_substr($newname, 0, 250);
 }
 
 /**
@@ -129,7 +128,7 @@ function temp_local_download_remote_file(string $url, string $key = "")
     $url = reset($url);
 
     $path_parts = pathinfo(basename($url));
-    $filename = safe_file_name($path_parts['filename'] ?? '');
+    $filename = safe_file_name($path_parts['filename'] ?? '', true);
     $extension = $path_parts['extension'] ?? '';
     $filename .= ($extension !== '' ? ".{$extension}" : '');
 
@@ -168,7 +167,7 @@ function temp_local_download_remote_file(string $url, string $key = "")
         }
 
         $extension = pathinfo(basename($filename), PATHINFO_EXTENSION);
-        $filename = safe_file_name(pathinfo(basename($filename), PATHINFO_FILENAME)) . ".{$extension}";
+        $filename = safe_file_name(pathinfo(basename($filename), PATHINFO_FILENAME), true) . ".{$extension}";
     }
 
     if (is_banned_extension($extension)) {

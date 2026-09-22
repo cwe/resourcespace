@@ -716,13 +716,13 @@ function report_process_period(array $info): array
 
     // Specific date range specified.
     if ($period == -1) {
-        $from_y = $info['from-y'] ?? '';
-        $from_m = $info['from-m'] ?? '';
-        $from_d = $info['from-d'] ?? '';
+        $from_y = (int) ($info['from-y'] ?? '');
+        $from_m = (int) ($info['from-m'] ?? '');
+        $from_d = (int) ($info['from-d'] ?? '');
 
-        $to_y = $info['to-y'] ?? '';
-        $to_m = $info['to-m'] ?? '';
-        $to_d = $info['to-d'] ?? '';
+        $to_y = (int) ($info['to-y'] ?? '');
+        $to_m = (int) ($info['to-m'] ?? '');
+        $to_d = (int) ($info['to-d'] ?? '');
     }
     // Work out the FROM and TO range based on the provided period in days.
     else {

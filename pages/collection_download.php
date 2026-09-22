@@ -317,6 +317,13 @@ include "../include/header.php";
                 jQuery('#archivesettings').prop('disabled', 'disabled');
             }
         });
+        jQuery('#collection_download_form').on('submit', function() {
+            if (jQuery('#tardownload').val() === 'on') {
+                this.target = '_blank';
+            } else {
+                this.removeAttribute('target');
+            }
+        });
     });
 </script>
 <div class="BasicsBox">

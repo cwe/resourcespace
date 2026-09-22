@@ -228,12 +228,21 @@ function api_login($username, #[\SensitiveParameter] $password)
  */
 function api_validate_upload_url($url)
 {
+    $url_parts = parse_url($url);
+    if ($url === false || !isset($url_parts['scheme']) || !isset($url_parts['host'])) {
+        return false;
+    }
+
+    if (isset($url_parts['path'])) {
+        # URL encode non ascii characters in path or file name for FILTER_VALIDATE_URL.
+        $url_parts['path'] = implode('/', array_map(fn($segment) => rawurlencode($segment), explode('/', $url_parts['path'])));
+        $url = $url_parts['scheme'] . '://' . $url_parts['host'] . $url_parts['path'];
+    }
+
     $url = filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED);
     if ($url === false) {
         return false;
     }
-
-    $url_parts = parse_url($url);
 
     if (in_array($url_parts['scheme'], BLOCKED_STREAM_WRAPPERS)) {
         return false;
