@@ -3,3 +3,5 @@ update_check.sh
 .DS_Store
 /filestore/
 /vendor/
+.vscode/
+/include/config.php
