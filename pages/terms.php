@@ -23,6 +23,11 @@ if ($k != "") {
     include "../include/authenticate.php";
 }
 
+// Ensure any resource type overrides are applied
+if ($ref != '' && is_array($resource_data = get_resource_data($ref))) {
+    resource_type_config_override($resource_data['resource_type']);
+}
+
 $url = getval("url", "pages/home.php?login=true");
 $newurl = hook("beforeredirectchangeurl");
 

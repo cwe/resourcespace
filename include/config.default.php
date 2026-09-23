@@ -1495,12 +1495,12 @@ $upload_retry_delays = [0, 1000, 3000, 5000];
 // 3     Deleted (recommended)
 $resource_deletion_state = 3;
 
-# Are resources removed from collections when they are moved to the deleted state?
+// Are resources removed from collections when they are moved to the deleted state?
 $remove_deleted_resources_from_collections = true;
 
-# Offline processes (e.g. staticsync and create_previews.php) - for process locking, how old does a lock have to be before it is ignored?
-$process_locks_max_seconds = 60 * 60 * 4; # 4 hours default.
 // Offline processes (e.g. staticsync and create_previews.php) - for process locking, how old does a lock have to be before it is ignored?
+// Offline jobs with locks older than this will be checked for log activity. If there is no log activity within this time
+// period then the job is considered stale and flagged as failed.
 $process_locks_max_seconds = 60 * 60 * 4; // 4 hours default.
 
 // List of extensions that can be processed by ffmpeg.

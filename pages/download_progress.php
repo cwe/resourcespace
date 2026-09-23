@@ -28,6 +28,11 @@ if ($url == '') {
         . "&k=" . urlencode($k) . "&alternative=" . urlencode($alternative) . "&iaccept=" . urlencode($iaccept);
     $download_url_suffix .= hook("addtodownloadquerystring");
 
+    // Ensure any resource type overrides are applied
+    if ($ref != '' && is_array($resource_data = get_resource_data($ref))) {
+        resource_type_config_override($resource_data['resource_type']);
+    }
+
     if ($download_usage && getval("usage", "") == "" && $terms_download) {
         redirect($baseurl_short . "pages/download_usage.php" . $download_url_suffix);
     }

@@ -87,12 +87,46 @@ if ($offline_job_queue) {
             $saved_process_lock_max_seconds = $process_locks_max_seconds;
             $process_locks_max_seconds = 9999999;
             if (is_process_lock("job_" . $runningjob["ref"])) {
-                echo "Job is in progress (ID: " . $runningjob["ref"] . ") but has exceeded maximum lock time - marking as failed\n";
-                job_queue_update($runningjob["ref"], $runningjob_data, STATUS_ERROR);
-                clear_process_lock("job_" . $runningjob["ref"]);
+                echo "Job is in progress (ID: " . $runningjob["ref"] . ") but has exceeded maximum lock time - checking log file for activity\n";
+
+                // Jobs that write a log file may legitimately run for longer than the lock period. Treat recent
+                // log activity as proof the job is still alive; anything else (no log file, unreadable log or
+                // no recent writes) is considered stale.
+                $job_is_stale = true;
+                $job_log_file = get_job_queue_log_path_by_ref($runningjob["ref"]);
+
+                if ($job_log_file !== false) {
+                    clearstatcache(true, $job_log_file);
+                    $modified_time = false;
+                    if (file_exists($job_log_file)) {
+                        $GLOBALS["use_error_exception"] = true;
+                        try {
+                            $modified_time = filemtime($job_log_file);
+                        } catch (Exception $e) {
+                            echo "Attempt to get file modified time for '$job_log_file' failed. Reason: {$e->getMessage()}\n";
+                        } finally {
+                            unset($GLOBALS["use_error_exception"]);
+                        }
+                    }
+
+                    if ($modified_time !== false && (time() - (int) $modified_time) <= $saved_process_lock_max_seconds) {
+                        $job_is_stale = false;
+                    }
+                }
+
+                if ($job_is_stale) {
+                    echo "Job is in progress (ID: " . $runningjob["ref"] . ") but has no recent log activity - marking as failed\n";
+                    job_queue_update($runningjob["ref"], $runningjob_data, STATUS_ERROR);
+                    clear_process_lock("job_" . $runningjob["ref"]);
+                    $jobcount--;
+                } else {
+                    echo "Job is in progress (ID: " . $runningjob["ref"] . ") and has recent log activity - continuing\n";
+                }
+            } else {
+                // No lock at all, job is not running
+                $jobcount--;
             }
             $process_locks_max_seconds = $saved_process_lock_max_seconds;
-            $jobcount--;
         }
     }
 

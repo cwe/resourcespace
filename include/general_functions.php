@@ -1888,8 +1888,9 @@ function is_process_lock($name)
         } # Lock has expired
     } catch (Exception $e) {
         debug("is_process_lock: Attempt to get file contents '$file' failed. Reason: {$e->getMessage()}");
+    } finally {
+        unset($GLOBALS["use_error_exception"]);
     }
-    unset($GLOBALS["use_error_exception"]);
 
     return true; # Lock is valid
 }

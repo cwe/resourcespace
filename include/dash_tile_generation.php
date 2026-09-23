@@ -59,6 +59,7 @@ function tile_select($tile_type, $tile_style, $tile, $tile_id, $tile_width, $til
         /*
         * Featured collection - themes specific tiles
         */
+        case "fcthm":
         switch ($tile_style) {
             case 'thmbs':
                 tile_featured_collection_thumbs($tile, $tile_id, $tile_width, $tile_height, getval('promimg', 0));

@@ -53,9 +53,9 @@ if (!in_array($authmode, $validauthmodes)) {
 }
 
 // Check API binding function (i.e. endpoint)
-$getval_fct = getval('function', '');
-$query_param_fct = $query_params['function'] ?? '';
-if (($getval_fct !== '' || $query_param_fct !== '') && $getval_fct !== $query_param_fct) {
+$getval_fct = trim(getval('function', ''));
+$query_param_fct = trim($query_params['function'] ?? '');
+if ($getval_fct !== '' && $query_param_fct !== '' && $getval_fct !== $query_param_fct) {
     http_response_code(400);
     debug(
         sprintf(
