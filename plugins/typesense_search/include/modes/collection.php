@@ -65,12 +65,17 @@ class TypesenseCollectionMode implements TypesenseSearchComponent
         global $typesense_search_collection_prefix;
         $order_by = trim((string)$ctx->order_by);
         if ($order_by === '' || strpos($order_by, 'c.sortorder') === 0) {
-            // Honour the sort direction (default collection order is ascending).
+            // Honour the sort direction (default collection order is ascending). Break ties the way
+            // core does - "c.sortorder <dir>, c.date_added <reversed dir>, r.ref <dir>" - since most
+            // members share a sortorder (a collection that was never reordered has NULL for every
+            // member, indexed as the same value).
             $direction = strtolower($ctx->sort) === 'desc' ? 'desc' : 'asc';
+            $reverse_direction = $direction === 'desc' ? 'asc' : 'desc';
             $plan->addRawSort(
                 '$' . $typesense_search_collection_prefix
-                . 'resource_collection_memberships(sortorder:' . $direction . ')'
+                . 'resource_collection_memberships(sortorder:' . $direction . ',date_added:' . $reverse_direction . ')'
             );
+            $plan->setSort('ref', $direction);
         }
     }
 }

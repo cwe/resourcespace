@@ -389,28 +389,29 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
 
     // Process response
     if ($batch) {
-        // Response in JSONL format
-
-
-
-        if (str_contains($response, '{"success":false}')) {
-            // file_put_contents(get_temp_dir() . '/jsonl.txt', $response, FILE_APPEND);
-            return false;
-        } else {
-            return array('success' => true);
+        // An import answers HTTP 200 even when documents are rejected. The body is JSONL with one
+        // result per document, e.g. {"success":false,"error":"...","document":"..."}, so check
+        // every line. (Matching the literal '{"success":false}' never matched a real failure line.)
+        $failed = 0;
+        foreach (preg_split('/\r?\n/', trim($response)) as $line) {
+            if ($line === '') {
+                continue;
+            }
+            $line_result = json_decode($line, true);
+            if (!is_array($line_result) || empty($line_result['success'])) {
+                $failed++;
+                if ($failed <= 5) {
+                    debug('typesense_search_request(): Import failed for document: ' . substr($line, 0, 500));
+                }
+            }
         }
 
-        // $response_lines = explode("\n", $response);
+        if ($failed > 0) {
+            debug('typesense_search_request(): ' . $failed . ' document(s) failed to import via ' . $endpoint);
+            return false;
+        }
 
-        // if (!is_array($response_lines)) {
-        //     debug('typesense_search_request(): Failed to decode JSON response');
-        //     return false;
-        // }
-
-        // foreach ($response_lines as $response_line) {
-        //     $decoded[] = json_decode($response_line, true);
-        // }
-
+        return array('success' => true);
     } else {
         $decoded = json_decode($response, true);
     }
@@ -920,6 +921,16 @@ function typesense_search_reindex_resource_collection_memberships(int $limit = 1
         $last_collection = (int) $rcm['collection_ref'];
         $last_resource = (int) $rcm['resource_id'];
         $rcms[$key]['resource_id'] = (string) $rcm['resource_id'];
+        $rcms[$key]['collection_ref'] = $last_collection;
+        $rcms[$key]['collection_type'] = (int) $rcm['collection_type'];
+
+        // sortorder and date_added are required int fields in the schema, so a NULL would make
+        // Typesense reject the whole document. add_resource_to_collection() leaves sortorder NULL
+        // unless the collection has been reordered, so NULL is the common case. Index a NULL
+        // sortorder as the lowest int32, which sorts where MySQL puts NULLs (first ascending,
+        // last descending), and a NULL date_added as 0.
+        $rcms[$key]['sortorder'] = is_numeric($rcm['sortorder']) ? (int) $rcm['sortorder'] : -2147483648;
+        $rcms[$key]['date_added'] = is_numeric($rcm['date_added']) ? (int) $rcm['date_added'] : 0;
     }
 
     $ok = typesense_search_index_rcms_batch($rcms);
