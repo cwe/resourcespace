@@ -668,11 +668,11 @@ function typesense_search_field_by_shortname(string $name): ?array
  * mirroring RS's word-level, field-scoped keyword match:
  *   - text fields  -> bare-colon word-contains on the field's string (`_s` / `_text`);
  *   - date fields  -> bare-colon on the `_q` representation array (partial-date match);
- *   - date range   -> an epoch-interval filter on `_range_start` (typesense_search_daterange_filter).
- * Returns null for anything not supported (caller falls back to MySQL): fixed-list fields never
- * reach here (resolved into $node_bucket by core); numeric `numrange` can't be served because the
- * indexer does not currently populate the `_f` numeric representation reliably; date-range
- * (start/end) fields need overlap semantics we don't reproduce.
+ *   - date range   -> an interval-overlap filter on `_range_start`/`_range_end`
+ *                     (typesense_search_daterange_filter), for every date field type;
+ *   - numeric range -> a range / exact filter on `_f` (typesense_search_numrange_filter).
+ * Returns null for anything not supported (caller falls back to MySQL). Fixed-list fields never
+ * reach here (they are resolved into $node_bucket by core).
  *
  * @param array{ref:int,type:int} $field
  */
@@ -681,11 +681,11 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
     $prefix = 'field_' . (int)$field['ref'];
     $type = (int)$field['type'];
 
-    // Numeric range (e.g. mynumberfield:numrange1|1234). The `_f` numeric representation is not
-    // reliably indexed today (see typesense_search_reindex_resource_attributes), so we can't serve
-    // this correctly -> veto to core.
+    // Numeric range (e.g. mynumberfield:numrange1|1234). Emitted as a range/comparison filter on
+    // the numeric `_f` representation (populated for numeric-constrained, indexed single-line
+    // fields - field_constraint == 1).
     if (strpos($value, 'numrange') === 0) {
-        return null;
+        return typesense_search_numrange_filter($prefix, $value);
     }
 
     $is_date = in_array($type, array(
@@ -778,6 +778,39 @@ function typesense_search_daterange_filter(string $prefix, string $value): ?stri
     }
 
     return implode(' && ', $clauses);
+}
+
+
+/**
+ * Build a numeric filter for a `field:value` numeric-range search on the `_f` representation. RS
+ * encodes these as "numrange<min>|<max>" with "neg" standing in for a leading "-", and either
+ * bound optional. Mirrors core (do_search_keywords.php): both bounds -> a range; a single bound ->
+ * an *exact* match on the value entered (core's `rnn.name = max(min,max)` behaviour), not a
+ * one-sided range. Returns null if nothing numeric parses (caller falls back to MySQL).
+ */
+function typesense_search_numrange_filter(string $prefix, string $value): ?string
+{
+    $body = substr($value, strlen('numrange')); // "<min>|<max>"
+    $parts = explode('|', $body, 2);
+
+    $min = str_replace('neg', '-', trim($parts[0]));
+    $max = isset($parts[1]) ? str_replace('neg', '-', trim($parts[1])) : '';
+
+    $has_min = $min !== '' && is_numeric($min);
+    $has_max = $max !== '' && is_numeric($max);
+
+    if ($has_min && $has_max) {
+        return $prefix . '_f:[' . $min . '..' . $max . ']';
+    }
+    // A single bound is an exact match in core, not a one-sided range.
+    if ($has_min) {
+        return $prefix . '_f:=' . $min;
+    }
+    if ($has_max) {
+        return $prefix . '_f:=' . $max;
+    }
+
+    return null;
 }
 
 
