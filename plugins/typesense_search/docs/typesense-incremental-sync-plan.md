@@ -123,7 +123,8 @@ It takes no lock, never deletes, and is the only way any change reaches the inde
 | `archive` | `resource.archive` | `update_archive_status`, saves, `put_resource_data`, raw SQL in staticsync / tools / workflow plugins |
 | `created_by` | `resource.created_by` | create, copy, saves, `put_resource_data` |
 | `access` | `resource.access` | saves, batch edit, `put_resource_data`, `copy_locked_data`, CSV, staticsync, action_dates |
-| `created_date` | node of `$date_field` (not `creation_date`) | metadata writes; config change |
+| `creation_date` | `resource.creation_date` (recent-days limit) | set once, when the resource is created |
+| `date_field_sort` | `resource.field<$date_field>`, the cached text of `$date_field` (date sort) | metadata writes; config change |
 | `modified_date` | `resource.modified` | any `resource_log()` call — including downloads (§3.6) |
 | `nodes[]`, `populated_field_ids[]` | all `resource_node` rows (any field) | every node writer |
 | `field_<ref>_{s,ss,text,q,f,ts,range_start,range_end}` | `resource_node` × `node.name` for **indexed** fields, typed by `resource_type_field.type` / `field_constraint` | node writers; node rename/delete; field config (index flags, type, constraint); field delete; `$stemming`, `$view_title_field`, `$date_field` |

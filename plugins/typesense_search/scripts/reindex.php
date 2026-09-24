@@ -10,8 +10,8 @@
  * rejects, grouped by the reason Typesense gave. The run ends with a summary of each pass and a
  * comparison of the documents in each Typesense collection with the MySQL rows they come from.
  *
- * Exit status: 0 if every document was indexed, 1 if the Typesense collections couldn't be set up,
- * 2 if the reindex finished but some documents failed.
+ * Exit status: 0 if every document was indexed, 1 if the Typesense collections couldn't be set up or
+ * their schema updated, 2 if the reindex finished but some documents failed.
  */
 
 include_once dirname(__DIR__, 3) . '/include/boot.php';
@@ -175,6 +175,16 @@ $overall_start = microtime(true);
 if (!typesense_search_ensure_collection()) {
     typesense_reindex_output('Failed to ensure Typesense collection exists.');
     exit(1);
+}
+
+// An existing resources collection doesn't pick up new fields by itself.
+$schema_changes = typesense_search_upgrade_resource_schema();
+if ($schema_changes === false) {
+    typesense_reindex_output('Failed to update the Typesense resources schema.');
+    exit(1);
+}
+foreach ($schema_changes as $change) {
+    typesense_reindex_output('Resources schema: ' . (!empty($change['drop']) ? 'dropped ' : 'added ') . $change['name']);
 }
 
 // Sync the related keywords.

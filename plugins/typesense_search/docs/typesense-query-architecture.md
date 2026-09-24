@@ -405,7 +405,13 @@ fallbacks are needed for syntax reasons:
    (guards against the `nodes[]` / `populated_field_ids[]` indexing gaps).
 9. **Sort correctness:** date/modified/resourceid/relevance sorts match core order; rating,
    popularity, colour, title and random sorts fall back to MySQL (not silently relevance-ordered).
-   ✅ live: `ref` (both directions), `created_date` and `modified_date` order correctly. Caveat:
+   ✅ live: `ref` (both directions) and `modified_date` order correctly; `modified_date` breaks ties
+   by `ref`, as core's `modified, r.ref` does. The date sort uses
+   `date_field_sort`, core's text sort key: the `field<$date_field>` column, ranked so NULL then
+   empty sort first, with a `ref` tie-break. Its order was checked on a scratch collection against
+   MySQL's `_ci` collation rules (2026-09-24). It replaced `created_date`, which held the same
+   `$date_field` value as a timestamp. The recent-days limit uses `creation_date`
+   (`resource.creation_date`), as core does. Caveat:
    relevance on a keyword-less browse falls back to `ref:desc` (the index has no `hit_count` /
    `user_rating`), so the default browse order differs from core's popularity-weighted one — and
    is identical to "Resource ID descending".

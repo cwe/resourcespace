@@ -95,9 +95,11 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
         if ($ctx->recent_search_daylimit === '' || !is_numeric($ctx->recent_search_daylimit)) {
             return;
         }
-        $cutoff = strtotime('-' . (int)$ctx->recent_search_daylimit . ' days');
+        // Core: "creation_date > (curdate() - interval n DAY)" - created after the midnight that
+        // began the day n days ago, not n x 24 hours ago.
+        $cutoff = strtotime(sprintf('today %+d days', -(int)$ctx->recent_search_daylimit));
         if ($cutoff !== false) {
-            $plan->addFilter('created_date:>' . $cutoff);
+            $plan->addFilter('creation_date:>' . $cutoff);
         }
     }
 

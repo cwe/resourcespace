@@ -474,6 +474,69 @@ function typesense_search_import_failure(array $documents, string $reason): arra
 
 
 /**
+ * The resource date fields that replace created_date. That field held the $date_field value under a
+ * misleading name and served both the date sort and the recent-days limit, but core uses different
+ * columns for the two.
+ *
+ * @return array Typesense field definitions.
+ */
+function typesense_search_resource_date_fields(): array
+{
+    return array(
+        // When the resource record was created: the recent-days limit ($recent_search_daylimit).
+        array('name' => 'creation_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true),
+        // The $date_field value as a text sort key: the date sort. See typesense_search_date_sort_key().
+        array('name' => 'date_field_sort', 'type' => 'string', 'sort' => true, 'optional' => true),
+    );
+}
+
+
+/**
+ * Bring an existing resources collection up to date: add the date fields if they're missing and drop
+ * created_date, which they replace. typesense_search_ensure_collection() only creates missing
+ * collections, so without this the new fields wouldn't be indexed until the collection was rebuilt.
+ *
+ * Only the reindex script calls this: changing the schema of a large collection can take a while,
+ * too long for a web request.
+ *
+ * @return array|false The field changes made (empty if none were needed), or false on failure.
+ */
+function typesense_search_upgrade_resource_schema()
+{
+    global $typesense_search_collection_prefix, $typesense_search_timeout;
+
+    $endpoint = '/collections/' . rawurlencode($typesense_search_collection_prefix . 'resources');
+    $collection = typesense_search_request('GET', $endpoint);
+    if (!is_array($collection) || !isset($collection['fields'])) {
+        return false;
+    }
+
+    $existing = array_column($collection['fields'], 'name');
+    $changes = array();
+    foreach (typesense_search_resource_date_fields() as $field) {
+        if (!in_array($field['name'], $existing, true)) {
+            $changes[] = $field;
+        }
+    }
+    if (in_array('created_date', $existing, true)) {
+        $changes[] = array('name' => 'created_date', 'drop' => true);
+    }
+
+    if (count($changes) === 0) {
+        return array();
+    }
+
+    // Typesense answers once every document has been processed, so allow plenty of time.
+    $timeout = $typesense_search_timeout;
+    $typesense_search_timeout = max(600, (int) $timeout);
+    $result = typesense_search_request('PATCH', $endpoint, false, array('fields' => $changes));
+    $typesense_search_timeout = $timeout;
+
+    return $result === false ? false : $changes;
+}
+
+
+/**
  * Ensure that the Typesense resource collections exists.
  *
  * @return bool true if all the collections exist or were created
@@ -498,7 +561,7 @@ function typesense_search_ensure_collection(): bool
                 array('name' => 'archive', 'type' => 'int32', 'facet' => true),
                 array('name' => 'created_by', 'type' => 'int32', 'facet' => true),
                 array('name' => 'access', 'type' => 'int32', 'facet' => true),
-                array('name' => 'created_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
+                ...typesense_search_resource_date_fields(),
                 array('name' => 'modified_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
                 
                 array('name' => 'nodes', 'type' => 'int32[]', 'facet' => true),
@@ -707,20 +770,6 @@ function typesense_search_get_document_data(int $resource)
     }
     */
 
-    // Created date
-    $date = null;
-    $date_value = $resource_data['field' . $date_field];
-    if (strlen($date_value) > 0) {
-        $date = strtotime($date_value);
-    }
-
-    // Modified date
-    $modified = null;
-    $modified_value = $resource_data['modified'];
-    if (strlen($modified_value) > 0) {
-        $modified = strtotime($modified_value);
-    }
-
     return array(
         'id' => (string) $resource,
         'ref' => (int) $resource,
@@ -728,8 +777,9 @@ function typesense_search_get_document_data(int $resource)
         'resource_type' => (int) $resource_data['resource_type'],
         'archive' => (int) $resource_data['archive'],
         'created_by' => (int) $resource_data['created_by'],
-        'created_date' => $date,
-        'modified_date' => $modified,
+        'creation_date' => typesense_search_timestamp($resource_data['creation_date'] ?? null),
+        'date_field_sort' => typesense_search_date_sort_key($resource_data['field' . $date_field] ?? null),
+        'modified_date' => typesense_search_timestamp($resource_data['modified'] ?? null),
         'attributes' => $indexed_values
     );
 }
@@ -813,6 +863,52 @@ function typesense_search_reindex_node_resources(int $node): int
 
 
 /**
+ * Timestamp to index for a resource table datetime column: creation_date (the recent-days limit) or
+ * modified (the modified sort).
+ *
+ * Read in PHP's default timezone, which ResourceSpace expects MySQL's to match. NULL or a zero date
+ * ("0000-00-00 00:00:00") has no point in time and is indexed as the start of year 0: it sorts where
+ * MySQL puts NULL (first ascending, last descending) and never passes a "created since" filter.
+ *
+ * @param string|null $value Column value, e.g. "2024-05-01 10:30:00".
+ *
+ * @return int
+ */
+function typesense_search_timestamp(?string $value): int
+{
+    $no_time = -62167219200; // 0000-01-01 00:00:00 UTC
+
+    // strtotime() reads a zero date as a date in year -1, so anything before year 0 counts as none.
+    $timestamp = trim((string) $value) === '' ? false : strtotime((string) $value);
+
+    return ($timestamp === false || $timestamp < $no_time) ? $no_time : $timestamp;
+}
+
+
+/**
+ * Sort key to index for the $date_field value, so that sorting on it matches core's date sort,
+ * "ORDER BY field<$date_field>, r.ref": a text sort of the resource table column, not a date sort.
+ *
+ * Typesense sorts text as MySQL's case-insensitive collation does, but it puts an empty or missing
+ * value last when ascending, where MySQL puts NULL first, then empty strings. So the key is ranked:
+ * "0:" for NULL, "1:" for an empty string, and "2:<value>" for everything else, which keeps values
+ * in their own order after the other two.
+ *
+ * @param string|null $value The resource table's field<$date_field> column.
+ *
+ * @return string
+ */
+function typesense_search_date_sort_key(?string $value): string
+{
+    if ($value === null) {
+        return '0:';
+    }
+
+    return $value === '' ? '1:' : '2:' . $value;
+}
+
+
+/**
  * Reindex resources in batches.
  *
  * @param int $limit Maximum number of resources to index in this batch.
@@ -837,7 +933,8 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
             r.archive,
             r.created_by,
             r.access,
-            r.field" . (int) $date_field . " AS created_date,
+            r.creation_date,
+            r.field" . (int) $date_field . " AS date_field_sort,
             r.modified AS modified_date
             FROM resource r
             LEFT JOIN (
@@ -875,15 +972,11 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
 
         // $resources[$key]['title'] = trim((string) get_data_by_field($resource['ref'], (int) $GLOBALS['view_title_field']));
 
-        // Process dates to integers
-
-        if (strlen($resource['created_date']) > 0) {
-           $resources[$key]['created_date'] = (int) strtotime($resource['created_date']);
-        }
-
-        if (strlen($resource['modified_date']) > 0) {
-           $resources[$key]['modified_date'] = (int) strtotime($resource['modified_date']);
-        }
+        // Dates: creation_date for the recent-days limit, the $date_field text for the date sort and
+        // modified for the modified sort.
+        $resources[$key]['creation_date'] = typesense_search_timestamp($resource['creation_date']);
+        $resources[$key]['date_field_sort'] = typesense_search_date_sort_key($resource['date_field_sort']);
+        $resources[$key]['modified_date'] = typesense_search_timestamp($resource['modified_date']);
     }
 
     // $documents = [];

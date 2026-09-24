@@ -613,8 +613,9 @@ function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQuer
 
     if ($order_by === '' || strpos($order_by, 'score') === 0) {
         $field = '_text_match'; // relevance
-    } elseif (strpos($order_by, 'field' . (int)$date_field) === 0) {
-        $field = 'created_date';
+    } elseif (preg_match('/^field' . (int)$date_field . '\b/', $order_by) === 1) {
+        // Word boundary, so that e.g. field120 isn't taken for field12.
+        $field = 'date_field_sort';
     } elseif (strpos($order_by, 'r.ref') === 0 || strpos($order_by, 'ref ') === 0) {
         $field = 'ref';
     } elseif (strpos($order_by, 'modified') === 0) {
@@ -630,6 +631,12 @@ function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQuer
     }
 
     $plan->setSort($field, $direction);
+
+    // Core's date and modified sorts end in "r.ref <dir>" ("field<$date_field> <dir>, r.ref <dir>" and
+    // "modified <dir>, r.ref <dir>"), so break ties by ref.
+    if ($field === 'date_field_sort' || $field === 'modified_date') {
+        $plan->setSort('ref', $direction);
+    }
 }
 
 
