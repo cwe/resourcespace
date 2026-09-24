@@ -528,6 +528,10 @@ function resolve_given_nodes(&$search, &$node_bucket, &$node_bucket_not)
 
         preg_match_all('/' . NODE_TOKEN_PREFIX . '(' . NODE_TOKEN_NOT . '*)(\d+)/', $word, $tokens);
 
+        if (!metadata_field_view_access(ps_value("SELECT resource_type_field value FROM node WHERE ref = ?", ['i', (int)$tokens[2][0]], 0))) {
+            continue;
+        }
+
         if (count($tokens[1]) == 1 && $tokens[1][0] == NODE_TOKEN_NOT) {      // you are currently only allowed NOT condition for a single token within a single word
             $node_bucket_not[] = $tokens[2][0];       // add the node number to the node_bucket_not
             continue;

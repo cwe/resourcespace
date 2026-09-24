@@ -28,6 +28,10 @@ $smart_fc_parent = getval("smart_fc_parent", 0, true);
 $smart_fc_parent = ($smart_fc_parent > 0 ? $smart_fc_parent : null);
 
 if ($smart_rtf > 0) {
+    if (!metadata_field_view_access($smart_rtf)) {
+        http_response_code(403);
+        exit($lang["error-permissiondenied"]);
+    }
     $field_data = get_field($smart_rtf);
 }
 

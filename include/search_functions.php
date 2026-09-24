@@ -1242,8 +1242,15 @@ function search_special($search, $sql_join, $fetchrows, $sql_prefix, $sql_suffix
             if (isset($smartsearch_ref_cache[$collection])) {
                 $smartsearch_ref = $smartsearch_ref_cache[$collection]; // this value is pretty much constant
             } else {
-                $smartsearch_ref = ps_value('SELECT savedsearch value FROM collection WHERE ref = ?', ['i',$collection], '');
+                $smartsearch_ref = ps_query('SELECT savedsearch, `type` FROM collection WHERE ref = ?', ['i',$collection], '');
                 $smartsearch_ref_cache[$collection] = $smartsearch_ref;
+            }
+
+            if (isset($smartsearch_ref[0])) {
+                $smartsearch_collection_type = $smartsearch_ref[0]['type'];
+                $smartsearch_ref = $smartsearch_ref[0]['savedsearch'];
+            } else {
+                $smartsearch_ref = '';
             }
 
             global $php_path, $remote_config, $host;
@@ -1252,7 +1259,22 @@ function search_special($search, $sql_join, $fetchrows, $sql_prefix, $sql_suffix
                     if (isset($remote_config, $host)) {
                         putenv("RESOURCESPACE_URL=" . $host); // To keep context if remote config is used
                     }
-                    exec($php_path . '/php ' . dirname(__FILE__) . '/../pages/ajax/update_smart_collection.php ' . escapeshellarg($smartsearch_ref) . ' ' . '> /dev/null 2>&1 &');
+
+                    if ($smartsearch_collection_type === COLLECTION_TYPE_FEATURED) {
+                        # Limit rate of updating smart collections async to avoid CPU / db connections becoming overwhelmed.
+                        # This can occur if smart collections are used as featured collections or dash tiles.
+                        # Smart collections should not be used as featured collections - use smart featured collections instead.
+                        $last_updated = ps_value("SELECT last_updated `value` FROM collection_savedsearch WHERE ref = ?;", array('i', $smartsearch_ref), '') ?? '1970-01-01';
+                        if (time() - strtotime($last_updated) < 2 * 60 * 60) {
+                            debug("Async skipping update of smart search ref $smartsearch_ref - last updated at $last_updated. 2 hour update interval.");
+                        } else {
+                            debug("Async updating smart search ref $smartsearch_ref - last updated at $last_updated.");
+                            exec($php_path . '/php ' . dirname(__FILE__) . '/../pages/ajax/update_smart_collection.php ' . escapeshellarg($smartsearch_ref) . ' ' . '> /dev/null 2>&1 &');
+                            ps_query('UPDATE collection_savedsearch SET last_updated = NOW() WHERE ref = ?;', array('i', $smartsearch_ref));
+                        }
+                    } else {
+                        exec($php_path . '/php ' . dirname(__FILE__) . '/../pages/ajax/update_smart_collection.php ' . escapeshellarg($smartsearch_ref) . ' ' . '> /dev/null 2>&1 &');
+                    }
                 } else {
                     update_smart_collection($smartsearch_ref);
                 }

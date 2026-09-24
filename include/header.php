@@ -419,6 +419,7 @@ $page_title = get_page_title($pagename, pluginname());
                     </div>
                 <?php } ?>
                 </div>
+                <div id="search-panel-background" style="display: none;"></div>
             </header>
             <div id="MessageContainer" style="position:absolute; "></div>
         <?php

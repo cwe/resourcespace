@@ -1,5 +1,5 @@
 ResourceSpace.Modules.Header = (() => {
-    const header = document.getElementById('header-container');
+    const header = document.querySelector('header');
     const uiCenter = document.getElementById('UICenter');
     const primaryNavOverflowThreshold = 6;
     let stickyHeaderLastScrollTop = 0;
@@ -23,7 +23,8 @@ ResourceSpace.Modules.Header = (() => {
         header.addEventListener('click', (e) => {
             // The search container is being replaced in the DOM as part of the reloadSearchBar()
             const headerSearch = e.target.closest('.header-search-field');
-            if (!headerSearch) return;
+            const background = e.target.matches('#search-panel-background');
+            if (!headerSearch && !background) return;
 
             if (
                 // The open/close buttons for the search (filter) panel
@@ -39,6 +40,7 @@ ResourceSpace.Modules.Header = (() => {
                     // call click on the submit input virtually)
                     && e.detail > 0
                 )
+                || (e.target.matches('#search-panel-background'))
             ) {
                 toggleSearchPanel(e);
             } else if (e.target.matches('.input-wrapper > button[type="submit"]')) {
@@ -117,7 +119,7 @@ ResourceSpace.Modules.Header = (() => {
 
         const is_small_screen = ResourceSpace.media.max('desktop').matches;
         const target = isEvent ? e.target : e;
-        const form = target.closest('form');
+        const form = header.querySelector('form');
         const panel = document.getElementById('search-filters-panel');
         const isOpen = form.classList.toggle('filters-open');
         form.querySelector('.input-wrapper > button:last-of-type')
@@ -125,11 +127,13 @@ ResourceSpace.Modules.Header = (() => {
 
         if (isOpen) {
             panel.hidden = false;
+            jQuery('#search-panel-background').fadeIn('fast');
 
             if (is_small_screen) {
                 target.classList.replace('icon-sliders-horizontal', 'icon-circle-x');
             }
         } else {
+            jQuery('#search-panel-background').fadeOut('fast');
             panel.addEventListener(
                 'transitionend',
                 (event) => {

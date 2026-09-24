@@ -53,28 +53,36 @@ function get_user_actions($countonly = false, $type = "", $order_by = "date", $s
         $editable_resource_query = get_editable_resource_sql();
 
         $actionsql = $actionsql->withStatement(new PreparedStatementQuery(
-            // For each resource independently, sort its resource (workflow state) change logs and number them.
-            // Therefore `lsc.rn = 1` is the last state change (based on the log ID).
             "WITH latest_state_change AS (
                 SELECT
                     rl.resource,
-                    rl.date,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY rl.resource
-                        ORDER BY rl.ref DESC
-                    ) AS rn
+                    MAX(rl.date) `date`
                 FROM resource_log rl
                 WHERE rl.type = '" . LOG_CODE_STATUS_CHANGED . "'
+                GROUP BY rl.resource
             )
-            SELECT lsc.date AS `date`, ref, created_by as user, {$generated_title_field} as `description`, 'resourcereview' as `type` FROM ({$editable_resource_query->sql}) resources
-            LEFT JOIN latest_state_change lsc ON lsc.resource = resources.ref AND lsc.rn = 1",
+            SELECT 
+                lsc.date `date`,
+                resources.ref `ref`,
+                resources.created_by `user`,
+                {$generated_title_field} `description`,
+                'resourcereview' `type`
+            FROM ({$editable_resource_query->sql}) resources
+            LEFT JOIN latest_state_change lsc
+                ON lsc.resource = resources.ref",
             $editable_resource_query->parameters
         ));
     }
     if (checkperm("R") && $actions_resource_requests && (!$filtered || 'resourcerequest' == $type)) {
         $request_query = get_requests(true, true, true);
         $actionsql = $actionsql->withUnionStatement(new PreparedStatementQuery(
-            "SELECT created as date,ref, user, substring(comments,21) as description,'resourcerequest' as type FROM ({$request_query->sql}) requests",
+            "SELECT
+                created `date`,
+                ref,
+                user,
+                substring(comments,21) `description`,
+                'resourcerequest' `type`
+            FROM ({$request_query->sql}) requests",
             $request_query->parameters
         ));
     }
@@ -85,7 +93,13 @@ function get_user_actions($countonly = false, $type = "", $order_by = "date", $s
         $account_requests_query = get_users($get_groups, "", "u.created", true, -1, 0, true, "u.ref,u.created,u.fullname,u.email,u.username, u.comments");
 
         $actionsql = $actionsql->withUnionStatement(new PreparedStatementQuery(
-            "SELECT created as date,ref,ref as user,comments as description,'userrequest' as type FROM ({$account_requests_query->sql}) users",
+            "SELECT
+                users.created `date`,
+                users.ref `ref`,
+                users.ref `user`,
+                users.comments `description`,
+                'userrequest' AS `type`
+            FROM ({$account_requests_query->sql}) users",
             $account_requests_query->parameters
         ));
     }
@@ -106,7 +120,7 @@ function get_user_actions($countonly = false, $type = "", $order_by = "date", $s
     } else {
         $final_action_sql = new PreparedStatementQuery(
             sprintf(
-                'SELECT `date`, allactions.ref, user.fullname AS user,%s `description`, `type`
+                'SELECT date, allactions.ref, user.fullname AS user,%s `description`, `type`
                 FROM (%s) allactions
                 LEFT JOIN user ON allactions.user = user.ref
                 %s

@@ -324,6 +324,7 @@ if ($search_titles) {
         && is_int_loose(substr($search, 2))
         && get_node((substr($search, 2)), $nodedata)
         && ($field_data = get_field($nodedata['resource_type_field']))['smart_theme_name']
+        && (metadata_field_view_access($nodedata['resource_type_field']))
     ) {
 
         $general_url_params = ($k == "" ? array() : array("k" => $k));
