@@ -301,13 +301,16 @@ function typesense_search_hydrate_refs(
 /**
  * Send a request to the Typesense API.
  *
- * @param string $method HTTP method.
- * @param string $endpoint API endpoint beginning with a slash.
- * @param array|null $payload Optional request payload.
+ * @param string     $method        HTTP method.
+ * @param string     $endpoint      API endpoint beginning with a slash.
+ * @param bool       $batch         True for a JSONL documents import ($payload is a list of documents).
+ * @param array|null $payload       Optional request payload.
+ * @param array|null $import_result For an import, set to array('imported' => int, 'failed' => int,
+ *                                  'errors' => array(reason => number of documents)).
  *
- * @return array|false Decoded JSON response, or false on failure.
+ * @return array|false Decoded JSON response, or false on failure (for an import, if any document failed).
  */
-function typesense_search_request(string $method, string $endpoint, $batch = false, ?array $payload = null)
+function typesense_search_request(string $method, string $endpoint, $batch = false, ?array $payload = null, ?array &$import_result = null)
 {
     global $typesense_search_host, $typesense_search_port;
     global $typesense_search_protocol, $typesense_search_api_key;
@@ -328,6 +331,9 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
         $curl = curl_init();
         if ($curl === false) {
             debug('typesense_search_request(): Failed to initialise cURL');
+            if ($batch) {
+                $import_result = typesense_search_import_failure((array) $payload, 'cURL could not be initialised');
+            }
             return false;
         }
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -366,6 +372,9 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
     if ($response === false) {
         debug('typesense_search_request(): cURL error: ' . curl_error($curl));
         file_put_contents(get_temp_dir() . '/jsonl.txt', 'typesense_search_request(): cURL error: ' . curl_error($curl) . PHP_EOL, FILE_APPEND);
+        if ($batch) {
+            $import_result = typesense_search_import_failure((array) $payload, 'cURL error: ' . curl_error($curl));
+        }
         return false;
     }
 
@@ -384,6 +393,13 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
         debug('typesense_search_request(): Response body: ' . $response);
         // file_put_contents(get_temp_dir() . '/jsonl.txt', $response, FILE_APPEND);
         //echo $response;
+        if ($batch) {
+            $error = json_decode($response, true);
+            $import_result = typesense_search_import_failure(
+                (array) $payload,
+                'HTTP ' . $status . ': ' . (is_array($error) && isset($error['message']) ? $error['message'] : substr($response, 0, 200))
+            );
+        }
         return false;
     }
 
@@ -392,19 +408,31 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
         // An import answers HTTP 200 even when documents are rejected. The body is JSONL with one
         // result per document, e.g. {"success":false,"error":"...","document":"..."}, so check
         // every line. (Matching the literal '{"success":false}' never matched a real failure line.)
+        $imported = 0;
         $failed = 0;
+        $errors = array();
         foreach (preg_split('/\r?\n/', trim($response)) as $line) {
             if ($line === '') {
                 continue;
             }
             $line_result = json_decode($line, true);
-            if (!is_array($line_result) || empty($line_result['success'])) {
-                $failed++;
-                if ($failed <= 5) {
-                    debug('typesense_search_request(): Import failed for document: ' . substr($line, 0, 500));
-                }
+            if (is_array($line_result) && !empty($line_result['success'])) {
+                $imported++;
+                continue;
             }
+
+            $failed++;
+            if ($failed <= 5) {
+                debug('typesense_search_request(): Import failed for document: ' . substr($line, 0, 500));
+            }
+            // Group failures by reason. The same error for different documents differs only in the
+            // document id (e.g. "Could not find a document with id: 123"), so mask the id.
+            $reason = is_array($line_result) ? (string) ($line_result['error'] ?? 'Unknown error') : 'Unreadable response line';
+            $reason = preg_replace('/\bid: ?[^`\s,]+/', 'id: <id>', $reason);
+            $errors[$reason] = ($errors[$reason] ?? 0) + 1;
         }
+
+        $import_result = array('imported' => $imported, 'failed' => $failed, 'errors' => $errors);
 
         if ($failed > 0) {
             debug('typesense_search_request(): ' . $failed . ' document(s) failed to import via ' . $endpoint);
@@ -422,6 +450,26 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
     }
 
     return $decoded;
+}
+
+
+/**
+ * Import outcome for a request that failed as a whole, so every document in it failed.
+ *
+ * @param array  $documents The documents that were sent.
+ * @param string $reason    Why the request failed.
+ *
+ * @return array array('imported' => 0, 'failed' => int, 'errors' => array(reason => number of documents))
+ */
+function typesense_search_import_failure(array $documents, string $reason): array
+{
+    $count = count($documents);
+
+    return array(
+        'imported' => 0,
+        'failed' => $count,
+        'errors' => $count > 0 ? array($reason => $count) : array(),
+    );
 }
 
 
@@ -858,15 +906,15 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
 
     // }
 
-    if (typesense_search_index_document_batch($resources)) {
-        $indexed += $resource_count;
-    } else {
-        $failed += $resource_count;
-    }
+    typesense_search_index_document_batch($resources, $import);
+    $indexed += $import['imported'];
+    $failed += $import['failed'];
 
     return array(
+        'processed' => $resource_count,
         'indexed' => $indexed,
         'failed' => $failed,
+        'errors' => $import['errors'],
         'last' => $last,
         'content_length' => 0,
         'complete' => $resource_count < $limit,
@@ -905,8 +953,10 @@ function typesense_search_reindex_resource_collection_memberships(int $limit = 1
 
     if ($rcm_count == 0) {
         return array(
+            'processed' => 0,
             'indexed' => 0,
             'failed' => 0,
+            'errors' => array(),
             'last_collection' => $after_collection,
             'last_resource' => $after_resource,
             'content_length' => 0,
@@ -933,11 +983,13 @@ function typesense_search_reindex_resource_collection_memberships(int $limit = 1
         $rcms[$key]['date_added'] = is_numeric($rcm['date_added']) ? (int) $rcm['date_added'] : 0;
     }
 
-    $ok = typesense_search_index_rcms_batch($rcms);
+    typesense_search_index_rcms_batch($rcms, $import);
 
     return array(
-        'indexed' => $ok ? $rcm_count : 0,
-        'failed' => $ok ? 0 : $rcm_count,
+        'processed' => $rcm_count,
+        'indexed' => $import['imported'],
+        'failed' => $import['failed'],
+        'errors' => $import['errors'],
         'last_collection' => $last_collection,
         'last_resource' => $last_resource,
         'content_length' => 0,
@@ -964,8 +1016,10 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
 
     if (empty($resource_list)) {
         return array(
+            'processed' => 0,
             'indexed' => 0,
             'failed' => 0,
+            'errors' => array(),
             'last' => $last,
             'content_length' => 0,
             'complete' => true,
@@ -1199,17 +1253,15 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         $documents[] = $document;
     }
 
-    $document_count = count($documents);
-
-    if (typesense_search_index_attributes_batch($documents)) {
-        $indexed += $document_count;
-    } else {
-        $failed += $document_count;
-    }
+    typesense_search_index_attributes_batch($documents, $import);
+    $indexed += $import['imported'];
+    $failed += $import['failed'];
 
     return array(
+        'processed' => $resource_list_count,
         'indexed' => $indexed,
         'failed' => $failed,
+        'errors' => $import['errors'],
         'last' => $last,
         'content_length' => 0,
         'complete' => $resource_list_count < $limit,
@@ -1242,16 +1294,20 @@ function typesense_search_index_document(array $document): bool
  * count or byte size per HTTP POST (so a large batch cannot produce an oversized request).
  * Caps are overridable via $typesense_search_import_max_docs / _max_bytes.
  *
- * @param string $collection_suffix Collection name after the prefix (e.g. "resources").
- * @param array  $documents         Documents to import.
- * @param string $action            Typesense import action (upsert / update / create).
+ * @param string     $collection_suffix Collection name after the prefix (e.g. "resources").
+ * @param array      $documents         Documents to import.
+ * @param string     $action            Typesense import action (upsert / update / create).
+ * @param array|null $stats             Set to array('imported' => int, 'failed' => int,
+ *                                      'errors' => array(reason => number of documents)).
  *
  * @return bool True if every chunk imported successfully.
  */
-function typesense_search_import(string $collection_suffix, array $documents, string $action): bool
+function typesense_search_import(string $collection_suffix, array $documents, string $action, ?array &$stats = null): bool
 {
     global $typesense_search_collection_prefix;
     global $typesense_search_import_max_docs, $typesense_search_import_max_bytes;
+
+    $stats = array('imported' => 0, 'failed' => 0, 'errors' => array());
 
     if (count($documents) === 0) {
         return true;
@@ -1271,12 +1327,25 @@ function typesense_search_import(string $collection_suffix, array $documents, st
     $chunk = array();
     $chunk_bytes = 0;
 
+    // POST one chunk and add its per-document outcome to $stats.
+    $send = function (array $chunk) use ($endpoint, &$ok, &$stats): void {
+        $chunk_result = null;
+        $ok = (typesense_search_request('POST', $endpoint, true, $chunk, $chunk_result) !== false) && $ok;
+        $chunk_result = $chunk_result ?? typesense_search_import_failure($chunk, 'No import result');
+
+        $stats['imported'] += $chunk_result['imported'];
+        $stats['failed'] += $chunk_result['failed'];
+        foreach ($chunk_result['errors'] as $reason => $count) {
+            $stats['errors'][$reason] = ($stats['errors'][$reason] ?? 0) + $count;
+        }
+    };
+
     foreach ($documents as $doc) {
         $len = strlen(json_encode($doc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) + 1;
 
         // Flush the current chunk before it would exceed a cap (always keep >= 1 doc per chunk).
         if (count($chunk) > 0 && (count($chunk) >= $max_docs || ($chunk_bytes + $len) > $max_bytes)) {
-            $ok = (typesense_search_request('POST', $endpoint, true, $chunk) !== false) && $ok;
+            $send($chunk);
             $chunk = array();
             $chunk_bytes = 0;
         }
@@ -1286,25 +1355,25 @@ function typesense_search_import(string $collection_suffix, array $documents, st
     }
 
     if (count($chunk) > 0) {
-        $ok = (typesense_search_request('POST', $endpoint, true, $chunk) !== false) && $ok;
+        $send($chunk);
     }
 
     return $ok;
 }
 
-function typesense_search_index_document_batch(array $documents): bool
+function typesense_search_index_document_batch(array $documents, ?array &$stats = null): bool
 {
-    return typesense_search_import('resources', $documents, 'upsert');
+    return typesense_search_import('resources', $documents, 'upsert', $stats);
 }
 
-function typesense_search_index_rcms_batch(array $documents): bool
+function typesense_search_index_rcms_batch(array $documents, ?array &$stats = null): bool
 {
-    return typesense_search_import('resource_collection_memberships', $documents, 'upsert');
+    return typesense_search_import('resource_collection_memberships', $documents, 'upsert', $stats);
 }
 
-function typesense_search_index_attributes_batch(array $documents): bool
+function typesense_search_index_attributes_batch(array $documents, ?array &$stats = null): bool
 {
-    return typesense_search_import('resources', $documents, 'update');
+    return typesense_search_import('resources', $documents, 'update', $stats);
 }
 
 
@@ -1348,20 +1417,24 @@ function typesense_search_grant_document(array $row): array
 /**
  * Batch-import grant documents into the grants collection.
  *
- * @param array $documents Grant documents.
+ * @param array      $documents Grant documents.
+ * @param array|null $stats     Set to the per-document outcome - see typesense_search_import().
  *
  * @return bool
  */
-function typesense_search_index_grants_batch(array $documents): bool
+function typesense_search_index_grants_batch(array $documents, ?array &$stats = null): bool
 {
-    return typesense_search_import('resource_access_grants', $documents, 'upsert');
+    return typesense_search_import('resource_access_grants', $documents, 'upsert', $stats);
 }
 
 
 /**
  * Reindex resource_custom_access grants in batches (access <> 2 only). Used by the reindex CLI.
  *
- * @param int $limit Batch size.
+ * A batch takes whole resources - every grant for the next $limit resources - because the cursor is
+ * a resource ref: a batch cut off part-way through a resource's grants would skip the rest of them.
+ *
+ * @param int $limit Number of resources per batch.
  * @param int $after Only grants for resources with ref greater than this.
  *
  * @return array Batch summary.
@@ -1369,18 +1442,22 @@ function typesense_search_index_grants_batch(array $documents): bool
 function typesense_search_reindex_grants(int $limit = 1000, int $after = 0): array
 {
     $rows = ps_query(
-        "SELECT resource, user, usergroup, access, user_expires
-           FROM resource_custom_access
-          WHERE access <> 2 AND resource > ?
-       ORDER BY resource ASC
-          LIMIT ?",
+        "SELECT rca.resource, rca.user, rca.usergroup, rca.access, rca.user_expires
+           FROM resource_custom_access rca
+           JOIN (SELECT DISTINCT resource
+                   FROM resource_custom_access
+                  WHERE access <> 2 AND resource > ?
+               ORDER BY resource ASC
+                  LIMIT ?) batch ON batch.resource = rca.resource
+          WHERE rca.access <> 2
+       ORDER BY rca.resource ASC",
         array('i', $after, 'i', $limit)
     );
 
     $count = count($rows);
 
     if ($count === 0) {
-        return array('indexed' => 0, 'failed' => 0, 'last' => $after, 'content_length' => 0, 'complete' => true);
+        return array('processed' => 0, 'indexed' => 0, 'failed' => 0, 'errors' => array(), 'last' => $after, 'content_length' => 0, 'complete' => true);
     }
 
     $documents = array();
@@ -1390,14 +1467,16 @@ function typesense_search_reindex_grants(int $limit = 1000, int $after = 0): arr
         $documents[] = typesense_search_grant_document($row);
     }
 
-    $ok = typesense_search_index_grants_batch($documents);
+    typesense_search_index_grants_batch($documents, $import);
 
     return array(
-        'indexed' => $ok ? $count : 0,
-        'failed' => $ok ? 0 : $count,
+        'processed' => $count,
+        'indexed' => $import['imported'],
+        'failed' => $import['failed'],
+        'errors' => $import['errors'],
         'last' => $last,
         'content_length' => 0,
-        'complete' => $count < $limit,
+        'complete' => count(array_unique(array_column($rows, 'resource'))) < $limit,
     );
 }
 
