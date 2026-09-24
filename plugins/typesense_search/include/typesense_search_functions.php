@@ -492,14 +492,28 @@ function typesense_search_resource_date_fields(): array
 
 
 /**
- * Bring an existing resources collection up to date: add the date fields if they're missing and drop
- * created_date, which they replace. typesense_search_ensure_collection() only creates missing
- * collections, so without this the new fields wouldn't be indexed until the collection was rebuilt.
+ * The resource created_by field. It's optional because resource.created_by is NULL for a resource
+ * created without a user (e.g. by a CLI import or staticsync). Such a resource is indexed with no
+ * value, which - like SQL's NULL - never equals a user in a created_by filter.
+ *
+ * @return array Typesense field definition.
+ */
+function typesense_search_resource_created_by_field(): array
+{
+    return array('name' => 'created_by', 'type' => 'int32', 'facet' => true, 'optional' => true);
+}
+
+
+/**
+ * Bring an existing resources collection up to date: add the date fields if they're missing, drop
+ * created_date, which they replace, and make created_by optional. typesense_search_ensure_collection()
+ * only creates missing collections, so without this an existing collection would keep its old schema
+ * until it was rebuilt.
  *
  * Only the reindex script calls this: changing the schema of a large collection can take a while,
  * too long for a web request.
  *
- * @return array|false The field changes made (empty if none were needed), or false on failure.
+ * @return array|false What was changed (empty if nothing needed changing), or false on failure.
  */
 function typesense_search_upgrade_resource_schema()
 {
@@ -511,15 +525,25 @@ function typesense_search_upgrade_resource_schema()
         return false;
     }
 
-    $existing = array_column($collection['fields'], 'name');
+    $existing = array_column($collection['fields'], null, 'name');
     $changes = array();
+    $changed = array();
     foreach (typesense_search_resource_date_fields() as $field) {
-        if (!in_array($field['name'], $existing, true)) {
+        if (!isset($existing[$field['name']])) {
             $changes[] = $field;
+            $changed[] = 'added ' . $field['name'];
         }
     }
-    if (in_array('created_date', $existing, true)) {
+    if (isset($existing['created_date'])) {
         $changes[] = array('name' => 'created_date', 'drop' => true);
+        $changed[] = 'dropped created_date';
+    }
+    // A field can't be altered in place, so drop created_by and add it back in the same request;
+    // Typesense keeps the stored values.
+    if (isset($existing['created_by']) && empty($existing['created_by']['optional'])) {
+        $changes[] = array('name' => 'created_by', 'drop' => true);
+        $changes[] = typesense_search_resource_created_by_field();
+        $changed[] = 'made created_by optional';
     }
 
     if (count($changes) === 0) {
@@ -532,7 +556,7 @@ function typesense_search_upgrade_resource_schema()
     $result = typesense_search_request('PATCH', $endpoint, false, array('fields' => $changes));
     $typesense_search_timeout = $timeout;
 
-    return $result === false ? false : $changes;
+    return $result === false ? false : $changed;
 }
 
 
@@ -559,7 +583,7 @@ function typesense_search_ensure_collection(): bool
                 array('name' => 'title', 'type' => 'string', 'stem' => true),
                 array('name' => 'resource_type', 'type' => 'int32', 'facet' => true, 'sort' => true),
                 array('name' => 'archive', 'type' => 'int32', 'facet' => true),
-                array('name' => 'created_by', 'type' => 'int32', 'facet' => true),
+                typesense_search_resource_created_by_field(),
                 array('name' => 'access', 'type' => 'int32', 'facet' => true),
                 ...typesense_search_resource_date_fields(),
                 array('name' => 'modified_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
@@ -776,7 +800,7 @@ function typesense_search_get_document_data(int $resource)
         'title' => $title,
         'resource_type' => (int) $resource_data['resource_type'],
         'archive' => (int) $resource_data['archive'],
-        'created_by' => (int) $resource_data['created_by'],
+        'created_by' => isset($resource_data['created_by']) ? (int) $resource_data['created_by'] : null,
         'creation_date' => typesense_search_timestamp($resource_data['creation_date'] ?? null),
         'date_field_sort' => typesense_search_date_sort_key($resource_data['field' . $date_field] ?? null),
         'modified_date' => typesense_search_timestamp($resource_data['modified'] ?? null),
@@ -971,6 +995,9 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
         $resources[$key]['title'] = (string) $resource['title'];
 
         // $resources[$key]['title'] = trim((string) get_data_by_field($resource['ref'], (int) $GLOBALS['view_title_field']));
+
+        // No value for a resource created without a user - see typesense_search_resource_created_by_field().
+        $resources[$key]['created_by'] = $resource['created_by'] === null ? null : (int) $resource['created_by'];
 
         // Dates: creation_date for the recent-days limit, the $date_field text for the date sort and
         // modified for the modified sort.

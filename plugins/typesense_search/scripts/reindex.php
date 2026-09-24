@@ -184,7 +184,7 @@ if ($schema_changes === false) {
     exit(1);
 }
 foreach ($schema_changes as $change) {
-    typesense_reindex_output('Resources schema: ' . (!empty($change['drop']) ? 'dropped ' : 'added ') . $change['name']);
+    typesense_reindex_output('Resources schema: ' . $change);
 }
 
 // Sync the related keywords.

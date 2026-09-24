@@ -121,7 +121,7 @@ It takes no lock, never deletes, and is the only way any change reaches the inde
 | `title` | node of `$view_title_field` | metadata writes; config change |
 | `resource_type` | `resource.resource_type` | `update_resource_type`, batch edit, API `put_resource_data`, CSV |
 | `archive` | `resource.archive` | `update_archive_status`, saves, `put_resource_data`, raw SQL in staticsync / tools / workflow plugins |
-| `created_by` | `resource.created_by` | create, copy, saves, `put_resource_data` |
+| `created_by` | `resource.created_by`; NULL when created without a user (CLI, staticsync) → indexed as no value, so it never matches a `created_by:=` filter | create, copy, saves, `put_resource_data` |
 | `access` | `resource.access` | saves, batch edit, `put_resource_data`, `copy_locked_data`, CSV, staticsync, action_dates |
 | `creation_date` | `resource.creation_date` (recent-days limit) | set once, when the resource is created |
 | `date_field_sort` | `resource.field<$date_field>`, the cached text of `$date_field` (date sort) | metadata writes; config change |
