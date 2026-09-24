@@ -3,15 +3,19 @@
 /**
  * CLI script to reindex existing resources into Typesense.
  *
- * Usage: php reindex.php [batch size] [start after resource ref]
+ * Usage: php reindex.php [batch size] [start after resource ref] [--drop]
  *
  * Runs four passes: resources, collection memberships, resource attributes and access grants. Each
  * pass reports its progress, with an estimate of the time left, and every document Typesense
  * rejects, grouped by the reason Typesense gave. The run ends with a summary of each pass and a
  * comparison of the documents in each Typesense collection with the MySQL rows they come from.
  *
- * Exit status: 0 if every document was indexed, 1 if the Typesense collections couldn't be set up or
- * their schema updated, 2 if the reindex finished but some documents failed.
+ * --drop drops the existing collections first, so the index is rebuilt from nothing with the current
+ * schema, and has no documents left over from deleted resources, memberships or grants. Searches
+ * served by Typesense are incomplete until the reindex finishes.
+ *
+ * Exit status: 0 if every document was indexed, 1 if the Typesense collections couldn't be dropped,
+ * set up or have their schema updated, 2 if the reindex finished but some documents failed.
  */
 
 include_once dirname(__DIR__, 3) . '/include/boot.php';
@@ -20,8 +24,26 @@ include_once dirname(__DIR__) . '/include/typesense_search_functions.php';
 command_line_only();
 set_time_limit(0);
 
-$batch_size = isset($argv[1]) && is_numeric($argv[1]) ? (int)$argv[1] : 10000;
-$after = isset($argv[2]) && is_numeric($argv[2]) ? (int)$argv[2] : 0;
+// Options (--...) can go anywhere; the other arguments keep their positions.
+$usage = 'Usage: php reindex.php [batch size] [start after resource ref] [--drop]';
+$options = array_values(array_filter(array_slice($argv, 1), function ($arg) {
+    return strpos($arg, '--') === 0;
+}));
+$positional = array_values(array_diff(array_slice($argv, 1), $options));
+$unknown = array_diff($options, array('--drop'));
+if (count($unknown) > 0) {
+    echo 'Unknown option: ' . implode(' ', $unknown) . PHP_EOL . $usage . PHP_EOL;
+    exit(1);
+}
+$drop = in_array('--drop', $options, true);
+
+$batch_size = isset($positional[0]) && is_numeric($positional[0]) ? (int)$positional[0] : 10000;
+$after = isset($positional[1]) && is_numeric($positional[1]) ? (int)$positional[1] : 0;
+
+if ($drop && $after > 0) {
+    echo "--drop rebuilds the whole index, so it can't start after a resource ref." . PHP_EOL . $usage . PHP_EOL;
+    exit(1);
+}
 
 // Seconds between progress lines within a pass. A batch with failures is always reported.
 $progress_interval = 5;
@@ -172,6 +194,17 @@ function typesense_reindex_pass(array $pass, int $progress_interval, int $max_re
 
 $overall_start = microtime(true);
 
+if ($drop) {
+    $dropped = typesense_search_drop_collections();
+    if ($dropped === false) {
+        typesense_reindex_output('Failed to drop the Typesense collections.');
+        exit(1);
+    }
+    foreach ($dropped as $name => $outcome) {
+        typesense_reindex_output('--drop: ' . $name . ' ' . $outcome);
+    }
+}
+
 if (!typesense_search_ensure_collection()) {
     typesense_reindex_output('Failed to ensure Typesense collection exists.');
     exit(1);
@@ -190,7 +223,10 @@ foreach ($schema_changes as $change) {
 // Sync the related keywords.
 typesense_search_sync_related_keywords();
 
-typesense_reindex_output('Starting Typesense reindex | Batch size: ' . $batch_size . ' | Starting after ref: ' . $after);
+typesense_reindex_output(
+    'Starting Typesense reindex | Batch size: ' . $batch_size . ' | Starting after ref: ' . $after
+    . ($drop ? ' | Collections dropped and recreated' : '')
+);
 
 // Each pass: 'expected' is the number of MySQL rows it will read (for progress), 'run' indexes the
 // next batch from the cursor and moves the cursor on, and 'position' describes the cursor.

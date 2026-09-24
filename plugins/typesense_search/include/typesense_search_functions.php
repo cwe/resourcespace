@@ -561,6 +561,37 @@ function typesense_search_upgrade_resource_schema()
 
 
 /**
+ * Drop the plugin's Typesense collections, so that typesense_search_ensure_collection() creates them
+ * again, empty and with the current schema. Used by the reindex script's --drop option.
+ *
+ * The memberships and grants collections go first, because they reference the resources collection.
+ *
+ * @return array|false Collection name => "dropped" or "not found", or false if a drop failed.
+ */
+function typesense_search_drop_collections()
+{
+    global $typesense_search_collection_prefix;
+
+    $outcome = array();
+    foreach (array('resource_collection_memberships', 'resource_access_grants', 'resources') as $suffix) {
+        $name = $typesense_search_collection_prefix . $suffix;
+        $endpoint = '/collections/' . rawurlencode($name);
+
+        if (typesense_search_request('GET', $endpoint) === false) {
+            $outcome[$name] = 'not found';
+            continue;
+        }
+        if (typesense_search_request('DELETE', $endpoint) === false) {
+            return false;
+        }
+        $outcome[$name] = 'dropped';
+    }
+
+    return $outcome;
+}
+
+
+/**
  * Ensure that the Typesense resource collections exists.
  *
  * @return bool true if all the collections exist or were created
