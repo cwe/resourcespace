@@ -15,5 +15,7 @@ $lang['typesense_search_only'] = 'Only use Typesense for searching';
 $lang['typesense_search_only_help'] = 'For testing. When enabled, a search that Typesense cannot handle returns no results instead of falling back to the standard ResourceSpace search.';
 $lang['typesense_search_show_indicator'] = 'Show search engine indicator';
 $lang['typesense_search_show_indicator_help'] = 'Show a badge next to the search title indicating whether the displayed results came from Typesense or the standard search.';
+$lang['typesense_search_max_rows'] = 'Most results to fetch from Typesense';
+$lang['typesense_search_max_rows_help'] = 'Typesense returns at most 250 results per request, so a search that needs more (for example every result of a large search) is fetched a page at a time, which gets slower as the pages get deeper. A search that needs more results than this uses the standard search instead, unless "Only use Typesense for searching" is enabled. 0 means no limit.';
 $lang['typesense_search_served_typesense'] = 'Typesense';
 $lang['typesense_search_served_mysql'] = 'Standard search';

@@ -73,20 +73,20 @@ flowchart TD
       H --> I[Apply restrictions<br/>Standard · Featured · GroupFilter · Access]
       I --> K{Any veto?}
       K -->|yes| X
-      K -->|no| L[Compile QueryPlan to params<br/>q · query_by · filter_by + join filters<br/>sort_by · page · per_page · result cap<br/>!last: extra query resolves the recent-N ref cutoff]
+      K -->|no| L[Compile QueryPlan to params<br/>q · query_by · filter_by + join filters<br/>sort_by · result window · result cap<br/>!last: extra query resolves the recent-N ref cutoff]
     end
 
-    L --> M[[HTTP GET documents/search]]
+    L --> M[[HTTP GET documents/search<br/>more pages via multi_search]]
     subgraph TS[Typesense server]
       direction TB
       M --> N[Search resources +<br/>joins to memberships / grants collections]
       N --> O[Return hits: refs + found count]
     end
     O --> Q{Response OK?}
-    Q -->|error or invalid| X
+    Q -->|error, invalid or<br/>over max rows| X
     Q -->|ok| P[Extract refs · cap total to result limit]
     P --> R[Hydrate refs]
-    R --> S[[SQL to MySQL<br/>fetch rows in Typesense ref order]]
+    R --> S[[SQL to MySQL, 1,000 refs per query<br/>rows returned in Typesense ref order]]
     S --> T[Return results array to core]
     T --> U[Results returned to caller / search page]
 
@@ -101,6 +101,30 @@ string once — leading `!command`+args, `field:value`, quoted phrases, keywords
 pagination, sort mapping, `$typesense_search_global_filter` append, `Compile`, `Execute`,
 [`Hydrate`](../../../plugins/typesense_search/include/typesense_search_functions.php:506). These always
 run identically, so they live in the pipeline, not the registry.
+
+### Result window
+`fetchrows` becomes the plan's `offset` and `limit` (`-1` = every row from the offset), and every
+request sends Typesense's `offset`/`limit`, so any offset works (the search page asks for
+`[offset − colcount, n]` when featured collections are listed first).
+- **Fetching:** the first request returns the total and up to 250 rows; `limit=0` (a `[0,0]` count)
+  returns just the total. Typesense returns at most 250 hits per request (more gives a 422), so the
+  rest of a bigger window is fetched 250 at a time in `multi_search` requests of up to 50 searches
+  (Typesense's default `limit_multi_searches`). Refs are de-duplicated, keeping the first position,
+  in case the index changes between requests. Only `ref` is requested.
+- **Cost:** each page costs more the deeper it is, because Typesense ranks every row before it. On
+  the live index (2026-09-24, through `typesense_search_execute()`): 10,000 rows 0.3 s, 25,000
+  1.5 s, 50,000 about 5 s, all 114,596 about 20 s. With one GET per page instead of `multi_search`
+  it was 1.3 s, 4 s, 10 s and 35 s. A window of more than `$typesense_search_max_rows` (default
+  25,000; 0 = no limit) falls back to MySQL, unless `$typesense_search_only` is on.
+- **Hydrate:** 1,000 refs per query, with the rows put back in Typesense's order in PHP. One query
+  would pass MySQL's limit of 65,535 placeholders at about 32,000 refs, and `ORDER BY FIELD` over a
+  long list is slow.
+- **Result shape, as core:** an array `fetchrows` returns `['total', 'data']`, keeping the total
+  even when `data` is empty. An integer `n` is zero-padded up to the total: `do_search()` pads full
+  rows only, `search_special()` refs-only results too (`$plan->special_search`, set for every mode
+  except the standard one). `-1` isn't padded, since every row is returned. Core ignores the offset
+  of `[x,-1]` for `x > 0` (a `sql_limit()` quirk); nothing calls it that way, and the plugin returns
+  the rows from `x`.
 
 ### `TypesenseQueryPlan` (accumulator)
 What modes/restrictions write into, compiled to Typesense params:
@@ -119,7 +143,7 @@ What modes/restrictions write into, compiled to Typesense params:
   standard restriction, mirroring core: `!collection`/`!list`/`!archivepending`/`!userpending`
   skip default archive states; `!contributions` bypasses custom-access for own resources.
   Restrictions are mode-aware and honour these flags.
-- `sort_by`, `page`, `per_page`, target collection
+- `sort_by`, the result window (`offset`, `limit`), target collection
 - `supported` + `fallback_reason` — any unit may veto → MySQL fallback.
 
 ### Shared step — keyword matching + node buckets (runs for every mode)
@@ -236,7 +260,8 @@ Same contract; each adds visibility/scope clauses regardless of mode.
 - `typesense_search_build_query($ctx)` — pick the one applicable mode → `build`; then run every
   restriction → `build`; if anything vetoes, return null → hook returns `false`.
 - `typesense_search_execute($plan)` — compile params (assemble `filter_by`, join filters,
-  `sort_by`, apply result cap), HTTP GET via [`typesense_search_request()`](../../../plugins/typesense_search/include/typesense_search_functions.php:600), extract refs + capped total.
+  `sort_by`, apply result cap), HTTP GET via [`typesense_search_request()`](../../../plugins/typesense_search/include/typesense_search_functions.php:600), then the rest of
+  a window over 250 rows via `multi_search` (see *Result window*), extract refs + capped total.
 - `typesense_search_do_search()` = thin driver: context → parse → build → execute → hydrate.
 
 ## What changes in code
@@ -441,6 +466,13 @@ fallbacks are needed for syntax reasons:
     restriction and `!last`.
 15. **OR-groups and full-text boolean:** ✅ both veto to core (harness). Before the veto, Typesense
     answered `sunset;beach` with 0 results — it AND-matched the tokens instead of ORing them.
+16. **Result window:** ✅ harness against the live index (2026-09-24), 40 checks, compared with a
+    plain page-by-page walk of the same query. `-1`, `[100,-1]`, `[45,48]`, `[0,251]`, `[0,1000]`, a
+    short last page and an offset past the end return exactly the expected refs and total; `[0,0]`
+    returns the total with no rows; `!last300` windows and a result cap trim correctly; collection 108
+    (329 members, join sort) and a keyword search keep their order across `multi_search` pages; over
+    `$typesense_search_max_rows` falls back unless Typesense-only. Hydrate (fake MySQL): 1,000 refs
+    per query, Typesense order kept, deleted refs dropped, zero-padding per the rules above.
 
 ### Planned: Typesense-vs-core parity testing via the RS API
 

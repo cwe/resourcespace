@@ -46,7 +46,7 @@ Typesense.
 | # | Difference | Evidence |
 |---|---|---|
 | 1 ⚠ | **`J` inside a collection returns nothing** unless the collection is itself a permitted featured collection. `TypesenseCollectionMode` and `TypesenseFeaturedCollectionsRestriction` each add a `$memberships(...)` join, and Typesense requires both to match the same membership document. | Live: collection 3837 gives 35 and 1,115 with each join alone, 0 together (Appendix A) |
-| 2 ⚠ | **Non-paged `fetchrows` is capped at 250 rows.** `-1` and `[x,-1]` become `per_page=250`, and integer `fetchrows` isn't zero-padded the way `search_special()` pads it. This hits the collection bar, the download, edit, share and feedback pages, and the API default. Two paths change data: `add_saved_search_items()` ("add all results to collection") adds only 250 resources, and the search page's selection clean-up (`pages/search.php`, `check_selection_collection`) removes selections past row 250. | Live: `!collection108` returns 250 of 328 |
+| 2 ⚠ | **Fixed 2026-09-24 (§2.4).** **Non-paged `fetchrows` is capped at 250 rows.** `-1` and `[x,-1]` become `per_page=250`, and integer `fetchrows` isn't zero-padded the way `search_special()` pads it. This hits the collection bar, the download, edit, share and feedback pages, and the API default. Two paths change data: `add_saved_search_items()` ("add all results to collection") adds only 250 resources, and the search page's selection clean-up (`pages/search.php`, `check_selection_collection`) removes selections past row 250. | Live: `!collection108` returns 250 of 328 |
 | 3 ⚠ | **Memberships are missing or stale.**<br>• **NULL `sortorder`**, the default from `add_resource_to_collection()`, can't be imported into the non-optional `int32` field. MySQL has **109,220** such rows and the index holds 44,801 docs in total, so most memberships are probably absent. Collection views, and `J`, silently miss those resources.<br>• Per-line import failures aren't detected, because the check looks for the literal `{"success":false}`. The reindex therefore reported them as indexed.<br>• There's no sync on save, and the full reindex only upserts, so removed members survive it.<br>• A member whose resource document isn't indexed can't be imported, because the reference needs it. | MySQL count vs index count. Exact split: see *Also found* |
 | 4 ⚠ | **The access check is looser than core's.** The plugin only calls `collection_readable()`. Core ([search_functions.php:1203-1238](../../../include/search_functions.php:1203)) also requires the collection to be one of the user's own, shared, public, selection, request or research collections, a permitted featured collection, or allowed by `$ignore_collection_access`. It also has an external-key path. `collection_readable()` is true for every collection for `R` and `h` users, and for `request_feedback` collections when `$collection_commenting` is on. Group-limited public collections and upload-share sessions differ too. The plugin also skips the check under `access_override`, which core doesn't. | Code |
 | 5 ◐ | **Ties are ordered differently.** The plugin sorts by `sortorder` only. Core sorts by `c.sortorder, c.date_added` (reversed), then `r.ref` ([search_functions.php:3184](../../../include/search_functions.php:3184)). | Live: collection 108 (180+ members share one `sortorder`) differs from row 20. The fix in Phase 0 matches 328/328 in both directions |
@@ -125,6 +125,13 @@ Typesense.
 
 **Recommended: F1.**
 
+**Decided (2026-09-24): F2 with a limit.** Measured on the live index, paging gets slower the deeper
+it goes: 10,000 rows take 0.3 s, 50,000 about 5 s, all 114,596 about 20 s. So up to `$typesense_search_max_rows`
+(default 25,000) rows are paged through Typesense, 250 per request, in `multi_search` batches of 50.
+A bigger request falls back to core, unless `$typesense_search_only` is on, when everything is paged.
+Integer `n` is zero-padded as core does, and a count-only search (`[0,0]`) keeps its total. See
+*Result window* in the architecture doc.
+
 ## 3. Phases
 
 ### Phase 0 — never serve a wrong collection result
@@ -134,7 +141,7 @@ Plugin changes plus one core helper, then a reindex.
 1. **Access check:** use G1. Don't skip it under `access_override`, and fall back for negative
    collection refs.
 2. **`J`:** use J1, and apply `J` under `access_override` as core does.
-3. **`fetchrows`:** use F1.
+3. **`fetchrows`:** done 2026-09-24 (F2 with a limit, see §2.4).
 4. **Default order, and the missing memberships:**
    - Sort by `$<prefix>resource_collection_memberships(sortorder:d,date_added:<opposite of d>),ref:d`.
    - Index NULL `sortorder` as −2147483648 and NULL `date_added` as 0. This reproduces MySQL's

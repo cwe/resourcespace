@@ -90,6 +90,15 @@ $page_def[] = config_add_boolean_select(
     $lang['typesense_search_show_indicator_help']
 );
 
+$page_def[] = config_add_text_input(
+    'typesense_search_max_rows',
+    $lang['typesense_search_max_rows'],
+    false,
+    420,
+    false,
+    $lang['typesense_search_max_rows_help']
+);
+
 config_gen_setup_post($page_def, $plugin_name);
 
 include '../../../include/header.php';

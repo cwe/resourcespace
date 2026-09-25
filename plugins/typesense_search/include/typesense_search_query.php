@@ -189,11 +189,18 @@ class TypesenseQueryPlan
     /** @var array<string,bool> Restrictions a mode has opted out of. */
     public array $suppressed = array();
 
-    /** @var int */
-    public int $page = 1;
+    /** @var int Offset of the first result to return, from fetchrows. */
+    public int $offset = 0;
 
-    /** @var int */
-    public int $per_page = 250;
+    /** @var int Number of results to return, from fetchrows, or -1 for every result from the offset. */
+    public int $limit = -1;
+
+    /**
+     * @var bool Whether core answers this search in search_special() (every mode except the
+     * standard one) rather than with do_search()'s own query. The two zero-pad an integer
+     * fetchrows result differently; see typesense_search_hydrate_refs().
+     */
+    public bool $special_search = false;
 
     /** @var string Target collection short name (without prefix), e.g. "resources". */
     public string $collection = 'resources';
@@ -350,7 +357,8 @@ class TypesenseQueryPlan
     }
 
     /**
-     * Compile the plan into the query parameters for the documents/search endpoint.
+     * Compile the plan into the query parameters for the documents/search endpoint. The result
+     * window (offset and limit) is added to each request by typesense_search_execute().
      *
      * @return array
      */
@@ -359,8 +367,6 @@ class TypesenseQueryPlan
         $params = array(
             'q' => $this->q === '' ? '*' : $this->q,
             'num_typos' => $this->num_typos,
-            'page' => $this->page,
-            'per_page' => $this->per_page,
             'validate_field_names' => 0,
             // Require every query token to match, mirroring core's AND keyword semantics
             // (Typesense would otherwise drop tokens to find more results).
@@ -902,12 +908,11 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
 {
     $plan = new TypesenseQueryPlan();
 
-    // Pagination is fixed plumbing.
+    // The result window is fixed plumbing: the rows core would return for this fetchrows, at any
+    // offset. A negative count (-1) means every row from the offset.
     setup_search_chunks($ctx->fetchrows, $chunk_offset, $search_chunk_size);
-    $plan->per_page = $search_chunk_size === -1 ? 250 : (int)$search_chunk_size;
-    $plan->page = $search_chunk_size > 0
-        ? (int)floor($chunk_offset / $search_chunk_size) + 1
-        : 1;
+    $plan->offset = (int)$chunk_offset;
+    $plan->limit = $search_chunk_size < 0 ? -1 : (int)$search_chunk_size;
 
     // Select and run the single applicable mode.
     $selected_mode = null;
@@ -922,6 +927,7 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
         return null;
     }
 
+    $plan->special_search = !($selected_mode instanceof TypesenseStandardSearchMode);
     $selected_mode->build($ctx, $plan);
 
     if (!$plan->supported) {
@@ -970,21 +976,54 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
  */
 function typesense_search_recent_cutoff(TypesenseQueryPlan $plan, int $n): ?int
 {
-    global $typesense_search_collection_prefix;
-
     if ($n < 1) {
         return null;
     }
 
-    $per_page = min($n, 250); // Typesense caps per_page at 250
-    $page = (int)ceil($n / $per_page);
-
     $params = $plan->compileParams();
-    // Override sort/paging to walk to the Nth newest; only the ref is needed.
+    // Sort newest first and fetch just the Nth row; only the ref is needed.
     $params['sort_by'] = 'ref:desc';
-    $params['per_page'] = $per_page;
-    $params['page'] = $page;
     $params['include_fields'] = 'ref';
+
+    $window = typesense_search_fetch_window($plan, $params, $n - 1, 1);
+    if ($window === false) {
+        return null;
+    }
+
+    // Fewer than (or exactly) N matches: the whole set is the result, no cutoff required.
+    if ($window['found'] <= $n) {
+        return null;
+    }
+
+    return $window['refs'][0] ?? null;
+}
+
+
+/**
+ * Append the resource refs of a page of Typesense hits to $refs.
+ */
+function typesense_search_collect_refs(array $hits, array &$refs): void
+{
+    foreach ($hits as $hit) {
+        if (isset($hit['document']['ref'])) {
+            $refs[] = (int)$hit['document']['ref'];
+        }
+    }
+}
+
+
+/**
+ * Run one documents/search request for rows $offset to $offset + $limit - 1 of a compiled query.
+ * $limit can be at most 250, the most hits Typesense returns per request; 0 fetches just the total.
+ *
+ * @return array{found:int,refs:int[]}|false
+ */
+function typesense_search_fetch_window(TypesenseQueryPlan $plan, array $params, int $offset, int $limit)
+{
+    global $typesense_search_collection_prefix;
+
+    $params['offset'] = $offset;
+    $params['limit'] = $limit;
 
     $endpoint =
         '/collections/'
@@ -994,32 +1033,77 @@ function typesense_search_recent_cutoff(TypesenseQueryPlan $plan, int $n): ?int
 
     $result = typesense_search_request('GET', $endpoint);
     if ($result === false || !isset($result['hits']) || !is_array($result['hits'])) {
-        return null;
+        return false;
     }
 
-    // Fewer than (or exactly) N matches: the whole set is the result, no cutoff required.
-    if ((int)($result['found'] ?? 0) <= $n) {
-        return null;
-    }
+    $refs = array();
+    typesense_search_collect_refs($result['hits'], $refs);
 
-    // The Nth newest overall sits at this index within the fetched page.
-    $index = ($n - 1) - ($page - 1) * $per_page;
-    if (!isset($result['hits'][$index]['document']['ref'])) {
-        return null;
-    }
-
-    return (int)$result['hits'][$index]['document']['ref'];
+    return array('found' => (int)($result['found'] ?? count($refs)), 'refs' => $refs);
 }
 
 
 /**
- * Execute a compiled query plan against Typesense and return ordered refs + total.
+ * Fetch $count rows of a compiled query from $offset on, 250 per page. The pages are sent in
+ * multi_search requests of up to 50 searches (Typesense's default limit_multi_searches), which
+ * saves a round trip per page.
  *
- * @return array{refs:int[],total:int}|false
+ * @return int[]|false Refs in result order.
+ */
+function typesense_search_fetch_pages(TypesenseQueryPlan $plan, array $params, int $offset, int $count)
+{
+    global $typesense_search_collection_prefix;
+
+    $page_size = 250;
+    $searches = array();
+    for ($start = $offset; $start < $offset + $count; $start += $page_size) {
+        $searches[] = array_merge($params, array(
+            'collection' => $typesense_search_collection_prefix . $plan->collection,
+            'offset' => $start,
+            'limit' => min($page_size, $offset + $count - $start),
+        ));
+    }
+
+    $refs = array();
+    foreach (array_chunk($searches, 50) as $batch) {
+        $response = typesense_search_request('POST', '/multi_search', false, array('searches' => $batch));
+        if (
+            $response === false
+            || !isset($response['results'])
+            || !is_array($response['results'])
+            || count($response['results']) !== count($batch)
+        ) {
+            return false;
+        }
+
+        foreach ($response['results'] as $result) {
+            // A search that fails reports its error in place of hits; the response is still HTTP 200.
+            if (!isset($result['hits']) || !is_array($result['hits'])) {
+                debug('typesense_search_fetch_pages(): search failed: ' . ($result['error'] ?? 'no hits returned'));
+                return false;
+            }
+            typesense_search_collect_refs($result['hits'], $refs);
+        }
+    }
+
+    return $refs;
+}
+
+
+/**
+ * Execute a compiled query plan against Typesense. Returns the refs in the plan's result window,
+ * in order, and the total number of matches.
+ *
+ * Typesense returns at most 250 hits per request, so a bigger window (fetchrows -1 asks for every
+ * result) is fetched a page at a time. Each page gets slower the deeper it is, as Typesense ranks
+ * every row before it, so a window of more than $typesense_search_max_rows results is left to the
+ * MySQL search instead, unless $typesense_search_only is on.
+ *
+ * @return array{refs:int[],total:int}|false False to fall back to the MySQL search.
  */
 function typesense_search_execute(TypesenseQueryPlan $plan)
 {
-    global $typesense_search_collection_prefix;
+    global $typesense_search_only, $typesense_search_max_rows;
 
     // "Most-recent N" selection (!last<num>): restrict the set to the N highest-ref matches via a
     // ref cutoff, then let the plan's own (user-chosen) sort order them. Mirrors core's !last,
@@ -1034,39 +1118,49 @@ function typesense_search_execute(TypesenseQueryPlan $plan)
     }
 
     $params = $plan->compileParams();
+    // Only the ref of each hit is used.
+    $params['include_fields'] = 'ref';
 
-    $endpoint =
-        '/collections/'
-        . rawurlencode($typesense_search_collection_prefix . $plan->collection)
-        . '/documents/search?'
-        . http_build_query($params);
-
-    $result = typesense_search_request('GET', $endpoint);
-
-    if ($result === false || !isset($result['hits']) || !is_array($result['hits'])) {
+    // The first request returns the total along with the start of the window. It's sent even when
+    // the window is empty (fetchrows 0, a count-only search) because the total is still needed.
+    $first_limit = $plan->limit < 0 ? 250 : min($plan->limit, 250);
+    $first = typesense_search_fetch_window($plan, $params, $plan->offset, $first_limit);
+    if ($first === false) {
         return false;
     }
 
-    debug('typesense_search_execute(): found=' . ($result['found'] ?? 'unknown'));
+    debug('typesense_search_execute(): found=' . $first['found']);
 
-    $refs = array();
-    foreach ($result['hits'] as $hit) {
-        if (isset($hit['document']['ref'])) {
-            $refs[] = (int)$hit['document']['ref'];
-        }
+    // A result cap (e.g. !last<num>) limits the total, and so the rows that can be returned.
+    $total = $plan->result_limit !== null ? min($first['found'], $plan->result_limit) : $first['found'];
+
+    // Rows in the window: from the offset to the end of the results, or fewer if fetchrows asked
+    // for fewer.
+    $window = max(0, $total - $plan->offset);
+    if ($plan->limit >= 0) {
+        $window = min($window, $plan->limit);
     }
 
-    $total = (int)($result['found'] ?? count($refs));
+    $refs = array_slice($first['refs'], 0, $window);
 
-    // Apply a result cap (e.g. !last<num>): trim both the reported total and any refs on this
-    // page that fall beyond the cap.
-    if ($plan->result_limit !== null) {
-        $total = min($total, $plan->result_limit);
-        $page_start = ($plan->page - 1) * $plan->per_page;
-        $allowed_on_page = max(0, $plan->result_limit - $page_start);
-        if (count($refs) > $allowed_on_page) {
-            $refs = array_slice($refs, 0, $allowed_on_page);
+    if ($window > $first_limit) {
+        $max_rows = (int)$typesense_search_max_rows;
+        if (empty($typesense_search_only) && $max_rows > 0 && $window > $max_rows) {
+            debug(
+                'typesense_search_execute(): ' . $window . ' rows requested, more than $typesense_search_max_rows ('
+                . $max_rows . '), so the MySQL search will handle it'
+            );
+            return false;
         }
+
+        $more = typesense_search_fetch_pages($plan, $params, $plan->offset + $first_limit, $window - $first_limit);
+        if ($more === false) {
+            return false;
+        }
+
+        // A change to the index between requests can move a resource onto a later page as well;
+        // keep its first position.
+        $refs = array_values(array_unique(array_merge($refs, $more)));
     }
 
     return array('refs' => $refs, 'total' => $total);
@@ -1097,7 +1191,8 @@ function typesense_search_run(TypesenseSearchContext $ctx)
         $ctx->fetchrows,
         $ctx->return_refs_only,
         $ctx->select,
-        (string)$ctx->order_by
+        (string)$ctx->order_by,
+        $plan->special_search
     );
 }
 

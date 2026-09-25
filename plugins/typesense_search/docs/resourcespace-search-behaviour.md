@@ -346,12 +346,18 @@ fields, rather than silently substituting relevance.
 `fetchrows` controls the window and the **return format**
 ([do_search.php:418-477](../../../include/do_search.php:418)):
 
-- **`-1`** (default) — all rows, returned as a **flat array padded with `0` entries** up to the true
-  total (legacy behaviour so callers can page by index).
-- **integer `n`** — first `n` rows, still padded to the total.
+- **`-1`** (default) — every row, as a flat array. Nothing is padded, because every row is
+  returned.
+- **integer `n`** — the first `n` rows as a flat array, **padded with `0` entries** up to the true
+  total (legacy behaviour so callers can `count()` or page by index). `do_search()` pads full rows
+  only; `search_special()` pads refs-only results too
+  ([search_functions.php:1799-1814](../../../include/search_functions.php:1799)).
 - **`[offset, limit]` array** — returns the structured `['total'=>…, 'data'=>[…]]` from
-  `sql_limit_with_total_count()`, **not padded**. The main search-results grid uses this form.
+  `sql_limit_with_total_count()`, **not padded**; `[0,0]` returns just the total. The main
+  search-results grid uses this form. `[x,-1]` with `x > 0` returns every row from the start:
+  `sql_limit()` drops the whole `LIMIT` when the count is negative, offset included.
 - **`return_refs_only`** — returns `[{ref}, …]` (or the structured form for an array `fetchrows`).
+  A special search returns its reduced column list rather than just `ref`.
 - **`returnsql`** — returns the `PreparedStatementQuery` (SQL + params), executing nothing.
 - **`return_disk_usage`** — wraps the query to return `SUM(disk_usage)` / counts instead of rows.
 

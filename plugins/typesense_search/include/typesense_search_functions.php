@@ -183,7 +183,8 @@ function typesense_search_get_query_field(array $field): ?string
 
 
 /**
- * Hydrate Typesense resource refs into the standard ResourceSpace search result structure.
+ * Hydrate Typesense resource refs into the standard ResourceSpace search result structure, in the
+ * shape core returns for the same fetchrows.
  *
  * @param array $refs Ordered resource refs from Typesense.
  * @param int $total Total number of matches reported by Typesense.
@@ -191,6 +192,8 @@ function typesense_search_get_query_field(array $field): ?string
  * @param bool $return_refs_only Whether only resource refs should be returned.
  * @param PreparedStatementQuery $select Existing ResourceSpace SELECT fields.
  * @param string $order_by The order by SQL from the standard ResourceSpace search construction.
+ * @param bool $special_search Whether core answers the search in search_special(), which zero-pads
+ *                             refs-only results as well.
  *
  * @return array ResourceSpace-compatible search results.
  */
@@ -200,101 +203,84 @@ function typesense_search_hydrate_refs(
     $fetchrows,
     bool $return_refs_only,
     PreparedStatementQuery $select,
-    string $order_by
+    string $order_by,
+    bool $special_search = false
 ): array {
-    if (count($refs) === 0) {
-        return is_array($fetchrows)
-            ? array('total' => 0, 'data' => array())
-            : array();
-    }
-
     setup_search_chunks($fetchrows, $chunk_offset, $search_chunk_size);
 
-    $ref_placeholders = ps_param_insert(count($refs));
-    $field_placeholders = ps_param_insert(count($refs));
+    $rows = array();
 
-    $ref_params = array();
-    $field_params = array();
+    if (count($refs) > 0) {
+        if ($return_refs_only) {
+            $select_sql = 'SELECT r.ref FROM resource r';
+            $select_params = array();
+        } else {
+            // For non-'v' users, $select (built by do_search) references the rca/rca2 custom-access
+            // columns (group_access/user_access/resultant_access). Reproduce the resource_custom_access
+            // joins from do_search so those columns resolve; otherwise MySQL errors on unknown columns.
+            // Placeholder order in the SQL: SELECT (select params) -> JOIN (rca params) -> WHERE (refs).
+            $custom_access_join = '';
+            $custom_access_params = array();
+            if (strpos($select->sql, 'rca.') !== false || strpos($select->sql, 'rca2.') !== false) {
+                global $userref, $usergroup;
+                $custom_access_join =
+                    ' LEFT OUTER JOIN resource_custom_access rca2'
+                    . ' ON r.ref = rca2.resource AND rca2.user = ?'
+                    . ' AND (rca2.user_expires IS NULL OR rca2.user_expires > now()) AND rca2.access <> 2'
+                    . ' LEFT OUTER JOIN resource_custom_access rca'
+                    . ' ON r.ref = rca.resource AND rca.usergroup = ? AND rca.access <> 2';
+                $custom_access_params = array('i', (int)$userref, 'i', (int)$usergroup);
+            }
 
-    foreach ($refs as $ref) {
-        $ref_params[] = 'i';
-        $ref_params[] = (int)$ref;
-
-        $field_params[] = 'i';
-        $field_params[] = (int)$ref;
-    }
-
-    $query = new PreparedStatementQuery();
-
-    if ($return_refs_only) {
-        $query->sql =
-            'SELECT r.ref'
-            . ' FROM resource r'
-            . ' WHERE r.ref IN (' . $ref_placeholders . ')'
-            . ' AND r.ref > 0';
-
-        $query->parameters = $ref_params;
-    } else {
-        // For non-'v' users, $select (built by do_search) references the rca/rca2 custom-access
-        // columns (group_access/user_access/resultant_access). Reproduce the resource_custom_access
-        // joins from do_search so those columns resolve; otherwise MySQL errors on unknown columns.
-        // Placeholder order in the SQL: SELECT (select params) -> JOIN (rca params) -> WHERE (refs).
-        $custom_access_join = '';
-        $custom_access_params = array();
-        if (strpos($select->sql, 'rca.') !== false || strpos($select->sql, 'rca2.') !== false) {
-            global $userref, $usergroup;
-            $custom_access_join =
-                ' LEFT OUTER JOIN resource_custom_access rca2'
-                . ' ON r.ref = rca2.resource AND rca2.user = ?'
-                . ' AND (rca2.user_expires IS NULL OR rca2.user_expires > now()) AND rca2.access <> 2'
-                . ' LEFT OUTER JOIN resource_custom_access rca'
-                . ' ON r.ref = rca.resource AND rca.usergroup = ? AND rca.access <> 2';
-            $custom_access_params = array('i', (int)$userref, 'i', (int)$usergroup);
+            $select_sql =
+                'SELECT r.hit_count score, ' . $select->sql
+                . ' FROM resource r'
+                . ' JOIN resource_type AS rty ON r.resource_type = rty.ref'
+                . $custom_access_join;
+            $select_params = array_merge($select->parameters, $custom_access_params);
         }
 
-        $query->sql =
-            'SELECT r.hit_count score, ' . $select->sql
-            . ' FROM resource r'
-            . ' JOIN resource_type AS rty ON r.resource_type = rty.ref'
-            . $custom_access_join
-            . ' WHERE r.ref IN (' . $ref_placeholders . ')'
-            . ' AND r.ref > 0';
+        debug('typesense_search_hydrate_refs(): candidate refs=' . count($refs));
 
-        $query->parameters = array_merge(
-            $select->parameters,
-            $custom_access_params,
-            $ref_params
-        );
-    }
+        // Query 1,000 refs at a time. One query for a large result would pass MySQL's limit of
+        // 65,535 placeholders.
+        $rows_by_ref = array();
+        foreach (array_chunk($refs, 1000) as $batch) {
+            $sql = $select_sql . ' WHERE r.ref IN (' . ps_param_insert(count($batch)) . ') AND r.ref > 0 GROUP BY r.ref';
+            $params = array_merge($select_params, ps_param_fill($batch, 'i'));
 
-    $query->sql .=
-        ' GROUP BY r.ref'
-        . ' ORDER BY FIELD(r.ref, ' . $field_placeholders . ')';
+            debug('typesense_search_hydrate_refs(): sql=' . $sql);
+            debug('typesense_search_hydrate_refs(): params=' . print_r($params, true));
 
-    $query->parameters = array_merge($query->parameters, $field_params);
+            foreach (ps_query($sql, $params) as $row) {
+                $rows_by_ref[(int)$row['ref']] = $row;
+            }
+        }
 
-    debug('typesense_search_hydrate_refs(): candidate refs=' . count($refs));
-    debug('typesense_search_hydrate_refs(): sql=' . $query->sql);
-    debug('typesense_search_hydrate_refs(): params=' . print_r($query->parameters, true));
-
-    $rows = ps_query($query->sql, $query->parameters);
-    $paged_rows = $rows;
-
-    if ($return_refs_only) {
-        $paged_rows = array_map(
-            function ($row) {
-                return array('ref' => (int)$row['ref']);
-            },
-            $paged_rows
-        );
+        // Return the rows in Typesense's order. A ref with no row (a resource deleted since it was
+        // indexed) is dropped.
+        foreach ($refs as $ref) {
+            if (isset($rows_by_ref[$ref])) {
+                $rows[] = $return_refs_only ? array('ref' => (int)$ref) : $rows_by_ref[$ref];
+            }
+        }
     }
 
     if (is_array($fetchrows)) {
-        return array('total' => $total, 'data' => $paged_rows);
+        return array('total' => $total, 'data' => $rows);
     }
-    else  {
-        return $paged_rows;
+
+    // Like core, pad an integer fetchrows result with 0 entries up to the total, so callers can
+    // count() it. do_search() pads full rows only; search_special() pads refs-only results too.
+    // fetchrows -1 returns every row, so there's nothing to pad.
+    if ($search_chunk_size > 0 && count($rows) > 0 && ($special_search || !$return_refs_only)) {
+        // Padded 1,000,000 at a time, as core does.
+        for ($missing = $total - count($rows); $missing > 0; $missing -= 1000000) {
+            $rows = array_merge($rows, array_fill(0, min($missing, 1000000), 0));
+        }
     }
+
+    return $rows;
 }
 
 
