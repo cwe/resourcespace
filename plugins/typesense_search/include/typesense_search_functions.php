@@ -183,6 +183,23 @@ function typesense_search_get_query_field(array $field): ?string
 
 
 /**
+ * The SELECT column list core built, made runnable against the resource table alone.
+ *
+ * For a search with node buckets core rewrites the hit-count column to aggregate the per-node
+ * join rows - ", (SUM(r.hit_count) + SUM(rn0.hit_count +rn1.hit_count))  total_hit_count"
+ * (do_search_nodes.php) - and those rn<N> joins exist only in core's own query. Hydrate has no
+ * such joins, so the expression fails to prepare (every fixed-list or "@@" search errored).
+ * The plain hit count is used instead; nothing in the plugin ranks by it.
+ *
+ * @param string $sql The $select->sql passed to the search hook.
+ */
+function typesense_search_hydrate_select_sql(string $sql): string
+{
+    return preg_replace('/\(SUM\(r\.hit_count\)\s*\+\s*SUM\([^()]*\)\)\s*total_hit_count/', 'r.hit_count total_hit_count', $sql);
+}
+
+
+/**
  * Hydrate Typesense resource refs into the standard ResourceSpace search result structure, in the
  * shape core returns for the same fetchrows.
  *
@@ -233,7 +250,7 @@ function typesense_search_hydrate_refs(
             }
 
             $select_sql =
-                'SELECT r.hit_count score, ' . $select->sql
+                'SELECT r.hit_count score, ' . typesense_search_hydrate_select_sql($select->sql)
                 . ' FROM resource r'
                 . ' JOIN resource_type AS rty ON r.resource_type = rty.ref'
                 . $custom_access_join;

@@ -25,6 +25,12 @@ dedicated section below.
 ## Status (23 Sep 2026)
 
 The pipeline below is built and serving searches. Changes since this plan was written:
+- **Free-text wildcard (`word*`) never reached Typesense** — the request carried `prefix=true,true`,
+  a per-field list Typesense rejects with a 400 once `query_by` has more than two fields, so every
+  wildcard search fell back to MySQL (or came back empty in Typesense-only mode; found by the RS-API
+  A/B run, 2026-09-29). Now a single `prefix=true`; a wildcarded word anywhere in the search is moved
+  to the end, since Typesense prefixes only the last token; two or more wildcarded words veto.
+  **[FIXED]**
 - **Sorting in `!last` and `!collection`** — both modes forced their own order (`ref:desc`,
   `sortorder:asc`), so the sort dropdown did nothing on the home/recent view (`!last<n>`) or inside a
   collection. Both now honour an explicit sort — see the modes below. **[FIXED]**
@@ -225,7 +231,10 @@ adds only its own scope (filters/sort/cap/joins) — keyword matching is the sha
   Consequence for `J` any-collection mode: a resource whose only membership is such a collection
   is not counted, unlike core's join. **[BUILT — decided 2026-09-29]**
 - `LastMode` — `!last<num>`: `setRecentSelection(N)` (default 1000) — the newest N by ref, shown in
-  the user's chosen sort; it sets no sort of its own. **[FIXED — it used to force `ref:desc`, so the
+  the user's chosen sort; it sets no sort of its own. N is read as core reads it — everything after
+  `!last` up to the first comma — so with text after the number (`!last50 sunset`) it is not numeric
+  and means 1000, the keyword still refining, exactly as core. **[FIXED 2026-09-29 — it used to
+  honour the 50]** **[FIXED — it used to force `ref:desc`, so the
   sort dropdown did nothing on the home/recent view]**
 - `UnsupportedSpecialMode` — recognises any `!command` no other mode claims (buckets B and C below,
   plus `!unused`) and vetoes → MySQL fallback.
@@ -360,7 +369,7 @@ Pre-hook order of operations: `resolve_given_nodes` ([:111](../../../include/do_
   node buckets are a **shared step** (`typesense_apply_keyword_matching()`) run by the
   orchestrator for **every** mode, so a special search's scope and keyword/node matching combine
   (`q="sunset"` + `$memberships(collection_ref:=123)` + `nodes:=[…]`; `!last50 sunset` caps the
-  keyword matches). A text/date `field:value` inside any mode now composes as a filter; a negative
+  keyword matches — at 1000, as core, since the number is lost once text follows it). A text/date `field:value` inside any mode now composes as a filter; a negative
   field search, OR-group or full-text search inside any mode still vetoes.
   [**SUPPORTED**] (This also fixed a bug where a special search + node refine silently returned
   the unfiltered scope.)
@@ -469,7 +478,8 @@ fallbacks are needed for syntax reasons:
    is identical to "Resource ID descending".
 10. **Special + keyword / node refine:** `!collection<id> <term>` returns collection members
     matching `<term>`; a fixed-list refine within `!collection<id>` filters by that node;
-    `!last50 <term>` returns the 50 most-recent matches. A text/date `field:value` within a special
+    `!last50 <term>` returns the 1000 most-recent matches, as core does (the number is lost once
+    text follows it; A/B-verified 2026-09-29). A text/date `field:value` within a special
     search composes; a negative field search falls back.
 11. **Access parity:** ✅ live-validated on the real 112k index — the 73 confidential resources are
     hidden from an ungranted user; restricted (access=1) and open stay visible; a user granted to a

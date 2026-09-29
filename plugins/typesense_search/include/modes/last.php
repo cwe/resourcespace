@@ -19,7 +19,11 @@ class TypesenseLastMode implements TypesenseSearchComponent
 
     public function build(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
     {
-        $num = is_int_loose($ctx->command_arg) ? (int)$ctx->command_arg : 1000;
+        // The count is taken exactly as core takes it (search_special(), "!last"): everything after
+        // "!last" up to the first comma. So text after the number - "!last50 sunset" - makes it
+        // non-numeric and core silently uses 1000, while the keyword still refines the matches.
+        $arg = str_replace('!last', '', explode(',', $ctx->search)[0]);
+        $num = is_int_loose($arg) ? (int)$arg : 1000;
 
         $plan->q = '*';
         $plan->setRecentSelection($num);

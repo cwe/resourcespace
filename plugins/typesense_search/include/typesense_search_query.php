@@ -555,8 +555,11 @@ function typesense_apply_keyword_matching(TypesenseSearchContext $ctx, Typesense
     }
     $plan->q = $q === '' ? '*' : $q;
 
+    // One value applies to every query_by field. (A per-field list must have exactly one entry
+    // per field, or Typesense rejects the whole request with a 400.) Typesense prefixes the last
+    // token only; typesense_build_q_from_keywords() moves a wildcarded word there.
     if ($ctx->wildcard || !empty($wildcard_always_applied)) {
-        $plan->prefix = 'true,true';
+        $plan->prefix = 'true';
     }
 
     // query_by - title (only when viewable) carries the highest weight; ref_s lets a resource
@@ -588,6 +591,7 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
     global $FIXED_LIST_FIELD_TYPES;
 
     $terms = array();
+    $wildcard_terms = array();
 
     foreach ($ctx->keywords as $keyword) {
         $keyword = trim((string)$keyword);
@@ -651,14 +655,31 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
             return '';
         }
 
-        if (substr($keyword, -1) === '*') {
-            $keyword = substr($keyword, 0, -1); // trailing wildcard handled via prefix
+        $is_wildcard = substr($keyword, -1) === '*';
+        if ($is_wildcard) {
+            $keyword = substr($keyword, 0, -1); // the wildcard becomes Typesense's prefix flag
         }
 
         $keyword = trim($keyword);
         if ($keyword !== '') {
-            $terms[] = $keyword;
+            if ($is_wildcard) {
+                $wildcard_terms[] = $keyword;
+            } else {
+                $terms[] = $keyword;
+            }
         }
+    }
+
+    // Typesense treats only the last query token as a prefix, so a wildcarded word ("sculpt*
+    // park") is moved to the end - the token order does not change the AND-matched set. Two or
+    // more wildcarded words cannot be expressed -> veto to core.
+    if (count($wildcard_terms) > 1) {
+        $plan->markUnsupported('more than one wildcard keyword not handled by Typesense');
+        return '';
+    }
+    if (count($wildcard_terms) === 1) {
+        $terms[] = $wildcard_terms[0];
+        $plan->prefix = 'true';
     }
 
     return trim(implode(' ', $terms));
