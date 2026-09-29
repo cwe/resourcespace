@@ -3,10 +3,10 @@
 /**
  * Standard visibility/scope restrictions applied under every mode - the Typesense equivalent of
  * the bulk of core search_filter(): resource type, archive state (defaults + workflow perms),
- * created-by filter, recent-search day limit and pending-state hiding.
+ * created-by filter, recent-search day limit and pending-state hiding (with the "ert" resource
+ * type exemption, $uploader_view_override and the external-share exemption, as in core).
  *
- * Note: restricted-resource custom access grants (access = 2) are handled by a separate
- * AccessRestriction (planned) and are not enforced here yet.
+ * Confidential / custom access grants are handled by AccessRestriction, not here.
  */
 class TypesenseStandardRestrictions implements TypesenseSearchComponent
 {
@@ -110,6 +110,7 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
     private function applyArchive(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
     {
         global $search_all_workflow_states, $archive_standard, $additional_archive_states, $userpermissions;
+        global $uploader_view_override, $collection_allow_not_approved_share;
 
         // Match core: only valid integer archive states count (a stray "" must not become 0).
         $archive = array_values(array_filter($ctx->archive, 'is_int_loose'));
@@ -128,7 +129,8 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
             }
         }
 
-        // "z" permission: exclude the blocked archive states.
+        // "z" permission: exclude the blocked archive states. With $uploader_view_override a user
+        // still sees their own resources in a blocked state, as in core.
         $blocked = array();
         for ($n = -2; $n <= 3; $n++) {
             if (checkperm('z' . $n)) {
@@ -141,26 +143,35 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
             }
         }
         if (count($blocked) > 0) {
-            $plan->addFilter('archive:!=[' . implode(',', $blocked) . ']');
+            $blocked_clause = 'archive:!=[' . implode(',', $blocked) . ']';
+            if (!empty($uploader_view_override)) {
+                $plan->addFilterOr(array($blocked_clause, 'created_by:=' . $ctx->userref));
+            } else {
+                $plan->addFilter($blocked_clause);
+            }
         }
 
-        // Hide resources in a pending state (unless "v"), except your own or "ert" types.
-        if (!checkperm('v') && !$plan->isSuppressed('pending')) {
+        // Hide resources in a pending state (-2 / -1) from users without "v", except the user's own
+        // resources and the resource types the user has "ert" permission for. Core's
+        // ((archive<>-2 OR created_by=U) AND (archive<>-1 OR created_by=U)) OR resource_type IN (ert)
+        // is archive NOT IN (-2,-1) OR created_by=U OR resource_type IN (ert). As in core, the hide
+        // is skipped when a collection is viewed through an external share key and
+        // $collection_allow_not_approved_share is set.
+        $shared_pending_allowed = $ctx->command === 'collection'
+            && $ctx->k !== ''
+            && !empty($collection_allow_not_approved_share);
+        if (!checkperm('v') && !$shared_pending_allowed && !$plan->isSuppressed('pending')) {
             $ert = array();
             foreach ((array)$userpermissions as $perm) {
                 if (substr($perm, 0, 3) === 'ert' && is_numeric(substr($perm, 3))) {
                     $ert[] = (int)substr($perm, 3);
                 }
             }
-            $clauses = array(
-                '(archive:!=-2 || created_by:=' . $ctx->userref . ')',
-                '(archive:!=-1 || created_by:=' . $ctx->userref . ')',
-            );
-            foreach ($clauses as $clause) {
-                $plan->addFilter($clause);
+            $clauses = array('archive:!=[-2,-1]', 'created_by:=' . $ctx->userref);
+            if (count($ert) > 0) {
+                $clauses[] = 'resource_type:=[' . implode(',', array_unique($ert)) . ']';
             }
-            // Note: "ert" resource-type exemption from pending-hiding is not modelled here yet;
-            // it would need to OR the whole pending block with resource_type:=[ert].
+            $plan->addFilterOr($clauses);
         }
     }
 }

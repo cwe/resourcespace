@@ -1005,7 +1005,11 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
         $resources[$key]['id'] = (string) $resource['ref'];
         $resources[$key]['ref_s'] = (string) $resource['ref'];
         
+        // Default both node-derived array fields to the 0 sentinel. The attributes pass replaces
+        // them with the real lists (which keep the sentinel), but it only visits resources that have
+        // at least one node, so a resource with no metadata would otherwise get nodes only.
         $resources[$key]['nodes'] = [0];
+        $resources[$key]['populated_field_ids'] = [0];
 
         // Populate the title field
 

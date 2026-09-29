@@ -19,7 +19,7 @@ class TypesenseCollectionMode implements TypesenseSearchComponent
         global $collections_omit_archived, $allow_smart_collections, $smart_collections_async;
         global $php_path, $remote_config, $host;
 
-        $collection = (int)preg_replace('/[^0-9-]/', '', $ctx->command_arg);
+        $collection = typesense_search_collection_ref($ctx);
 
         // Collection readability gate. If the user can't view this collection, fall back to core
         // (which returns an empty result set) rather than exposing its members.

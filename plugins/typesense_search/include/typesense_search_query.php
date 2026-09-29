@@ -83,6 +83,9 @@ class TypesenseSearchContext
     /** @var int Current user's primary group ref. */
     public int $usergroup = 0;
 
+    /** @var string External share access key ($k) for this request, or '' when not viewing a share. */
+    public string $k = '';
+
     // --- Parsed components (filled by typesense_parse_search()) ---
 
     /** @var string|null Special command name without the leading "!" (e.g. "collection"), or null. */
@@ -117,6 +120,7 @@ class TypesenseSearchContext
 
         $ctx->userref = (int)($GLOBALS['userref'] ?? 0);
         $ctx->usergroup = (int)($GLOBALS['usergroup'] ?? 0);
+        $ctx->k = (string)($GLOBALS['k'] ?? '');
 
         typesense_parse_search($ctx);
 
@@ -434,6 +438,17 @@ function typesense_parse_search(TypesenseSearchContext $ctx): void
     }
 
     $ctx->terms = array_values(array_filter(preg_split('/\s+/', trim($remaining)), 'strlen'));
+}
+
+
+/**
+ * The collection ref of a !collection search, parsed the way core does (search_special(): the
+ * first space-separated token, then the part before the first comma, cast to int), so
+ * "!collection123,456" is collection 123.
+ */
+function typesense_search_collection_ref(TypesenseSearchContext $ctx): int
+{
+    return (int)explode(',', $ctx->command_arg)[0];
 }
 
 

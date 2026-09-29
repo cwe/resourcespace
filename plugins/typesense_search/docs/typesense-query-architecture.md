@@ -33,6 +33,15 @@ The pipeline below is built and serving searches. Changes since this plan was wr
 - **OR-groups (`red;green`) and full-text boolean searches** — now veto to core instead of being
   answered wrongly (Typesense has no equivalent). **[FIXED]**
 - **Numeric indexing** — `_f` was almost never written (a `$value == 1` bug). **[FIXED]**
+- **Pending-state rules** — the `ert` resource-type exemption, `$uploader_view_override` for
+  `z`-blocked states and the external-share exemption (`$k` with `$collection_allow_not_approved_share`,
+  `!collection` only) now match core in `StandardRestrictions`. **[FIXED, 25 Sep]**
+- **`J` inside a collection** — returned nothing unless the collection was itself a permitted featured
+  collection (two joins to the memberships collection must match the same document). Now the `J` join
+  is dropped when the collection is permitted (it would restrict nothing) and the search falls back to
+  core otherwise; `J` also applies under `access_override`, and with `j*` and no `-j` it accepts
+  membership of any collection, as core does. The collection id is parsed like core
+  (`!collection123,456` is 123). **[FIXED, 25 Sep]**
 - **Incremental (on-save) indexing is broken** — RS edits only reach Typesense via a full reindex.
   **[OPEN]** — see *Indexing gaps*; tracked as a separate task.
 - **Next: automated parity testing via the RS API** — run the same searches as a Typesense user and a
