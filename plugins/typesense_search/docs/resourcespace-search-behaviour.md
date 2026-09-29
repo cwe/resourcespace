@@ -496,6 +496,8 @@ Most combinations are served by Typesense (the ✅ rows above). The remaining di
 - **Full-text boolean phrase** (`@FULL_TEXT…`) — no `MATCH … IN BOOLEAN MODE` equivalent; vetoed.
 - **`!properties…`** (alone, multi-property, or with a keyword) — no `!properties` mode.
 - **`-field:value`** and **`field:value` on a non-viewable field** — deliberate vetoes.
+- **`!collection` of a selection or upload collection** (type 2, type 1, or a negative ref) — these
+  volatile per-user collections are deliberately not indexed, so the mode vetoes.
 - Beyond the combination matrix, every special without a dedicated mode also vetoes here:
   `!images`, `!nopreview`, `!geo`, `!colour`/`!colourkey`, `!rgb`, `!related`/`!relatedpushed`,
   `!duplicates`, `!nodownloads`, `!integrityfail`, `!locked`, `!noningested`, `!report`, `!unused`

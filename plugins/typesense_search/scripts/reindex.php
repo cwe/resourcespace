@@ -248,7 +248,7 @@ $passes = array(
     array(
         'name' => 'Memberships',
         'unit' => 'memberships',
-        'expected' => (int) ps_value('SELECT COUNT(*) value FROM collection_resource cr INNER JOIN collection c ON cr.collection = c.ref', array(), 0),
+        'expected' => (int) ps_value('SELECT COUNT(*) value FROM collection_resource cr INNER JOIN collection c ON cr.collection = c.ref WHERE ' . typesense_search_membership_indexed_sql('cr', 'c'), array(), 0),
         'cursor' => array('collection' => 0, 'resource' => 0),
         'run' => function (array &$cursor) use ($batch_size): array {
             $result = typesense_search_reindex_resource_collection_memberships($batch_size, $cursor['collection'], $cursor['resource']);
@@ -322,7 +322,7 @@ typesense_reindex_output();
 typesense_reindex_output('Typesense documents compared with MySQL rows');
 $comparisons = array(
     'resources' => 'SELECT COUNT(*) value FROM resource WHERE ref > 0',
-    'resource_collection_memberships' => 'SELECT COUNT(DISTINCT cr.collection, cr.resource) value FROM collection_resource cr INNER JOIN collection c ON cr.collection = c.ref',
+    'resource_collection_memberships' => 'SELECT COUNT(DISTINCT cr.collection, cr.resource) value FROM collection_resource cr INNER JOIN collection c ON cr.collection = c.ref WHERE ' . typesense_search_membership_indexed_sql('cr', 'c'),
     'resource_access_grants' => "SELECT COUNT(DISTINCT resource, IF(IFNULL(user, 0) > 0, CONCAT('u', user), CONCAT('g', IFNULL(usergroup, 0)))) value FROM resource_custom_access WHERE access <> 2 AND resource > 0",
 );
 foreach ($comparisons as $suffix => $sql) {

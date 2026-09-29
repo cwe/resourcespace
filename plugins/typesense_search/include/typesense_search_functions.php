@@ -1067,6 +1067,9 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
  * so pagination uses a keyset cursor on the composite (collection, resource) key - paging by
  * collection alone would skip the rest of a collection that straddles a batch boundary.
  *
+ * Selection and upload collections, and negative refs, are not indexed - see
+ * typesense_search_membership_indexed(); the reindex script counts with the same rule.
+ *
  * @param int $limit           Batch size.
  * @param int $after_collection Cursor: last collection processed.
  * @param int $after_resource   Cursor: last resource processed within $after_collection.
@@ -1084,7 +1087,8 @@ function typesense_search_reindex_resource_collection_memberships(int $limit = 1
             c.type as collection_type
             FROM collection_resource cr
             INNER JOIN collection c ON cr.collection = c.ref
-            WHERE cr.collection > ? OR (cr.collection = ? AND cr.resource > ?)
+            WHERE (cr.collection > ? OR (cr.collection = ? AND cr.resource > ?))
+              AND " . typesense_search_membership_indexed_sql('cr', 'c') . "
             ORDER BY cr.collection ASC, cr.resource ASC
             LIMIT ?;",
         array('i', $after_collection, 'i', $after_collection, 'i', $after_resource, 'i', $limit)

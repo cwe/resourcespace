@@ -55,6 +55,8 @@ class TypesenseFeaturedCollectionsRestriction implements TypesenseSearchComponen
         if ($accessible === true) {
             // j* with no exclusions: core's filter is empty, so membership of any collection
             // qualifies.
+            // Selection and upload collections are not indexed (typesense_search_membership_indexed()),
+            // so unlike core's join a resource whose only collection is one of those is not counted.
             $plan->addJoinFilter('resource_collection_memberships', 'collection_type:>=0');
         } else {
             $refs = implode(',', array_map('intval', $accessible));

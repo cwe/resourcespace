@@ -6,6 +6,9 @@
  * Constrains results to a collection's members (via a join to the memberships collection) and
  * orders them by the collection sort order. Collection membership does not itself grant resource
  * access - resource-level visibility is still enforced by the restrictions layer.
+ *
+ * Selection and upload collections (and negative refs) are not indexed, so a search of one is
+ * vetoed and core answers it - see typesense_search_membership_indexed().
  */
 class TypesenseCollectionMode implements TypesenseSearchComponent
 {
@@ -20,6 +23,13 @@ class TypesenseCollectionMode implements TypesenseSearchComponent
         global $php_path, $remote_config, $host;
 
         $collection = typesense_search_collection_ref($ctx);
+
+        // Selection and upload collections are deliberately not indexed (the selection bar and
+        // upload-then-edit are served by core), whatever the user's permissions.
+        if (!typesense_search_collection_indexed($collection)) {
+            $plan->markUnsupported('collection ' . $collection . ' is not indexed (selection/upload collection)');
+            return;
+        }
 
         // Collection readability gate. If the user can't view this collection, fall back to core
         // (which returns an empty result set) rather than exposing its members.

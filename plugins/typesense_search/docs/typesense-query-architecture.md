@@ -150,8 +150,11 @@ What modes/restrictions write into, compiled to Typesense params:
 - **Result cap** — `setResultLimit(n)` (report `total = min(found, n)`).
 - **Restriction suppression** — `suppressRestriction(name)` so a mode can opt out of a
   standard restriction, mirroring core: `!collection`/`!list`/`!archivepending`/`!userpending`
-  skip default archive states; `!contributions` bypasses custom-access for own resources.
-  Restrictions are mode-aware and honour these flags.
+  skip default archive states. `suppressAllRestrictions()`, `suppressKeywordMatching()` and
+  `setOpenAccess()` let a mode own the whole scope, as core's `search_special()` does when it
+  replaces `$sql_filter`/`$sql_join` outright — used by `!contributions` on the user's own resources
+  with `$open_access_for_contributor` (see the modes list). Restrictions are mode-aware and honour
+  these flags.
 - `sort_by`, the result window (`offset`, `limit`), target collection
 - `supported` + `fallback_reason` — any unit may veto → MySQL fallback.
 
@@ -215,6 +218,12 @@ adds only its own scope (filters/sort/cap/joins) — keyword matching is the sha
   default order** (a `c.sortorder…` `order_by`); any explicit sort (resource ID, date, modified,
   relevance) is left to the standard sort mapping, mirroring core's outer re-sort of the members.
   **[FIXED — it used to force `sortorder:asc`, so the sort dropdown did nothing in a collection]**
+  Selection collections (type 2) and upload collections (type 1, plus the per-user "New uploads"
+  collections with negative refs) are **not indexed** — they change on every click and upload — so
+  the mode vetoes a search of one (the selection bar, upload-then-edit) → core. The reindex's
+  expected and drift counts use the same rule (`typesense_search_membership_indexed_sql()`).
+  Consequence for `J` any-collection mode: a resource whose only membership is such a collection
+  is not counted, unlike core's join. **[BUILT — decided 2026-09-29]**
 - `LastMode` — `!last<num>`: `setRecentSelection(N)` (default 1000) — the newest N by ref, shown in
   the user's chosen sort; it sets no sort of its own. **[FIXED — it used to force `ref:desc`, so the
   sort dropdown did nothing on the home/recent view]**
@@ -224,7 +233,10 @@ adds only its own scope (filters/sort/cap/joins) — keyword matching is the sha
 The full `search_special()` audit (below) confirms every special search lands in a mode.
 
 **A. Built (data already indexed):** `!collection`, `!last`, `!list`/`!listall`
-(`ref:=[...]`), `!resource`/numeric (`ref:=`), `!contributions` (`created_by:=`), `!hasdata`
+(`ref:=[...]`), `!resource`/numeric (`ref:=`), `!contributions` (`created_by:=`; the user's own with
+`$open_access_for_contributor` replicates core's filter replacement — only `ref:>0` + the requested
+archive states, every restriction and the keyword/field/node criteria dropped, grant columns zeroed
+in the hydrate SELECT — quirks included), `!hasdata`
 (`populated_field_ids:=`), `!archivepending`/`!userpending` (`archive:=`). Keyword + node-bucket
 matching is the shared step, so it combines with any of these (e.g. `!collection123 sunset`).
 `!unused` (memberships absence-of-match) was planned here but **not built** — it currently vetoes
@@ -433,7 +445,8 @@ fallbacks are needed for syntax reasons:
    collection 4025 by default → its stored `sortorder`, by resource ID ascending → 127183, …).
 4. **Restrictions apply under every mode, and modes can suppress them:** type/access still
    constrain a `!collection` search, but its default-archive restriction is skipped (any archive
-   state), matching core; `!contributions` on own resources bypasses custom access.
+   state), matching core; `!contributions` on own resources with `$open_access_for_contributor`
+   drops every restriction and the keyword/node criteria, exactly as core does (item 18).
 5. **Extensibility proof:** each required case arrived as a new file + a registry entry, orchestrator untouched.
 6. **Fallback:** a vetoed search (`returnsql`, out-of-scope `!`, unindexed sort) → hook returns `false`, MySQL unchanged.
 7. **Config parity:** toggle `$stemming`, `$wildcard_always_applied`, `$config_search_for_number`,
@@ -492,6 +505,13 @@ fallbacks are needed for syntax reasons:
     empty / the *All* label / non-`v` users are ignored, `$access_override` does not suppress it) and
     read-only live counts on the 114,596-document index: `access:=0` 113,136, `access:=1` 1,387,
     `access:=2` 73, `access:=3` 0, summing to the total. No reindex: `access` was already indexed.
+18. **`!contributions` own / open-access replication:** ✅ stub harness (17 checks): own + option on →
+    `created_by:=U && ref:>0 && archive:=[requested]`, with keywords, `field:value`, node buckets,
+    `T`, `z`, pending, access (a `v` user's `$access` included) all dropped, the sort and the plugin's
+    global filter kept, a `""` archive entry bound as 0 as mysqli does, an empty list vetoed; another
+    user or the option off → the normal path; the hydrate SELECT gets `rca.access`/`rca2.access`
+    replaced by 0 (so no grant joins), a `v` SELECT untouched. Not live-testable on `ysp_`, where the
+    option is off.
 
 ### Planned: Typesense-vs-core parity testing via the RS API
 

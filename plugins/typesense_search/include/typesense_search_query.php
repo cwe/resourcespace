@@ -215,6 +215,15 @@ class TypesenseQueryPlan
     /** @var string|null */
     public ?string $fallback_reason = null;
 
+    /** @var bool False when a mode owns the whole scope of the search and the shared keyword /
+     *  field:value / node-bucket step must not run - see suppressKeywordMatching(). */
+    public bool $keyword_matching = true;
+
+    /** @var bool True when the results are presented as open access: hydrate zeroes the
+     *  custom-access columns in the SELECT, as core does for a user's own contributions with
+     *  $open_access_for_contributor - see setOpenAccess(). */
+    public bool $open_access = false;
+
     /**
      * Add a single AND filter clause.
      */
@@ -307,9 +316,36 @@ class TypesenseQueryPlan
         $this->suppressed[$name] = true;
     }
 
+    /**
+     * Suppress every restriction, hook-registered ones included - for a mode that defines the
+     * complete scope of the search itself, as core's search_special() does when it replaces
+     * $sql_filter and $sql_join outright.
+     */
+    public function suppressAllRestrictions(): void
+    {
+        $this->suppressed['*'] = true;
+    }
+
     public function isSuppressed(string $name): bool
     {
-        return !empty($this->suppressed[$name]);
+        return !empty($this->suppressed[$name]) || !empty($this->suppressed['*']);
+    }
+
+    /**
+     * Skip the shared keyword / field:value / node-bucket step - for a mode replicating a core
+     * path that discards the keyword criteria along with the filter they were appended to.
+     */
+    public function suppressKeywordMatching(): void
+    {
+        $this->keyword_matching = false;
+    }
+
+    /**
+     * Present the results as open access - see $open_access.
+     */
+    public function setOpenAccess(): void
+    {
+        $this->open_access = true;
     }
 
     /**
@@ -449,6 +485,53 @@ function typesense_parse_search(TypesenseSearchContext $ctx): void
 function typesense_search_collection_ref(TypesenseSearchContext $ctx): int
 {
     return (int)explode(',', $ctx->command_arg)[0];
+}
+
+
+/**
+ * Whether a collection's memberships are indexed. Selection collections (COLLECTION_TYPE_SELECTION),
+ * upload collections (COLLECTION_TYPE_UPLOAD) and any collection with a negative ref (the per-user
+ * "New uploads" review collections, created as 0 - userref) are deliberately left out: they change
+ * on every selection click and every upload, and the searches that need them (the selection bar,
+ * upload-then-edit) are small refs-only lookups that core serves. The one rule is shared by the
+ * indexer, the reindex counts (typesense_search_membership_indexed_sql()) and the collection mode,
+ * which vetoes a search of an unindexed collection so core answers it.
+ *
+ * @param int $collection Collection ref.
+ * @param int $type       collection.type.
+ */
+function typesense_search_membership_indexed(int $collection, int $type): bool
+{
+    return $collection > 0 && !in_array($type, array(COLLECTION_TYPE_UPLOAD, COLLECTION_TYPE_SELECTION), true);
+}
+
+
+/**
+ * SQL twin of typesense_search_membership_indexed(), for a query joining collection_resource $cr to
+ * collection $c.
+ */
+function typesense_search_membership_indexed_sql(string $cr = 'cr', string $c = 'c'): string
+{
+    return $cr . '.collection > 0 AND ' . $c . '.type NOT IN ('
+        . (int)COLLECTION_TYPE_UPLOAD . ', ' . (int)COLLECTION_TYPE_SELECTION . ')';
+}
+
+
+/**
+ * Whether a search of this collection can be served from the index - see
+ * typesense_search_membership_indexed(). An unknown collection is left to the collection mode's
+ * readability gate.
+ */
+function typesense_search_collection_indexed(int $collection): bool
+{
+    if ($collection <= 0) {
+        return false;
+    }
+    $type = ps_value('SELECT type value FROM collection WHERE ref = ?', array('i', $collection), null);
+    if ($type === null || $type === '') {
+        return true;
+    }
+    return typesense_search_membership_indexed($collection, (int)$type);
 }
 
 
@@ -953,14 +1036,18 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
     // Keyword matching + node buckets are orthogonal to a mode's scope and, as in core, apply to
     // every search (standard and special) - so "!collection123 sunset" and node-bucket refine
     // within a special search work. This may veto (field-scoped text/date or negative search).
-    typesense_apply_keyword_matching($ctx, $plan);
-    if (!$plan->supported) {
-        debug('typesense_search: unsupported (' . $plan->fallback_reason . ')');
-        return null;
+    // A mode that owns the whole scope may suppress it (suppressKeywordMatching()).
+    if ($plan->keyword_matching) {
+        typesense_apply_keyword_matching($ctx, $plan);
+        if (!$plan->supported) {
+            debug('typesense_search: unsupported (' . $plan->fallback_reason . ')');
+            return null;
+        }
     }
 
-    // Apply all restrictions.
-    foreach (typesense_search_restrictions() as $restriction) {
+    // Apply all restrictions - none when the mode owns the whole scope (suppressAllRestrictions()).
+    $restrictions = $plan->isSuppressed('*') ? array() : typesense_search_restrictions();
+    foreach ($restrictions as $restriction) {
         if ($restriction->applies($ctx)) {
             $restriction->build($ctx, $plan);
             if (!$plan->supported) {
@@ -1205,10 +1292,31 @@ function typesense_search_run(TypesenseSearchContext $ctx)
         $result['total'],
         $ctx->fetchrows,
         $ctx->return_refs_only,
-        $ctx->select,
+        $plan->open_access ? typesense_search_open_access_select($ctx->select) : $ctx->select,
         (string)$ctx->order_by,
         $plan->special_search
     );
+}
+
+
+/**
+ * The SELECT for results presented as open access. Core's own-contributions case in
+ * search_special() replaces "rca.access" / "rca2.access" with "0", so group_access, user_access
+ * and resultant_access all read as open (0), and its join reset means no grant row is consulted.
+ * The same replacement on a copy: with no "rca." reference left, hydrate adds no grant joins
+ * either.
+ *
+ * @param PreparedStatementQuery|null $select
+ * @return PreparedStatementQuery|null
+ */
+function typesense_search_open_access_select($select)
+{
+    if (!is_object($select)) {
+        return $select;
+    }
+    $copy = clone $select;
+    $copy->sql = str_replace(array('rca.access', 'rca2.access'), '0', (string)$copy->sql);
+    return $copy;
 }
 
 
