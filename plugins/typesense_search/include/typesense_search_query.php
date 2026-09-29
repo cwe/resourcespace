@@ -849,8 +849,11 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
         case FIELD_TYPE_DATE_AND_OPTIONAL_TIME:
         case FIELD_TYPE_EXPIRY_DATE:
         case FIELD_TYPE_DATE_RANGE:
-            $key = $prefix . '_q';
-            break;
+            // Core tests the raw stored value with LIKE '<value>%' (do_search_keywords.php), so the
+            // typed year, year-month or date must equal one of the indexed prefix representations
+            // exactly. A word-contains match would also hit the time parts ("20:24" reads as 2024)
+            // and the month and day tokens ("13" would match every 13th) - A/B-found 2026-09-29.
+            return $prefix . '_q:=' . typesense_search_filter_value($value);
         default:
             return null;
     }

@@ -595,6 +595,104 @@ function typesense_search_drop_collections()
 
 
 /**
+ * The characters Typesense splits indexed text on, in addition to whitespace - the same ones RS's
+ * keyword indexing turns into spaces: $config_separators plus the comma and colon that
+ * cleanse_string() (include/search_functions.php) always adds. Without this Typesense keeps
+ * "file_name.jpg" or "iron-tree" as one token (special characters are dropped, not split on), so
+ * RS's keyword matches on the parts are missed. Typesense accepts single-byte characters only,
+ * so the curly quotes in the default RS list are left out; RS drops those characters too.
+ *
+ * @return string[]
+ */
+function typesense_search_token_separators(): array
+{
+    global $config_separators;
+
+    $separators = array_merge((array)$config_separators, array(',', ':'));
+    $separators = array_filter($separators, function ($c) {
+        return is_string($c) && strlen($c) === 1 && $c !== ' ';
+    });
+
+    return array_values(array_unique($separators));
+}
+
+
+/**
+ * The schema of the resources collection. Every text field stems if and only if RS's $stemming
+ * is on: RS then indexes and searches stems for every field, fixed-list values included, and
+ * Typesense combines a multi-word query across fields correctly only when the fields agree on
+ * stemming. (Before 2026-09-29 title and the multi-line fields stemmed unconditionally and the
+ * single-line and fixed-list fields never, which missed plurals and broke multi-word matching -
+ * found by the RS-API A/B run.) Changing stem or token_separators needs a --drop reindex.
+ *
+ * @return array
+ */
+function typesense_search_resources_schema(): array
+{
+    global $typesense_search_collection_prefix, $stemming;
+
+    $stem = !empty($stemming);
+
+    return array(
+        'name' => $typesense_search_collection_prefix . 'resources',
+        'token_separators' => typesense_search_token_separators(),
+        'fields' => array(
+            array('name' => 'ref', 'type' => 'int32', 'sort' => true),
+            array('name' => 'ref_s', 'type' => 'string'),
+            array('name' => 'title', 'type' => 'string', 'stem' => $stem),
+            array('name' => 'resource_type', 'type' => 'int32', 'facet' => true, 'sort' => true),
+            array('name' => 'archive', 'type' => 'int32', 'facet' => true),
+            typesense_search_resource_created_by_field(),
+            array('name' => 'access', 'type' => 'int32', 'facet' => true),
+            ...typesense_search_resource_date_fields(),
+            array('name' => 'modified_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
+            
+            array('name' => 'nodes', 'type' => 'int32[]', 'facet' => true),
+            array('name' => 'populated_field_ids', 'type' => 'int32[]', 'optional' => true),
+
+            array('name' => 'field_.*_s', 'type' => 'string', 'optional' => true, 'facet' => true, 'stem' => $stem),
+            array('name' => 'field_.*_ss', 'type' => 'string[]', 'optional' => true, 'facet' => true, 'stem' => $stem),
+
+            // array('name' => 'field_.*_i', 'type' => 'int64', 'optional' => true, 'range_index' => true, 'sort' => true),
+            // array('name' => 'field_.*_is', 'type' => 'int64[]', 'optional' => true),
+
+            array('name' => 'field_.*_f', 'type' => 'float', 'optional' => true, 'range_index' => true, 'sort' => true),
+            // array('name' => 'field_.*_b', 'type' => 'bool', 'optional' => true, 'facet' => true),
+            array(
+                'name' => 'field_.*_ts',
+                'type' => 'int64',
+                'optional' => true,
+                'range_index' => true,
+                'sort' => true
+            ),
+
+            array(
+                'name' => 'field_.*_range_start',
+                'type' => 'int64',
+                'optional' => true,
+                'range_index' => true,
+                'sort' => true
+            ),
+
+            array(
+                'name' => 'field_.*_range_end',
+                'type' => 'int64',
+                'optional' => true,
+                'range_index' => true
+            ),
+            
+            // Text representation of non-string fields for Typesense query matching
+            array('name' => 'field_.*_q', 'type' => 'string[]', 'optional' => true),
+
+            array('name' => 'field_.*_text', 'type' => 'string', 'optional' => true, 'stem' => $stem),
+
+            ),
+        'default_sorting_field' => 'ref',
+    );
+}
+
+
+/**
  * Ensure that the Typesense resource collections exists.
  *
  * @return bool true if all the collections exist or were created
@@ -609,61 +707,7 @@ function typesense_search_ensure_collection(): bool
 
     if ($existing_resource_collection === false) {
 
-        $schema = array(
-            'name' => $typesense_search_collection_prefix . 'resources',
-            'fields' => array(
-                array('name' => 'ref', 'type' => 'int32', 'sort' => true),
-                array('name' => 'ref_s', 'type' => 'string'),
-                array('name' => 'title', 'type' => 'string', 'stem' => true),
-                array('name' => 'resource_type', 'type' => 'int32', 'facet' => true, 'sort' => true),
-                array('name' => 'archive', 'type' => 'int32', 'facet' => true),
-                typesense_search_resource_created_by_field(),
-                array('name' => 'access', 'type' => 'int32', 'facet' => true),
-                ...typesense_search_resource_date_fields(),
-                array('name' => 'modified_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true ),
-                
-                array('name' => 'nodes', 'type' => 'int32[]', 'facet' => true),
-                array('name' => 'populated_field_ids', 'type' => 'int32[]', 'optional' => true),
-
-                array('name' => 'field_.*_s', 'type' => 'string', 'optional' => true, 'facet' => true),
-                array('name' => 'field_.*_ss', 'type' => 'string[]', 'optional' => true, 'facet' => true),
-
-                // array('name' => 'field_.*_i', 'type' => 'int64', 'optional' => true, 'range_index' => true, 'sort' => true),
-                // array('name' => 'field_.*_is', 'type' => 'int64[]', 'optional' => true),
-
-                array('name' => 'field_.*_f', 'type' => 'float', 'optional' => true, 'range_index' => true, 'sort' => true),
-                // array('name' => 'field_.*_b', 'type' => 'bool', 'optional' => true, 'facet' => true),
-                array(
-                    'name' => 'field_.*_ts',
-                    'type' => 'int64',
-                    'optional' => true,
-                    'range_index' => true,
-                    'sort' => true
-                ),
-
-                array(
-                    'name' => 'field_.*_range_start',
-                    'type' => 'int64',
-                    'optional' => true,
-                    'range_index' => true,
-                    'sort' => true
-                ),
-
-                array(
-                    'name' => 'field_.*_range_end',
-                    'type' => 'int64',
-                    'optional' => true,
-                    'range_index' => true
-                ),
-                
-                // Text representation of non-string fields for Typesense query matching
-                array('name' => 'field_.*_q', 'type' => 'string[]', 'optional' => true),
-
-                array('name' => 'field_.*_text', 'type' => 'string', 'optional' => true, 'stem' => true),
-
-                ),
-            'default_sorting_field' => 'ref',
-        );
+        $schema = typesense_search_resources_schema();
 
         $created_resource_collection = typesense_search_request('POST', '/collections', false, $schema);
         if (!$created_resource_collection) {

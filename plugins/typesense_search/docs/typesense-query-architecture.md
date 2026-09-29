@@ -25,6 +25,10 @@ dedicated section below.
 ## Status (23 Sep 2026)
 
 The pipeline below is built and serving searches. Changes since this plan was written:
+- **Keyword matching missed plurals and multi-word searches collapsed** (`sculpture` 47,479 vs 49,468,
+  `sculpture landscape` 2,703 vs 34,408 in the A/B run): stemming was on for some fields only and
+  Typesense did not split on RS's separators. Every text field now stems iff `$stemming`, and the
+  collection gets `token_separators` — see *Config dependencies*. Needs a `--drop` reindex. **[FIXED]**
 - **Free-text wildcard (`word*`) never reached Typesense** — the request carried `prefix=true,true`,
   a per-field list Typesense rejects with a 400 once `query_by` has more than two fields, so every
   wildcard search fell back to MySQL (or came back empty in Typesense-only mode; found by the RS-API
@@ -192,7 +196,9 @@ tokenizer/stemming — it returns exactly what a keyword search of that field re
 `node_keyword` match, so:
 - **Text (multiline)** → `field_<ref>_text:<value>` (bare-colon word-contains).
 - **Text (single-line / warning)** → `field_<ref>_s:<value>`.
-- **Date fields** → `field_<ref>_q:<value>` (bare-colon over the representation array — matches
+- **Date fields** → `field_<ref>_q:=<value>` (an **exact** element match over the prefix representations,
+  as core's `LIKE '<value>%'` on the raw value; a word-contains match also hit time parts, `20:24`
+  reading as 2024 — A/B-found, fixed 2026-09-29 — matches
   partial dates like `2024`, `2024-02`).
 - **Date ranges** (`eventdate:rangestart<A>end<B>`, as the advanced search builds them) → an
   **interval overlap** of the resource's `[field_<ref>_range_start, _range_end)` with the query
@@ -234,7 +240,11 @@ adds only its own scope (filters/sort/cap/joins) — keyword matching is the sha
   the user's chosen sort; it sets no sort of its own. N is read as core reads it — everything after
   `!last` up to the first comma — so with text after the number (`!last50 sunset`) it is not numeric
   and means 1000, the keyword still refining, exactly as core. **[FIXED 2026-09-29 — it used to
-  honour the 50]** **[FIXED — it used to force `ref:desc`, so the
+  honour the 50]** With a relevance order core lists the newest N in **ref order**, DESC only when the
+  resolved order-by string contains an upper-case `DESC` (the search page's default), so the API's
+  lower-case `desc` gives oldest-first; replicated with the same test
+  ([search_functions.php:1115](../../../include/search_functions.php:1115)). **[FIXED 2026-09-29 —
+  it used to fall through to the text-match / ref-desc mapping]** **[FIXED — it used to force `ref:desc`, so the
   sort dropdown did nothing on the home/recent view]**
 - `UnsupportedSpecialMode` — recognises any `!command` no other mode claims (buckets B and C below,
   plus `!unused`) and vetoes → MySQL fallback.
@@ -309,9 +319,14 @@ Same contract; each adds visibility/scope clauses regardless of mode.
 
 ## Config dependencies (must be honoured or Typesense diverges from MySQL)
 Each unit reads the relevant `config.default.php` options; several are current divergence risks:
-- **Index-time (⚠):** `$stemming` — schema currently stems `title`/`text` **unconditionally**
-  ([ensure_collection](../../../plugins/typesense_search/include/typesense_search_functions.php:733));
-  must be gated on `$stemming`. Also `$partial_index_min_word_length`,
+- **Index-time:** `$stemming` — every text field (`title`, `_s`, `_ss`, `_text`) stems iff `$stemming`
+  (`typesense_search_resources_schema()`). **[FIXED 2026-09-29 — `title`/`_text` stemmed unconditionally
+  and `_s`/`_ss` never, which missed plurals in single-line and fixed-list fields and broke multi-word
+  matching across fields; A/B-found]** `$config_separators` (plus the comma and colon `cleanse_string()`
+  adds) → the collection's `token_separators`, so hyphens, underscores and dots split words as RS's
+  indexing does — single-byte characters only, Typesense rejects the curly quotes. **[FIXED, same date]**
+  Both need a `--drop` reindex. Still open: `$partial_index_min_word_length` (RS prefix-matches every
+  word of a partial-indexed field; Typesense prefixes only the last query word),
   `$resource_field_verbatim_keyword_regex` (infix/verbatim tokenisation).
 - **KeywordComponent / StandardSearchMode:** `$wildcard_always_applied` (force prefix, disable
   synonyms/quoted); `$config_search_for_number` (numeric → `ResourceRefMode`, else boost exact

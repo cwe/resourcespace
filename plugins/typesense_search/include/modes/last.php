@@ -27,5 +27,17 @@ class TypesenseLastMode implements TypesenseSearchComponent
 
         $plan->q = '*';
         $plan->setRecentSelection($num);
+
+        // Core special-cases a relevance order for "!last" (search_special(), "!last"): the newest
+        // N are listed in ref order, and the direction is DESC only when the resolved order-by
+        // string contains an upper-case "DESC" - the search page's default - so a lower-case
+        // "desc", as the API sends, lists them oldest first. Replicated with the same test on the
+        // same string. (Core keys this on the order-by *name* being "relevance"; the hook only sees
+        // the resolved string, so a relevance string reached through an empty name is treated the
+        // same.) The recent-N *selection* is by ref desc regardless - see setRecentSelection().
+        $order_by = trim((string)$ctx->order_by);
+        if ($order_by === '' || strpos($order_by, 'score') === 0) {
+            $plan->setSort('ref', strpos($order_by, 'DESC') === false ? 'asc' : 'desc');
+        }
     }
 }
