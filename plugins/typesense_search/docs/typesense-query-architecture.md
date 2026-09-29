@@ -261,6 +261,8 @@ Same contract; each adds visibility/scope clauses regardless of mode.
   collection (both added to `ensure_collection`) and grant indexing (`typesense_search_reindex_grants`,
   a reindex pass, and `typesense_search_index_grants()` for future incremental sync).
   **[BUILT — live-validated: granted user sees confidential/custom, ungranted user does not]**
+  It also carries the `v`-only specific-access-level filter: `access:=N` when `$access` is numeric
+  (core's `r.access = ?`), applied regardless of `$access_override`. **[BUILT]**
 
 ### Registry + orchestrator
 - `typesense_search_modes()` / `typesense_search_restrictions()` return ordered lists, each
@@ -357,7 +359,10 @@ Pre-hook order of operations: `resolve_given_nodes` ([:111](../../../include/do_
   `AccessRestriction` (confidential/custom grants) and `GroupFilterRestriction` (node rules).
   [**BUILT** — needs a reindex to populate `access` + the grants collection; until then non-`v`
   searches error on the missing grant join and fall back to MySQL, which is safe.]
-- `$access` (a `v`-user's specific-access search) is still ignored. [minor — deferred]
+- `$access` (a `v`-user's specific-access search — the advanced search *Access* option) → `access:=N`
+  from `AccessRestriction`, honoured for `v` users only and regardless of `$access_override`, as
+  core's `r.access = ?` is. A non-numeric value (the *All* option posts its label) is ignored, as
+  in core. [**BUILT**]
 
 ## Indexing gaps that break query correctness (indexer workstream, not the query pipeline)
 **[FIXED]** `nodes[]` and `populated_field_ids[]` were previously built only from keyword-indexed
@@ -482,6 +487,11 @@ fallbacks are needed for syntax reasons:
     (329 members, join sort) and a keyword search keep their order across `multi_search` pages; over
     `$typesense_search_max_rows` falls back unless Typesense-only. Hydrate (fake MySQL): 1,000 refs
     per query, Typesense order kept, deleted refs dropped, zero-padding per the rules above.
+
+17. **`$access` for `v` users:** ✅ stub harness (12 cases: numeric values become `access:=N`, null /
+    empty / the *All* label / non-`v` users are ignored, `$access_override` does not suppress it) and
+    read-only live counts on the 114,596-document index: `access:=0` 113,136, `access:=1` 1,387,
+    `access:=2` 73, `access:=3` 0, summing to the total. No reindex: `access` was already indexed.
 
 ### Planned: Typesense-vs-core parity testing via the RS API
 
