@@ -30,9 +30,13 @@ The pipeline below is built and serving searches. Changes since this plan was wr
   matched `sculpture`; non-breaking spaces glued words together on 4,347 more. RS strips these when
   it indexes (`cleanse_string()`); `typesense_search_clean_text()` now does the same for every
   indexed text value and for typed `field:value` text (A/B-found 2026-09-29). Needs a reindex, no
-  `--drop`. In the same change a single-word `field:value` on a **partial-indexed** field gets a
-  trailing `*`, replicating RS's partial index (every prefix of a word is indexed) for field-scoped
-  searches — free-text `q` can only prefix its last word, so that residual stays. **[FIXED]**
+  `--drop`. **[FIXED]**
+- **Partial-indexed fields matched whole words only** — RS's partial index is an infix index
+  (`add_partial_index()` stores every substring of a word of at least `$partial_index_min_word_length`
+  characters), so `sculpture` finds a file named `yorkshireSculpturePark.jpg`. The indexer now writes
+  the same fragments to `field_<ref>_p`, which is searched with the other fields and used for
+  `field:value` on such a field. Measurements under *Config dependencies*. Needs a `--drop` reindex.
+  **[BUILT 2026-09-30]**
 - **Keyword matching missed plurals and multi-word searches collapsed** (`sculpture` 47,479 vs 49,468,
   `sculpture landscape` 2,703 vs 34,408 in the A/B run): stemming was on for some fields only and
   Typesense did not split on RS's separators. Every text field now stems iff `$stemming`, and the
@@ -360,8 +364,16 @@ Each unit reads the relevant `config.default.php` options; several are current d
   matching across fields; A/B-found]** `$config_separators` (plus the comma and colon `cleanse_string()`
   adds) → the collection's `token_separators`, so hyphens, underscores and dots split words as RS's
   indexing does — single-byte characters only, Typesense rejects the curly quotes. **[FIXED, same date]**
-  Both need a `--drop` reindex. Still open: `$partial_index_min_word_length` (RS prefix-matches every
-  word of a partial-indexed field; Typesense prefixes only the last query word),
+  Both need a `--drop` reindex. Partial-indexed fields (`partial_index`, `$partial_index_min_word_length`): the indexer writes
+  every fragment RS's `add_partial_index()` would store to `field_<ref>_p`
+  (`typesense_search_partial_fragments()`), the field joins `query_by`, and `field:value` on such a
+  field filters on it. Scratch-verified on the real 114,596 filenames (2026-09-30): `sculpture` 3,499,
+  `park` 3,455, `img` 7,387 — RS's counts exactly, as free text and as a filter; multi-word and NOT
+  searches correct; mean 49 fragments per filename (max 1,487), about 108 MB of memory and 15 s of
+  import. Typesense's own `infix` was tested and rejected: it applies to the first query word only and
+  those matches bypass the other words and NOT; no search parameter changes that. Before this the A/B
+  run showed `sculpt*` 49,606 vs 51,007 and `sculpture` in archive 8 3,369 vs 3,380. **[BUILT — needs
+  a `--drop` reindex]** Still open:
   `$resource_field_verbatim_keyword_regex` (infix/verbatim tokenisation).
 - **KeywordComponent / StandardSearchMode:** `$wildcard_always_applied` (force prefix, disable
   synonyms/quoted); `$config_search_for_number` (numeric → `ResourceRefMode`, else boost exact
@@ -592,7 +604,7 @@ fallbacks are needed for syntax reasons:
     change):** node cases match exactly — `@@389` (58,028), `@@389 @@6123` (27,039), `@@388 @@389`
     (0), `@@388@@389` (94,936), `@@!389` alone (42,834), `@@389 @@!388`, `keywords:sculpture`,
     `keywords:sculpture;nature` and `keywords:sculpture;nosuchvalue` (30 each), `!hasdata88`
-    (101,666), `!hasdata150` (105,651), `@@389` with restypes / relevance / page 2, and
+    (101,666), `!hasdata150` (105,651), and
     `!collection3058` plain, `@@389`, `@@!389` and `sculpture` refines. `sculpture @@389` and
     `sculpture @@!389` differ only by the keyword side (`sculpture` alone: 47,536 vs 49,468 — the
     stemming / related-keyword divergences already in the inventory). AND chains of N `@@389` words:
@@ -605,8 +617,25 @@ fallbacks are needed for syntax reasons:
     Parser quirks match too, since core resolves every token before the hook: `@@389@@!388` (a NOT
     inside an OR word is kept positive) = 94,936, the same as `@@388@@389`; `@@!!389` (double NOT,
     treated as positive) = 58,028; `@@!389 @@!388` = 5,926; `@@389 keywords:sculpture` = 3;
-    `@@99999999` (no such node, dropped) = 0; and `@@389` under archive `0,1,2`, date DESC and
-    modified DESC all match.
+    `@@99999999` (no such node, dropped) = 0.
+    **Correction (2026-09-30):** the runner first dropped every per-case option (it merged the option
+    list by appending), so the `@@389` variants recorded here as matching had all run as the default
+    `@@389`. Re-run with the options applied: restypes 1 (54,812) and 2 (0), page 2 `[48,48]`, archive
+    `0,1,2`, and the date, modified and resource ID sorts (DESC) all match. **Relevance does not:**
+    `do_search` through the API as both users (`@@389` and `@@388@@389`, relevance DESC, `[0,48]`)
+    returns the same total and a first page with no resource in common - core from ref 44274 (score
+    125), the plugin from ref 127611 down. Core's relevance for a keyword-less node search is
+    `score, user_rating, total_hit_count, field<$date_field>, r.ref`
+    ([search_functions.php:3180](../../../include/search_functions.php:3180)) and there `score` is
+    the hit-count expression ([do_search.php:402](../../../include/do_search.php:402)); in the rows
+    the API returned it equals the resource's `new_hit_count` in 195 of the top 200 and is within 2
+    in the rest, so the per-node hit counts add almost nothing. Core therefore lists the most-viewed
+    first, and the plugin, with no hit count in the index, lists by ref. Re-sorting core's top 400
+    rows offline by score, then `field12` (the date field), then ref reproduces 387 of the 400
+    positions; score then ref alone reproduces 81. That is a simulation on the API's rows, not a
+    Typesense query - no `hit_count` field exists in the index yet. Popularity is vetoed, as
+    designed (empty for the Typesense-only user). This is decision D2 (accept the order, or index
+    `hit_count`).
     **After deployment (70a4f6ad, reindexed, 2026-09-30):** the regression cases match (`@@389`,
     `@@389 @@6123`, `@@!389`, `keywords:sculpture`, `!hasdata88`, `!collection3058 @@389`); the
     Typesense user now gets 100,783 and 100,801 for the 600- and 1,000-common-id buckets — core's

@@ -714,7 +714,7 @@ function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQuer
 /**
  * Resolve a field short name to its ref and type, or null if it is not a field.
  *
- * @return array{ref:int,type:int}|null
+ * @return array{ref:int,type:int,partial_index:int}|null
  */
 function typesense_search_field_by_shortname(string $name): ?array
 {
@@ -732,7 +732,7 @@ function typesense_search_field_by_shortname(string $name): ?array
     );
 
     $cache[$key] = count($rows) > 0
-        ? array('ref' => (int)$rows[0]['ref'], 'type' => (int)$rows[0]['type'])
+        ? array('ref' => (int)$rows[0]['ref'], 'type' => (int)$rows[0]['type'], 'partial_index' => (int)$rows[0]['partial_index'])
         : null;
 
     return $cache[$key];
@@ -769,16 +769,9 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
 
     $value = typesense_search_clean_text($value);
 
-    // A partially indexed field matches on word prefixes, as core's partial index does.
-    global $partial_index_min_word_length;
-    $min = isset($partial_index_min_word_length) ? (int)$partial_index_min_word_length : 3;
-    if (
-        !empty($field['partial_index'])
-        && in_array($type, array(FIELD_TYPE_TEXT_BOX_SINGLE_LINE, FIELD_TYPE_WARNING_MESSAGE, FIELD_TYPE_TEXT_BOX_MULTI_LINE, FIELD_TYPE_TEXT_BOX_LARGE_MULTI_LINE, FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE), true)
-        && preg_match('/^[\p{L}\p{N}_]+$/u', $value) === 1
-        && mb_strlen($value) >= $min
-    ) {
-        $value .= '*';
+    // A partially indexed field is matched on its fragments, as core's partial index does.
+    if (!$is_date && !empty($field['partial_index'])) {
+        return $prefix . '_p:' . typesense_search_filter_value($value);
     }
 
     switch ($type) {

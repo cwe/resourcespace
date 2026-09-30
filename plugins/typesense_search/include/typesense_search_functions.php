@@ -28,6 +28,10 @@ function typesense_build_query_by(): array
         } else {
             $query_by[] = $mapping;
         }
+
+        if (!empty($field["partial_index"])) {
+            $query_by[] = "field_{$ref}_p";
+        }
     }
 
     return $query_by;
@@ -585,6 +589,35 @@ function typesense_search_token_separators(): array
 
 
 /**
+ * The words of a value plus every fragment of each word that core's partial index stores
+ * (add_partial_index()): all substrings of at least $partial_index_min_word_length characters.
+ *
+ * @return string[]
+ */
+function typesense_search_partial_fragments(string $value): array
+{
+    global $partial_index_min_word_length;
+
+    $min = max(1, (int) ($partial_index_min_word_length ?? 3));
+    $text = mb_strtolower(typesense_search_clean_text($value), 'UTF-8');
+    $words = preg_split('/\s+/u', str_replace(typesense_search_token_separators(), ' ', $text), -1, PREG_SPLIT_NO_EMPTY);
+
+    $fragments = array();
+    foreach ($words as $word) {
+        $fragments[$word] = true;
+        $length = mb_strlen($word);
+        for ($size = $min; $size < $length; $size++) {
+            for ($offset = 0; $offset <= $length - $size; $offset++) {
+                $fragments[mb_substr($word, $offset, $size)] = true;
+            }
+        }
+    }
+
+    return array_map('strval', array_keys($fragments));
+}
+
+
+/**
  * The schema of the resources collection. Text fields stem only if $stemming is on. Changing stem
  * or token_separators needs a --drop reindex.
  *
@@ -646,6 +679,9 @@ function typesense_search_resources_schema(): array
             
             // Text representation of non-string fields for Typesense query matching
             array('name' => 'field_.*_q', 'type' => 'string[]', 'optional' => true),
+
+            // Word fragments of partially indexed fields
+            array('name' => 'field_.*_p', 'type' => 'string[]', 'optional' => true, 'stem' => $stem),
 
             array('name' => 'field_.*_text', 'type' => 'string', 'optional' => true, 'stem' => $stem),
 
@@ -1184,6 +1220,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
             rtf.ref AS field_ref,
             rtf.type AS field_type,
             rtf.field_constraint AS field_constraint,
+            rtf.partial_index AS partial_index,
             TRIM(n.name) AS node_value,
             n.ref as node_ref
             FROM resource_type_field rtf
@@ -1289,6 +1326,14 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
                 $resource_array_info[$rref][$prefix . '_s'] = typesense_search_clean_text((string) $value);
                 break;
         }
+
+        // A partially indexed field also gets the word fragments core's partial index stores.
+        if (!empty($resource_attribute['partial_index'])) {
+            $resource_array_info[$rref][$prefix . '_p'] = array_merge(
+                $resource_array_info[$rref][$prefix . '_p'] ?? array(),
+                typesense_search_partial_fragments((string) $value)
+            );
+        }
     }
 
     foreach ($date_range_info as $resource_ref => $fields) {
@@ -1369,7 +1414,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
                 $values = array_values(array_unique($values));
                 sort($values, SORT_NUMERIC);
                 $document[$field] = $values;
-            } elseif (is_array($value) && (substr($field, -2) === '_q' || substr($field, -3) === '_ss')) {
+            } elseif (is_array($value) && in_array(substr($field, strrpos($field, '_')), array('_q', '_ss', '_p'), true)) {
                 // De-duplicate multi-value string fields.
                 $document[$field] = array_values(array_unique($value));
             } else {
