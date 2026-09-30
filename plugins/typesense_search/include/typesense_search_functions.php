@@ -1074,7 +1074,7 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
 
         // Populate the title field
 
-        $resources[$key]['title'] = (string) $resource['title'];
+        $resources[$key]['title'] = typesense_search_clean_text((string) $resource['title']);
 
         // $resources[$key]['title'] = trim((string) get_data_by_field($resource['ref'], (int) $GLOBALS['view_title_field']));
 
@@ -1299,14 +1299,14 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
                     $resource_array_info[$rref][$prefix . '_q'][] = (string) $value;
                 } else {
                     // string type
-                    $resource_array_info[$rref][$prefix . '_s'] = (string) $value;
+                    $resource_array_info[$rref][$prefix . '_s'] = typesense_search_clean_text((string) $value);
                 }
                 break;
 
             case FIELD_TYPE_TEXT_BOX_MULTI_LINE:
             case FIELD_TYPE_TEXT_BOX_LARGE_MULTI_LINE:
             case FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE:
-                $resource_array_info[$rref][$prefix . '_text'] = (string) $value;
+                $resource_array_info[$rref][$prefix . '_text'] = typesense_search_clean_text((string) $value);
                 break;
 
             case FIELD_TYPE_DYNAMIC_KEYWORDS_LIST:
@@ -1314,7 +1314,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
             case FIELD_TYPE_DROP_DOWN_LIST:
             case FIELD_TYPE_CATEGORY_TREE:
             case FIELD_TYPE_RADIO_BUTTONS:
-                $resource_array_info[$rref][$prefix . '_ss'][] = (string) $value;
+                $resource_array_info[$rref][$prefix . '_ss'][] = typesense_search_clean_text((string) $value);
                 break;
 
             case FIELD_TYPE_DATE:
@@ -1350,7 +1350,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
 
             default:
                 // string default
-                $resource_array_info[$rref][$prefix . '_s'] = (string) $value;
+                $resource_array_info[$rref][$prefix . '_s'] = typesense_search_clean_text((string) $value);
                 break;
         }
     }

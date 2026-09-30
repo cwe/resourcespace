@@ -782,7 +782,7 @@ function typesense_search_field_by_shortname(string $name): ?array
     }
 
     $rows = ps_query(
-        "SELECT ref, `type` FROM resource_type_field WHERE name = ?",
+        "SELECT ref, `type`, partial_index FROM resource_type_field WHERE name = ?",
         array('s', $name),
         'schema'
     );
@@ -833,6 +833,23 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
     // span between its two endpoints. Works for every date field type.
     if ($is_date && strpos($value, 'range') === 0) {
         return typesense_search_daterange_filter($prefix, $value);
+    }
+
+    $value = typesense_search_clean_text($value);
+
+    // RS's partial index (resource_type_field.partial_index) indexes every prefix of a word of at
+    // least $partial_index_min_word_length characters, so a word matches any longer word it starts
+    // with. Typesense's bare-colon filter takes a trailing "*" as a prefix, which replicates that
+    // for a single word (a multi-word value is left as core matches it, whole words).
+    global $partial_index_min_word_length;
+    $min = isset($partial_index_min_word_length) ? (int)$partial_index_min_word_length : 3;
+    if (
+        !empty($field['partial_index'])
+        && in_array($type, array(FIELD_TYPE_TEXT_BOX_SINGLE_LINE, FIELD_TYPE_WARNING_MESSAGE, FIELD_TYPE_TEXT_BOX_MULTI_LINE, FIELD_TYPE_TEXT_BOX_LARGE_MULTI_LINE, FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE), true)
+        && preg_match('/^[\p{L}\p{N}_]+$/u', $value) === 1
+        && mb_strlen($value) >= $min
+    ) {
+        $value .= '*';
     }
 
     switch ($type) {
@@ -953,6 +970,23 @@ function typesense_search_numrange_filter(string $prefix, string $value): ?strin
  * Escape a filter_by value: simple word tokens (optionally with a trailing wildcard) are left as
  * is; anything containing spaces or punctuation is backtick-quoted.
  */
+/**
+ * Normalise text the way RS's keyword indexing does before it splits words (cleanse_string() in
+ * include/search_functions.php): invisible format characters are removed - the byte-order mark,
+ * zero-width spaces and joiners, the word joiner, the soft hyphen - and every Unicode space
+ * (non-breaking space included) becomes a plain space. Typesense keeps such characters inside a
+ * token, so a stored value like "\u{FEFF}sculpture" never equals "sculpture": on the test copy one
+ * such checkbox value alone was used by 6,548 resources (A/B-found 2026-09-29). Applied to every
+ * indexed text value and to typed field:value text.
+ */
+function typesense_search_clean_text(string $value): string
+{
+    $clean = preg_replace('/\p{Cf}/u', '', $value);
+    $clean = preg_replace('/\p{Zs}/u', ' ', $clean ?? $value);
+    return $clean ?? $value;
+}
+
+
 function typesense_search_filter_value(string $value): string
 {
     if (preg_match('/[^\p{L}\p{N}_*]/u', $value)) {

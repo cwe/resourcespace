@@ -25,6 +25,14 @@ dedicated section below.
 ## Status (23 Sep 2026)
 
 The pipeline below is built and serving searches. Changes since this plan was written:
+- **Invisible characters in stored values hid resources** — a checkbox value stored as
+  `\u{FEFF}sculpture` (a byte-order mark) was used by 6,548 resources on the test copy and never
+  matched `sculpture`; non-breaking spaces glued words together on 4,347 more. RS strips these when
+  it indexes (`cleanse_string()`); `typesense_search_clean_text()` now does the same for every
+  indexed text value and for typed `field:value` text (A/B-found 2026-09-29). Needs a reindex, no
+  `--drop`. In the same change a single-word `field:value` on a **partial-indexed** field gets a
+  trailing `*`, replicating RS's partial index (every prefix of a word is indexed) for field-scoped
+  searches — free-text `q` can only prefix its last word, so that residual stays. **[FIXED]**
 - **Keyword matching missed plurals and multi-word searches collapsed** (`sculpture` 47,479 vs 49,468,
   `sculpture landscape` 2,703 vs 34,408 in the A/B run): stemming was on for some fields only and
   Typesense did not split on RS's separators. Every text field now stems iff `$stemming`, and the
