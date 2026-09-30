@@ -149,15 +149,22 @@ request sends Typesense's `offset`/`limit`, so any offset works (the search page
 - **Filter operation cap:** Typesense refuses a `filter_by` costing more than `--filter-by-max-ops`
   (default 100) operations. Every operand and every `&&` / `||` counts one; parentheses, the values
   inside an array and a connector inside a backtick-quoted value are free — so 50 clauses is the
-  most, or 25 `(a || b)` groups. [`typesense_search_filter_ops()`](../include/typesense_search_query.php:1182)
-  counts the compiled filter and [`typesense_search_multi_search()`](../include/typesense_search_query.php:1221)
+  most, or 25 `(a || b)` groups. A reference-join clause `$collection(…)` is one operand of the
+  expression it sits in, whatever it contains, and its inner expression is held to the same limit
+  separately — over it, the search is refused when the join stands alone or inside an OR group,
+  but **matches nothing, silently,** when the join is ANDed with other clauses.
+  [`typesense_search_filter_ops()`](../include/typesense_search_query.php:1188) returns the larger of
+  the two costs for the compiled filter and
+  [`typesense_search_multi_search()`](../include/typesense_search_query.php:1258)
   vetoes above `$typesense_search_filter_max_ops` (default 100, on the setup page; 0 = send
   regardless) before any request, so the search falls back instead of failing. Only AND-of-single-
-  node shapes get near it — `$category_tree_search_use_and_logic` or `$checkbox_and` with about 45
-  nodes once the restriction clauses are counted; an OR bucket of any size costs one. Core is
-  bounded on the same shape by MySQL's 61-table join limit (one `resource_node` join per node,
-  [do_search_nodes.php:11](../../../include/do_search_nodes.php:11)). Live-verified 2026-09-29.
-  [**BUILT**]
+  node shapes get near it — `$category_tree_search_use_and_logic` or `$checkbox_and` with more than
+  40 nodes for a standard (non-`v`) user, whose archive and grant restrictions cost 19 of the 100;
+  an OR bucket of any size costs one. Core is bounded on the same shape by MySQL's 61-table join
+  limit (one `resource_node` join per node,
+  [do_search_nodes.php:11](../../../include/do_search_nodes.php:11)). Live-verified 2026-09-29/30.
+  [**BUILT**; **FIXED** 2026-09-30 — the counter first counted the connectors inside a join too, so
+  it vetoed a standard user's searches of 38–40 ANDed nodes that Typesense accepts]
 - **Cost:** each page costs more the deeper it is, because Typesense ranks every row before it. On
   the live index (2026-09-24, through `typesense_search_execute()`): 10,000 rows 0.3 s, 25,000
   1.5 s, 50,000 about 5 s, all 114,596 about 20 s. With one GET per page instead of `multi_search`
@@ -600,6 +607,20 @@ fallbacks are needed for syntax reasons:
     treated as positive) = 58,028; `@@!389 @@!388` = 5,926; `@@389 keywords:sculpture` = 3;
     `@@99999999` (no such node, dropped) = 0; and `@@389` under archive `0,1,2`, date DESC and
     modified DESC all match.
+    **After deployment (70a4f6ad, reindexed, 2026-09-30):** the regression cases match (`@@389`,
+    `@@389 @@6123`, `@@!389`, `keywords:sculpture`, `!hasdata88`, `!collection3058 @@389`); the
+    Typesense user now gets 100,783 and 100,801 for the 600- and 1,000-common-id buckets — core's
+    totals, where it got nothing before — and buckets of 600 / 1,000 rare ids and `@@389` + 600 ids
+    match core exactly (31,092 / 41,899 / 70,891). The same run exposed an over-count in the first
+    version of the guard: it counted the three connectors inside the grants join of a non-`v`
+    user's access restriction, vetoing from 38 ANDed nodes where Typesense accepts 40. Probes of
+    the join rules: a join is one operand outside (1, 2 or 4 inner clauses all leave room for 49
+    node clauses; both grant groups together leave 46); its inner expression has its own cap (50
+    clauses pass, 51 do not); over that cap it is refused alone or inside an OR group, but
+    `$memberships(51 × collection_ref:=3058) && nodes:=[389]` returns 0 where 50 returns the
+    correct 21. The counter now takes the larger of the outer cost and each join's inner cost:
+    stub harness 60 checks; live through `typesense_search_execute()`, 11 shapes agree with
+    Typesense's own verdict and the twelfth is that silent-empty case, which the guard vetoes.
 
 
 ### Planned: Typesense-vs-core parity testing via the RS API

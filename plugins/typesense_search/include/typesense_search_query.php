@@ -1177,7 +1177,13 @@ function typesense_search_collect_refs(array $hits, array &$refs): void
  * (default 100). Every operand and every connector counts one, so N clauses joined by && or ||
  * cost 2N - 1: 50 clauses pass, 51 are refused. Parentheses and the values inside an array
  * (nodes:=[1,2,3]) are free, and a connector inside a backtick-quoted value is not one.
- * Live-verified on Typesense 30.2 (2026-09-29).
+ *
+ * A reference-join clause, $collection(...), is one operand of the expression it sits in, whatever
+ * it contains, and its own inner expression is held to the same limit separately: over the limit
+ * it is refused when the join stands alone or inside an OR group, but matches nothing, silently,
+ * when the join is ANDed with other clauses. The result is therefore the largest cost among the
+ * expression and the inner expressions of its joins. Live-verified on Typesense 30.2 (2026-09-29,
+ * 2026-09-30).
  */
 function typesense_search_filter_ops(string $filter_by): int
 {
@@ -1187,19 +1193,50 @@ function typesense_search_filter_ops(string $filter_by): int
     }
 
     $connectors = 0;
+    $largest_inner = 0;
     $quoted = false;
     $length = strlen($filter_by);
     for ($i = 0; $i < $length; $i++) {
         $char = $filter_by[$i];
         if ($char === '`') {
             $quoted = !$quoted;
-        } elseif (!$quoted && ($char === '&' || $char === '|') && $i + 1 < $length && $filter_by[$i + 1] === $char) {
+            continue;
+        }
+        if ($quoted) {
+            continue;
+        }
+
+        // A reference join: cost its inner expression apart and step over it as one operand.
+        if ($char === '$' && preg_match('/\G\$[A-Za-z0-9_.-]+\(/', $filter_by, $join, 0, $i) === 1) {
+            $start = $i + strlen($join[0]);
+            $depth = 1;
+            $inner_quoted = false;
+            for ($j = $start; $j < $length && $depth > 0; $j++) {
+                if ($filter_by[$j] === '`') {
+                    $inner_quoted = !$inner_quoted;
+                } elseif (!$inner_quoted && $filter_by[$j] === '(') {
+                    $depth++;
+                } elseif (!$inner_quoted && $filter_by[$j] === ')') {
+                    $depth--;
+                }
+            }
+            // $j is now one past the join's closing parenthesis, or the end if it never closed.
+            $inner_end = $depth === 0 ? $j - 1 : $length;
+            $largest_inner = max(
+                $largest_inner,
+                typesense_search_filter_ops(substr($filter_by, $start, $inner_end - $start))
+            );
+            $i = $j - 1;
+            continue;
+        }
+
+        if (($char === '&' || $char === '|') && $i + 1 < $length && $filter_by[$i + 1] === $char) {
             $connectors++;
             $i++;
         }
     }
 
-    return 2 * $connectors + 1;
+    return max(2 * $connectors + 1, $largest_inner);
 }
 
 
