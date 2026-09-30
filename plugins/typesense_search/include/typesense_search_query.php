@@ -1,20 +1,14 @@
 <?php
 
 /**
- * Extensible query-build pipeline for the typesense_search plugin.
+ * Query-build pipeline for the typesense_search plugin.
  *
  * Flow: Context -> Parse -> Mode -> Restrictions -> Compile -> Execute -> Hydrate.
- *
- * A single "mode" decides the query shape (mirrors core search_special() vs standard) and
- * "restrictions" layer visibility/scope on top of any mode (mirrors core search_filter()).
- * New search types are added by registering a new mode or restriction - the orchestrator is
- * never edited. See the plan for the full design.
  */
 
 /**
- * Normalised input for a single search, built once from the External_search hook arguments
- * plus a snapshot of the current user context. Parsing populates the $command / $keywords /
- * $field_values / $wildcard properties.
+ * Normalised input for a single search, built from the External_search hook arguments and the
+ * current user.
  */
 class TypesenseSearchContext
 {
@@ -182,11 +176,8 @@ class TypesenseQueryPlan
     public ?int $result_limit = null;
 
     /**
-     * @var int|null "Most-recent N" selection (e.g. !last<num>): the result set is the N
-     * highest-ref resources matching the other criteria, but the display order is still the
-     * user's chosen sort. Resolved to a `ref:>=<cutoff>` filter at execute time. This mirrors
-     * core's !last, whose inner query picks the newest N (ref desc) and whose outer query
-     * re-sorts them by the requested order_by.
+     * @var int|null Most-recent N selection (e.g. !last<num>): the N highest-ref matches, shown
+     * in the requested sort order.
      */
     public ?int $recent_selection = null;
 
@@ -199,11 +190,7 @@ class TypesenseQueryPlan
     /** @var int Number of results to return, from fetchrows, or -1 for every result from the offset. */
     public int $limit = -1;
 
-    /**
-     * @var bool Whether core answers this search in search_special() (every mode except the
-     * standard one) rather than with do_search()'s own query. The two zero-pad an integer
-     * fetchrows result differently; see typesense_search_hydrate_refs().
-     */
+    /** @var bool Whether core answers this search in search_special() (affects result padding). */
     public bool $special_search = false;
 
     /** @var string Target collection short name (without prefix), e.g. "resources". */
@@ -215,13 +202,10 @@ class TypesenseQueryPlan
     /** @var string|null */
     public ?string $fallback_reason = null;
 
-    /** @var bool False when a mode owns the whole scope of the search and the shared keyword /
-     *  field:value / node-bucket step must not run - see suppressKeywordMatching(). */
+    /** @var bool False when a mode owns the whole scope and keyword matching must not run. */
     public bool $keyword_matching = true;
 
-    /** @var bool True when the results are presented as open access: hydrate zeroes the
-     *  custom-access columns in the SELECT, as core does for a user's own contributions with
-     *  $open_access_for_contributor - see setOpenAccess(). */
+    /** @var bool True when the results are presented as open access - see setOpenAccess(). */
     public bool $open_access = false;
 
     /**
@@ -302,8 +286,7 @@ class TypesenseQueryPlan
     }
 
     /**
-     * Select the N most-recent resources (highest refs) as the result set, while leaving the
-     * display sort to the normal sort mapping. See $recent_selection.
+     * Select the N most-recent resources (highest refs) as the result set.
      */
     public function setRecentSelection(int $limit): void
     {
@@ -317,9 +300,7 @@ class TypesenseQueryPlan
     }
 
     /**
-     * Suppress every restriction, hook-registered ones included - for a mode that defines the
-     * complete scope of the search itself, as core's search_special() does when it replaces
-     * $sql_filter and $sql_join outright.
+     * Suppress every restriction - for a mode that defines the whole scope of the search itself.
      */
     public function suppressAllRestrictions(): void
     {
@@ -332,8 +313,7 @@ class TypesenseQueryPlan
     }
 
     /**
-     * Skip the shared keyword / field:value / node-bucket step - for a mode replicating a core
-     * path that discards the keyword criteria along with the filter they were appended to.
+     * Skip the shared keyword and node-bucket step - for a mode that defines the whole scope itself.
      */
     public function suppressKeywordMatching(): void
     {
@@ -341,7 +321,8 @@ class TypesenseQueryPlan
     }
 
     /**
-     * Present the results as open access - see $open_access.
+     * Present the results as open access, as core does for a user's own contributions with
+     * $open_access_for_contributor.
      */
     public function setOpenAccess(): void
     {
@@ -383,9 +364,7 @@ class TypesenseQueryPlan
 
         $global = trim((string)$typesense_search_global_filter);
         if ($global !== '') {
-            // The configured global filter is expected to begin with its own connector
-            // (e.g. " && resource_type:=3"); append as-is when we already have clauses,
-            // otherwise strip a leading connector.
+            // The global filter may begin with its own connector (e.g. " && resource_type:=3").
             if ($filter_by === '') {
                 $filter_by = preg_replace('/^\s*&&\s*/', '', $global);
             } else {
@@ -397,8 +376,7 @@ class TypesenseQueryPlan
     }
 
     /**
-     * Compile the plan into the query parameters for the documents/search endpoint. The result
-     * window (offset and limit) is added to each request by typesense_search_execute().
+     * Compile the plan into Typesense search parameters, without the result window.
      *
      * @return array
      */
@@ -408,13 +386,11 @@ class TypesenseQueryPlan
             'q' => $this->q === '' ? '*' : $this->q,
             'num_typos' => $this->num_typos,
             'validate_field_names' => 0,
-            // Require every query token to match, mirroring core's AND keyword semantics
-            // (Typesense would otherwise drop tokens to find more results).
+            // Require every query token to match, as core's AND keyword search does.
             'drop_tokens_threshold' => 0,
         );
 
-        // query_by is only required for keyword matching; a match-all (q=*) mode may leave it
-        // empty, in which case it must be omitted rather than sent as an empty string.
+        // Omit query_by when empty (a match-all search).
         if (count($this->query_by) > 0) {
             $params['query_by'] = implode(',', array_keys($this->query_by));
 
@@ -478,9 +454,7 @@ function typesense_parse_search(TypesenseSearchContext $ctx): void
 
 
 /**
- * The collection ref of a !collection search, parsed the way core does (search_special(): the
- * first space-separated token, then the part before the first comma, cast to int), so
- * "!collection123,456" is collection 123.
+ * The collection ref of a !collection search, parsed as core does ("!collection123,456" is 123).
  */
 function typesense_search_collection_ref(TypesenseSearchContext $ctx): int
 {
@@ -489,13 +463,8 @@ function typesense_search_collection_ref(TypesenseSearchContext $ctx): int
 
 
 /**
- * Whether a collection's memberships are indexed. Selection collections (COLLECTION_TYPE_SELECTION),
- * upload collections (COLLECTION_TYPE_UPLOAD) and any collection with a negative ref (the per-user
- * "New uploads" review collections, created as 0 - userref) are deliberately left out: they change
- * on every selection click and every upload, and the searches that need them (the selection bar,
- * upload-then-edit) are small refs-only lookups that core serves. The one rule is shared by the
- * indexer, the reindex counts (typesense_search_membership_indexed_sql()) and the collection mode,
- * which vetoes a search of an unindexed collection so core answers it.
+ * Whether a collection's memberships are indexed. Selection and upload collections, and any
+ * collection with a negative ref, are not.
  *
  * @param int $collection Collection ref.
  * @param int $type       collection.type.
@@ -518,9 +487,8 @@ function typesense_search_membership_indexed_sql(string $cr = 'cr', string $c = 
 
 
 /**
- * Whether a search of this collection can be served from the index - see
- * typesense_search_membership_indexed(). An unknown collection is left to the collection mode's
- * readability gate.
+ * Whether a search of this collection can be served from the index. An unknown collection is left
+ * to the collection mode's readability check.
  */
 function typesense_search_collection_indexed(int $collection): bool
 {
@@ -536,14 +504,8 @@ function typesense_search_collection_indexed(int $collection): bool
 
 
 /**
- * Apply keyword matching and node-bucket filtering to the plan.
- *
- * Shared by the standard search and every special mode. This mirrors core, where the keyword
- * match (join + criteria) and node buckets are baked into $sql_join / $sql_filter and applied to
- * *all* searches - so e.g. "!collection123 sunset" or a fixed-list refine within a collection
- * work. Builds q from $keywords (with the field-token split), sets query_by (respecting field
- * visibility) and node filters. May veto (a field-scoped text/date search, or a negative field
- * search) so the whole search falls back to MySQL.
+ * Apply keyword matching and node-bucket filtering to the plan. Shared by every mode, as in core.
+ * May mark the search unsupported.
  */
 function typesense_apply_keyword_matching(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
 {
@@ -555,15 +517,12 @@ function typesense_apply_keyword_matching(TypesenseSearchContext $ctx, Typesense
     }
     $plan->q = $q === '' ? '*' : $q;
 
-    // One value applies to every query_by field. (A per-field list must have exactly one entry
-    // per field, or Typesense rejects the whole request with a 400.) Typesense prefixes the last
-    // token only; typesense_build_q_from_keywords() moves a wildcarded word there.
+    // One value for every query_by field. Typesense prefixes the last token only.
     if ($ctx->wildcard || !empty($wildcard_always_applied)) {
         $plan->prefix = 'true';
     }
 
-    // query_by - title (only when viewable) carries the highest weight; ref_s lets a resource
-    // number match as text. typesense_build_query_by() is already limited to viewable fields.
+    // Title (when viewable) has the highest weight; ref_s lets a resource number match as text.
     if (metadata_field_view_access((int)$view_title_field)) {
         $plan->addQueryBy('title', 10);
     }
@@ -580,11 +539,8 @@ function typesense_apply_keyword_matching(TypesenseSearchContext $ctx, Typesense
 
 
 /**
- * Build the q string from $ctx->keywords, splitting off field-scoped tokens:
- *   - fixed-list "shortname:value" is already resolved into $node_bucket by core -> dropped from q;
- *   - a named search on a non-fixed-list field, or a negative field search, is not yet
- *     reproducible in Typesense -> veto to MySQL;
- *   - a colon that is not a field short name (e.g. a time "12:30") is treated as free text.
+ * Build the q string from $ctx->keywords. Field-scoped tokens become filters or mark the search
+ * unsupported; fixed-list ones are dropped, as core has already put them in $node_bucket.
  */
 function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): string
 {
@@ -601,8 +557,7 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
 
         $is_quoted = substr($keyword, 0, 1) === '"' || substr($keyword, 0, 2) === '-"';
 
-        // Full-text boolean search ("@FULL_TEXT…") relies on MySQL boolean-mode operators that
-        // Typesense has no equivalent for -> veto to core.
+        // Full-text boolean search has no Typesense equivalent.
         if ($is_quoted) {
             $ft_prefix = defined('FULLTEXT_SEARCH_PREFIX') ? FULLTEXT_SEARCH_PREFIX : '@FULL_TEXT';
             $inner = substr($keyword, 0, 1) === '-' ? substr($keyword, 2) : substr($keyword, 1);
@@ -623,7 +578,7 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
 
             if ($field !== null) {
                 if (in_array($field['type'], (array)$FIXED_LIST_FIELD_TYPES, true)) {
-                    continue; // fixed-list already resolved into $node_bucket by core
+                    continue; // already in $node_bucket
                 }
                 // Never scope a search to a field the user can't view (would probe hidden data).
                 if (!metadata_field_view_access((int)$field['ref'])) {
@@ -635,21 +590,20 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
                     $plan->markUnsupported('OR-group (";") in a field-scoped search not handled by Typesense');
                     return '';
                 }
-                // Text/date field:value -> a bare-colon (word-contains), date range, or _q clause.
+                // A text or date field:value becomes a filter clause.
                 $clause = typesense_search_fieldvalue_filter($field, $parts[1]);
                 if ($clause === null) {
                     $plan->markUnsupported('field-scoped search on field "' . $parts[0] . '" not supported');
                     return '';
                 }
                 $plan->addFilter($clause);
-                continue; // consumed as a filter; not free-text
+                continue; // now a filter, not free text
             }
 
             $keyword = str_replace(':', ' ', $keyword); // incidental colon
         }
 
-        // OR-groups ("red;green") have no clean Typesense equivalent (no term-level OR across
-        // query_by in one query) -> veto to core, which ORs them correctly.
+        // OR-groups ("red;green") have no Typesense equivalent.
         if (strpos($keyword, ';') !== false) {
             $plan->markUnsupported('OR-group (";") not handled by Typesense');
             return '';
@@ -670,9 +624,7 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
         }
     }
 
-    // Typesense treats only the last query token as a prefix, so a wildcarded word ("sculpt*
-    // park") is moved to the end - the token order does not change the AND-matched set. Two or
-    // more wildcarded words cannot be expressed -> veto to core.
+    // Typesense only prefixes the last token, so a wildcarded word goes last; two can't be expressed.
     if (count($wildcard_terms) > 1) {
         $plan->markUnsupported('more than one wildcard keyword not handled by Typesense');
         return '';
@@ -717,13 +669,8 @@ function typesense_apply_node_buckets(TypesenseSearchContext $ctx, TypesenseQuer
 
 
 /**
- * Apply the default RS-order-by -> Typesense sort mapping, unless a mode already set a sort.
- * Fixed plumbing shared by all searches.
- *
- * $order_by is a resolved SQL fragment (see set_search_order_by()). Only the orders backed by a
- * sortable Typesense field are supported; anything else (rating, popularity, colour, title,
- * random, status, custom-field sorts, ...) vetoes so core sorts it correctly rather than the
- * plugin silently returning relevance order.
+ * Map the ResourceSpace order_by to a Typesense sort, unless a mode already set one. An order
+ * with no sortable Typesense field marks the search unsupported.
  */
 function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
 {
@@ -757,8 +704,7 @@ function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQuer
 
     $plan->setSort($field, $direction);
 
-    // Core's date and modified sorts end in "r.ref <dir>" ("field<$date_field> <dir>, r.ref <dir>" and
-    // "modified <dir>, r.ref <dir>"), so break ties by ref.
+    // Break ties by ref, as core's date and modified sorts do.
     if ($field === 'date_field_sort' || $field === 'modified_date') {
         $plan->setSort('ref', $direction);
     }
@@ -766,9 +712,7 @@ function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQuer
 
 
 /**
- * Resolve a field short name (as used in "shortname:value" searches) to its ref and type.
- * Uses the same lookup as core do_search_keywords.php. Returns null when the name is not a
- * field (i.e. the colon is incidental, such as a time "12:30").
+ * Resolve a field short name to its ref and type, or null if it is not a field.
  *
  * @return array{ref:int,type:int}|null
  */
@@ -796,15 +740,8 @@ function typesense_search_field_by_shortname(string $name): ?array
 
 
 /**
- * Build a Typesense filter_by clause for a `field:value` search on a non-fixed-list field,
- * mirroring RS's word-level, field-scoped keyword match:
- *   - text fields  -> bare-colon word-contains on the field's string (`_s` / `_text`);
- *   - date fields  -> bare-colon on the `_q` representation array (partial-date match);
- *   - date range   -> an interval-overlap filter on `_range_start`/`_range_end`
- *                     (typesense_search_daterange_filter), for every date field type;
- *   - numeric range -> a range / exact filter on `_f` (typesense_search_numrange_filter).
- * Returns null for anything not supported (caller falls back to MySQL). Fixed-list fields never
- * reach here (they are resolved into $node_bucket by core).
+ * Build a filter_by clause for a field:value search on a text or date field. Returns null if the
+ * search is not supported.
  *
  * @param array{ref:int,type:int} $field
  */
@@ -813,9 +750,7 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
     $prefix = 'field_' . (int)$field['ref'];
     $type = (int)$field['type'];
 
-    // Numeric range (e.g. mynumberfield:numrange1|1234). Emitted as a range/comparison filter on
-    // the numeric `_f` representation (populated for numeric-constrained, indexed single-line
-    // fields - field_constraint == 1).
+    // Numeric range (e.g. mynumberfield:numrange1|1234).
     if (strpos($value, 'numrange') === 0) {
         return typesense_search_numrange_filter($prefix, $value);
     }
@@ -827,20 +762,14 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
         FIELD_TYPE_DATE_RANGE,
     ), true);
 
-    // Date range (e.g. eventdate:rangestart2020-01-01end2020-12-31). Matched as an interval overlap
-    // against the resource's indexed [_range_start, _range_end): the date at its own precision (a
-    // year/month is an interval, a full date a one-day interval) and, for a DATE_RANGE field, the
-    // span between its two endpoints. Works for every date field type.
+    // Date range (e.g. eventdate:rangestart2020-01-01end2020-12-31).
     if ($is_date && strpos($value, 'range') === 0) {
         return typesense_search_daterange_filter($prefix, $value);
     }
 
     $value = typesense_search_clean_text($value);
 
-    // RS's partial index (resource_type_field.partial_index) indexes every prefix of a word of at
-    // least $partial_index_min_word_length characters, so a word matches any longer word it starts
-    // with. Typesense's bare-colon filter takes a trailing "*" as a prefix, which replicates that
-    // for a single word (a multi-word value is left as core matches it, whole words).
+    // A partially indexed field matches on word prefixes, as core's partial index does.
     global $partial_index_min_word_length;
     $min = isset($partial_index_min_word_length) ? (int)$partial_index_min_word_length : 3;
     if (
@@ -866,31 +795,20 @@ function typesense_search_fieldvalue_filter(array $field, string $value): ?strin
         case FIELD_TYPE_DATE_AND_OPTIONAL_TIME:
         case FIELD_TYPE_EXPIRY_DATE:
         case FIELD_TYPE_DATE_RANGE:
-            // Core tests the raw stored value with LIKE '<value>%' (do_search_keywords.php), so the
-            // typed year, year-month or date must equal one of the indexed prefix representations
-            // exactly. A word-contains match would also hit the time parts ("20:24" reads as 2024)
-            // and the month and day tokens ("13" would match every 13th) - A/B-found 2026-09-29.
+            // Exact match on a date representation, as core's LIKE '<value>%' does.
             return $prefix . '_q:=' . typesense_search_filter_value($value);
         default:
             return null;
     }
 
-    // Bare colon (":") is a tokenised word-contains match honouring the field's tokenizer/stemming.
+    // Bare colon is a word-contains match.
     return $key . ':' . typesense_search_filter_value($value);
 }
 
 
 /**
- * Build an interval-overlap filter for a date `field:value` range search. RS encodes these as
- * "range" + "start<A>" + "end<B>" (either endpoint optional), where <A>/<B> are (possibly partial)
- * dates like "2020-00-00". We reuse typesense_parse_date() so the query window aligns exactly with
- * the `_range_start`/`_range_end` epochs the indexer stored, then test whether the resource's
- * indexed interval [_range_start, _range_end) overlaps the query window [A.range_start, B.range_end):
- *   start A present -> resource must extend past A:   field_<ref>_range_end   > A.range_start
- *   end   B present -> resource must begin before B:  field_<ref>_range_start < B.range_end
- * A resource whose date has no epoch interval (e.g. a bare "August" with no year) simply has no
- * `_range_*` and is excluded, as it can't be placed on the timeline. Returns null if neither
- * endpoint parses (caller falls back to MySQL).
+ * Build a filter for a date range field:value search ("rangestart<A>end<B>", either end optional),
+ * matching resources whose date overlaps the range. Returns null if neither end parses.
  */
 function typesense_search_daterange_filter(string $prefix, string $value): ?string
 {
@@ -934,11 +852,8 @@ function typesense_search_daterange_filter(string $prefix, string $value): ?stri
 
 
 /**
- * Build a numeric filter for a `field:value` numeric-range search on the `_f` representation. RS
- * encodes these as "numrange<min>|<max>" with "neg" standing in for a leading "-", and either
- * bound optional. Mirrors core (do_search_keywords.php): both bounds -> a range; a single bound ->
- * an *exact* match on the value entered (core's `rnn.name = max(min,max)` behaviour), not a
- * one-sided range. Returns null if nothing numeric parses (caller falls back to MySQL).
+ * Build a filter for a numeric range field:value search ("numrange<min>|<max>", "neg" for a minus
+ * sign). As in core, a single bound is an exact match. Returns null if nothing numeric parses.
  */
 function typesense_search_numrange_filter(string $prefix, string $value): ?string
 {
@@ -967,17 +882,8 @@ function typesense_search_numrange_filter(string $prefix, string $value): ?strin
 
 
 /**
- * Escape a filter_by value: simple word tokens (optionally with a trailing wildcard) are left as
- * is; anything containing spaces or punctuation is backtick-quoted.
- */
-/**
- * Normalise text the way RS's keyword indexing does before it splits words (cleanse_string() in
- * include/search_functions.php): invisible format characters are removed - the byte-order mark,
- * zero-width spaces and joiners, the word joiner, the soft hyphen - and every Unicode space
- * (non-breaking space included) becomes a plain space. Typesense keeps such characters inside a
- * token, so a stored value like "\u{FEFF}sculpture" never equals "sculpture": on the test copy one
- * such checkbox value alone was used by 6,548 resources (A/B-found 2026-09-29). Applied to every
- * indexed text value and to typed field:value text.
+ * Normalise text as RS's keyword indexing does (cleanse_string()): remove invisible format
+ * characters and turn every Unicode space into a plain space.
  */
 function typesense_search_clean_text(string $value): string
 {
@@ -987,6 +893,10 @@ function typesense_search_clean_text(string $value): string
 }
 
 
+/**
+ * Escape a filter_by value: anything other than a simple word (optionally with a trailing
+ * wildcard) is backtick-quoted.
+ */
 function typesense_search_filter_value(string $value): string
 {
     if (preg_match('/[^\p{L}\p{N}_*]/u', $value)) {
@@ -997,11 +907,8 @@ function typesense_search_filter_value(string $value): string
 
 
 /**
- * Ordered list of registered search modes. Exactly one mode claims a given search: the first
- * whose applies() returns true. More specific modes are listed before the catch-alls.
- *
- * Extend via the "typesense_search_modes" hook (return an array of TypesenseSearchComponent to
- * append) so new search types register without editing this function.
+ * Ordered list of search modes; the first whose applies() returns true claims the search.
+ * Extend via the "typesense_search_modes" hook.
  *
  * @return TypesenseSearchComponent[]
  */
@@ -1022,7 +929,7 @@ function typesense_search_modes(): array
 
     $extra = hook('typesense_search_modes');
     if (is_array($extra)) {
-        // Registered modes take priority over the standard catch-all but after built-in specials.
+        // Hook modes go before the standard catch-all.
         array_splice($modes, count($modes) - 1, 0, $extra);
     }
 
@@ -1031,9 +938,8 @@ function typesense_search_modes(): array
 
 
 /**
- * Ordered list of registered restrictions. All applicable restrictions run for every mode.
- *
- * Extend via the "typesense_search_restrictions" hook.
+ * Ordered list of restrictions; all that apply run for every mode. Extend via the
+ * "typesense_search_restrictions" hook.
  *
  * @return TypesenseSearchComponent[]
  */
@@ -1064,8 +970,7 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
 {
     $plan = new TypesenseQueryPlan();
 
-    // The result window is fixed plumbing: the rows core would return for this fetchrows, at any
-    // offset. A negative count (-1) means every row from the offset.
+    // Result window from fetchrows; -1 means every row from the offset.
     setup_search_chunks($ctx->fetchrows, $chunk_offset, $search_chunk_size);
     $plan->offset = (int)$chunk_offset;
     $plan->limit = $search_chunk_size < 0 ? -1 : (int)$search_chunk_size;
@@ -1091,10 +996,7 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
         return null;
     }
 
-    // Keyword matching + node buckets are orthogonal to a mode's scope and, as in core, apply to
-    // every search (standard and special) - so "!collection123 sunset" and node-bucket refine
-    // within a special search work. This may veto (field-scoped text/date or negative search).
-    // A mode that owns the whole scope may suppress it (suppressKeywordMatching()).
+    // Keyword matching and node buckets apply to every search, as in core, unless the mode opts out.
     if ($plan->keyword_matching) {
         typesense_apply_keyword_matching($ctx, $plan);
         if (!$plan->supported) {
@@ -1103,7 +1005,7 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
         }
     }
 
-    // Apply all restrictions - none when the mode owns the whole scope (suppressAllRestrictions()).
+    // Apply the restrictions, unless the mode suppressed them all.
     $restrictions = $plan->isSuppressed('*') ? array() : typesense_search_restrictions();
     foreach ($restrictions as $restriction) {
         if ($restriction->applies($ctx)) {
@@ -1115,7 +1017,7 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
         }
     }
 
-    // Default sort mapping (fixed plumbing) - only if no mode set an explicit sort.
+    // Default sort, if no mode set one.
     typesense_apply_default_sort($ctx, $plan);
     if (!$plan->supported) {
         debug('typesense_search: unsupported (' . $plan->fallback_reason . ')');
@@ -1127,12 +1029,8 @@ function typesense_search_build_query(TypesenseSearchContext $ctx): ?TypesenseQu
 
 
 /**
- * Resolve the ref cutoff for a "most-recent N" (!last<num>) selection: the Nth-highest ref among
- * the resources matching the plan's current filters/keywords. Runs one Typesense query sorted by
- * ref desc, reusing the plan's filter_by/q/query_by so the recent set matches the same resources
- * the main query will (e.g. "!last50 sunset" -> newest 50 matching "sunset").
- *
- * Returns the cutoff ref, or null when there are N or fewer matches (no cutoff needed) or on error.
+ * The ref cutoff for a most-recent N selection (!last<num>): the Nth-highest ref among the plan's
+ * matches, or null when there are N or fewer.
  */
 function typesense_search_recent_cutoff(TypesenseQueryPlan $plan, int $n): ?int
 {
@@ -1150,7 +1048,7 @@ function typesense_search_recent_cutoff(TypesenseQueryPlan $plan, int $n): ?int
         return null;
     }
 
-    // Fewer than (or exactly) N matches: the whole set is the result, no cutoff required.
+    // N or fewer matches - no cutoff needed.
     if ($window['found'] <= $n) {
         return null;
     }
@@ -1173,17 +1071,9 @@ function typesense_search_collect_refs(array $hits, array &$refs): void
 
 
 /**
- * How many operations a filter_by expression costs against Typesense's --filter-by-max-ops limit
- * (default 100). Every operand and every connector counts one, so N clauses joined by && or ||
- * cost 2N - 1: 50 clauses pass, 51 are refused. Parentheses and the values inside an array
- * (nodes:=[1,2,3]) are free, and a connector inside a backtick-quoted value is not one.
- *
- * A reference-join clause, $collection(...), is one operand of the expression it sits in, whatever
- * it contains, and its own inner expression is held to the same limit separately: over the limit
- * it is refused when the join stands alone or inside an OR group, but matches nothing, silently,
- * when the join is ANDed with other clauses. The result is therefore the largest cost among the
- * expression and the inner expressions of its joins. Live-verified on Typesense 30.2 (2026-09-29,
- * 2026-09-30).
+ * Count the operations in a filter_by expression as Typesense does for --filter-by-max-ops: each
+ * clause and each && or || counts one. A $collection(...) join counts as one clause and its inner
+ * expression is counted separately; the larger figure is returned.
  */
 function typesense_search_filter_ops(string $filter_by): int
 {
@@ -1206,7 +1096,7 @@ function typesense_search_filter_ops(string $filter_by): int
             continue;
         }
 
-        // A reference join: cost its inner expression apart and step over it as one operand.
+        // Join clause: count its inner expression separately.
         if ($char === '$' && preg_match('/\G\$[A-Za-z0-9_.-]+\(/', $filter_by, $join, 0, $i) === 1) {
             $start = $i + strlen($join[0]);
             $depth = 1;
@@ -1220,7 +1110,7 @@ function typesense_search_filter_ops(string $filter_by): int
                     $depth--;
                 }
             }
-            // $j is now one past the join's closing parenthesis, or the end if it never closed.
+            // $j is one past the closing parenthesis.
             $inner_end = $depth === 0 ? $j - 1 : $length;
             $largest_inner = max(
                 $largest_inner,
@@ -1241,19 +1131,12 @@ function typesense_search_filter_ops(string $filter_by): int
 
 
 /**
- * Run one or more windows of a compiled query as multi_search requests (batches of up to 50
- * searches, Typesense's default limit_multi_searches). Every search request goes this way, the
- * first window included: GET /documents/search caps the query string at 4,000 bytes, which a node
- * bucket of a few hundred ids fills on its own, while multi_search carries the same parameters in
- * the request body with no such cap (5,000 ids in one nodes:=[...] verified) and returns the same
- * totals.
+ * Run one or more windows of a compiled query through multi_search, up to 50 searches per
+ * request. POST is used for every search because GET caps the query string at 4,000 bytes.
+ * Returns false without sending anything if the filter exceeds $typesense_search_filter_max_ops.
  *
- * A filter_by costing more than $typesense_search_filter_max_ops operations is refused here,
- * before any request is made - Typesense would reject it with HTTP 400 - so the search falls back
- * to the MySQL search (or returns nothing in Typesense-only mode).
- *
- * @param array $windows [offset, limit] pairs, one per search; a limit of 0 fetches just the total.
- * @return array[]|false One decoded search result per window, in order, each with 'found' and 'hits'.
+ * @param array $windows [offset, limit] pairs, one per search.
+ * @return array[]|false One search result per window, in order.
  */
 function typesense_search_multi_search(TypesenseQueryPlan $plan, array $params, array $windows)
 {
@@ -1327,8 +1210,7 @@ function typesense_search_fetch_window(TypesenseQueryPlan $plan, array $params, 
 
 
 /**
- * Fetch $count rows of a compiled query from $offset on, 250 per page, all the pages in as few
- * multi_search requests as possible.
+ * Fetch $count rows of a compiled query from $offset on, 250 per page.
  *
  * @return int[]|false Refs in result order.
  */
@@ -1358,35 +1240,25 @@ function typesense_search_fetch_pages(TypesenseQueryPlan $plan, array $params, i
  * Execute a compiled query plan against Typesense. Returns the refs in the plan's result window,
  * in order, and the total number of matches.
  *
- * Typesense returns at most 250 hits per request, so a bigger window (fetchrows -1 asks for every
- * result) is fetched a page at a time. Each page gets slower the deeper it is, as Typesense ranks
- * every row before it, so a window of more than $typesense_search_max_rows results is left to the
- * MySQL search instead, unless $typesense_search_only is on.
- *
  * @return array{refs:int[],total:int}|false False to fall back to the MySQL search.
  */
 function typesense_search_execute(TypesenseQueryPlan $plan)
 {
     global $typesense_search_only, $typesense_search_max_rows;
 
-    // "Most-recent N" selection (!last<num>): restrict the set to the N highest-ref matches via a
-    // ref cutoff, then let the plan's own (user-chosen) sort order them. Mirrors core's !last,
-    // where the inner query picks the newest N and the outer query re-sorts them.
+    // Most-recent N selection: restrict the set to the N highest refs with a ref cutoff.
     if ($plan->recent_selection !== null) {
         $cutoff = typesense_search_recent_cutoff($plan, $plan->recent_selection);
         if ($cutoff !== null) {
-            // ref >= the Nth-highest ref == exactly the newest N matches (refs are unique).
             $plan->addFilter('ref:>=' . $cutoff);
         }
-        // else: fewer than N matches - the whole set already qualifies, no cutoff needed.
     }
 
     $params = $plan->compileParams();
     // Only the ref of each hit is used.
     $params['include_fields'] = 'ref';
 
-    // The first request returns the total along with the start of the window. It's sent even when
-    // the window is empty (fetchrows 0, a count-only search) because the total is still needed.
+    // The first request returns the total and the start of the window.
     $first_limit = $plan->limit < 0 ? 250 : min($plan->limit, 250);
     $first = typesense_search_fetch_window($plan, $params, $plan->offset, $first_limit);
     if ($first === false) {
@@ -1395,11 +1267,10 @@ function typesense_search_execute(TypesenseQueryPlan $plan)
 
     debug('typesense_search_execute(): found=' . $first['found']);
 
-    // A result cap (e.g. !last<num>) limits the total, and so the rows that can be returned.
+    // A result cap (e.g. !last<num>) limits the total.
     $total = $plan->result_limit !== null ? min($first['found'], $plan->result_limit) : $first['found'];
 
-    // Rows in the window: from the offset to the end of the results, or fewer if fetchrows asked
-    // for fewer.
+    // Rows in the window, from the offset.
     $window = max(0, $total - $plan->offset);
     if ($plan->limit >= 0) {
         $window = min($window, $plan->limit);
@@ -1422,8 +1293,7 @@ function typesense_search_execute(TypesenseQueryPlan $plan)
             return false;
         }
 
-        // A change to the index between requests can move a resource onto a later page as well;
-        // keep its first position.
+        // Drop a ref repeated on a later page if the index changed between requests.
         $refs = array_values(array_unique(array_merge($refs, $more)));
     }
 
@@ -1462,11 +1332,8 @@ function typesense_search_run(TypesenseSearchContext $ctx)
 
 
 /**
- * The SELECT for results presented as open access. Core's own-contributions case in
- * search_special() replaces "rca.access" / "rca2.access" with "0", so group_access, user_access
- * and resultant_access all read as open (0), and its join reset means no grant row is consulted.
- * The same replacement on a copy: with no "rca." reference left, hydrate adds no grant joins
- * either.
+ * The SELECT for results presented as open access: the custom-access columns read as 0, as core
+ * does for a user's own contributions.
  *
  * @param PreparedStatementQuery|null $select
  * @return PreparedStatementQuery|null
@@ -1483,9 +1350,8 @@ function typesense_search_open_access_select($select)
 
 
 /**
- * Result to return when Typesense could not handle a search. In Typesense-only mode this is an
- * empty (but correctly shaped) result set, so core does not fall back to the MySQL search;
- * otherwise false, which lets core continue with its own search.
+ * Result when Typesense could not handle a search: false to let core search, or an empty result
+ * set in Typesense-only mode.
  *
  * @return array|false
  */

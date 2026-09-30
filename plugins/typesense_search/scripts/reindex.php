@@ -5,17 +5,8 @@
  *
  * Usage: php reindex.php [batch size] [start after resource ref] [--drop]
  *
- * Runs four passes: resources, collection memberships, resource attributes and access grants. Each
- * pass reports its progress, with an estimate of the time left, and every document Typesense
- * rejects, grouped by the reason Typesense gave. The run ends with a summary of each pass and a
- * comparison of the documents in each Typesense collection with the MySQL rows they come from.
- *
- * --drop drops the existing collections first, so the index is rebuilt from nothing with the current
- * schema, and has no documents left over from deleted resources, memberships or grants. Searches
- * served by Typesense are incomplete until the reindex finishes.
- *
- * Exit status: 0 if every document was indexed, 1 if the Typesense collections couldn't be dropped,
- * set up or have their schema updated, 2 if the reindex finished but some documents failed.
+ * --drop drops the existing collections first, so the index is rebuilt from nothing.
+ * Exit status: 0 on success, 1 if the collections couldn't be set up, 2 if some documents failed.
  */
 
 include_once dirname(__DIR__, 3) . '/include/boot.php';
@@ -45,10 +36,10 @@ if ($drop && $after > 0) {
     exit(1);
 }
 
-// Seconds between progress lines within a pass. A batch with failures is always reported.
+// Seconds between progress lines within a pass.
 $progress_interval = 5;
 
-// The most distinct failure reasons kept per pass; any further reasons are counted together.
+// Most distinct failure reasons kept per pass.
 $max_reasons = 50;
 
 
@@ -156,8 +147,7 @@ function typesense_reindex_pass(array $pass, int $progress_interval, int $max_re
             $totals['errors'][$reason] = ($totals['errors'][$reason] ?? 0) + $count;
         }
 
-        // Report any failures at once; otherwise report progress every $progress_interval seconds and
-        // at the end, skipping a line that would repeat the last one (e.g. a final, empty batch).
+        // Report failures at once, otherwise every $progress_interval seconds and at the end.
         $now = microtime(true);
         $progressed = $totals['processed'] !== $last_reported;
         if (
@@ -228,8 +218,7 @@ typesense_reindex_output(
     . ($drop ? ' | Collections dropped and recreated' : '')
 );
 
-// Each pass: 'expected' is the number of MySQL rows it will read (for progress), 'run' indexes the
-// next batch from the cursor and moves the cursor on, and 'position' describes the cursor.
+// Per pass: 'expected' rows to read, 'run' indexes the next batch, 'position' describes the cursor.
 $passes = array(
     array(
         'name' => 'Resources',
@@ -266,7 +255,7 @@ $passes = array(
         'expected' => (int) ps_value('SELECT COUNT(*) value FROM resource WHERE ref > 0', array(), 0),
         'cursor' => array('after' => 0),
         'run' => function (array &$cursor): array {
-            // 500 resources per SQL batch; the import auto-chunks to keep each POST bounded.
+            // 500 resources per SQL batch.
             $result = typesense_search_reindex_resource_attributes(500, $cursor['after']);
             $cursor['after'] = (int) $result['last'];
             return $result;
@@ -314,10 +303,8 @@ foreach ($passes as $pass) {
     ));
 }
 
-// Compare what each Typesense collection now holds with the rows it is built from. The reindex adds
-// and updates documents but never deletes them, so a document whose row has gone (a deleted
-// resource, a removed collection member, a revoked grant) is still there. The MySQL counts are
-// distinct document ids, and can drift if the system was in use during the reindex.
+// Compare each Typesense collection with the MySQL rows it is built from. The reindex never
+// deletes, so documents for rows that have gone are still there.
 typesense_reindex_output();
 typesense_reindex_output('Typesense documents compared with MySQL rows');
 $comparisons = array(

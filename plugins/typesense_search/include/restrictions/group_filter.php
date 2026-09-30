@@ -1,17 +1,7 @@
 <?php
 
 /**
- * Group search filter restriction.
- *
- * Reproduces core's group `search_filter` ([get_filter_sql()](include/search_functions.php:1957),
- * applied via do_search_filtering.php before the hook) as node filters. Filter rules are pure
- * resource_node membership, so this works against the existing `nodes[]` index with no schema
- * change.
- *
- * Rule semantics (per get_filter_sql): each rule ORs its nodes_on / nodes_off clauses; rules are
- * combined with AND for ALL/NONE conditions and OR for ANY; NONE inverts each clause. The whole
- * filter is then OR'd with a grant-exists clause (when $custom_access_overrides_search_filter) and
- * the user's own resources (when $open_access_for_contributor).
+ * Group search filter restriction - core's group search_filter rules as node filters.
  */
 class TypesenseGroupFilterRestriction implements TypesenseSearchComponent
 {
@@ -33,7 +23,7 @@ class TypesenseGroupFilterRestriction implements TypesenseSearchComponent
         $filter = get_filter($filterid);
 
         if ($filter === false) {
-            // Invalid filter - core would error; fall back so it is handled consistently.
+            // Invalid filter - leave it to core.
             $plan->markUnsupported('invalid group search_filter ' . $filterid);
             return;
         }

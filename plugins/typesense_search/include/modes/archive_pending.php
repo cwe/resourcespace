@@ -1,10 +1,7 @@
 <?php
 
 /**
- * Archive-pending mode - "!archivepending".
- *
- * Resources awaiting archival (archive state 1). The default-archive restriction is suppressed
- * and replaced with the fixed state; the "z" permission and pending restrictions still apply.
+ * Archive-pending mode - "!archivepending". Resources in archive state 1.
  */
 class TypesenseArchivePendingMode implements TypesenseSearchComponent
 {

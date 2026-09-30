@@ -153,9 +153,9 @@ request sends Typesense's `offset`/`limit`, so any offset works (the search page
   expression it sits in, whatever it contains, and its inner expression is held to the same limit
   separately — over it, the search is refused when the join stands alone or inside an OR group,
   but **matches nothing, silently,** when the join is ANDed with other clauses.
-  [`typesense_search_filter_ops()`](../include/typesense_search_query.php:1188) returns the larger of
+  [`typesense_search_filter_ops()`](../include/typesense_search_query.php:1078) returns the larger of
   the two costs for the compiled filter and
-  [`typesense_search_multi_search()`](../include/typesense_search_query.php:1258)
+  [`typesense_search_multi_search()`](../include/typesense_search_query.php:1141)
   vetoes above `$typesense_search_filter_max_ops` (default 100, on the setup page; 0 = send
   regardless) before any request, so the search falls back instead of failing. Only AND-of-single-
   node shapes get near it — `$category_tree_search_use_and_logic` or `$checkbox_and` with more than

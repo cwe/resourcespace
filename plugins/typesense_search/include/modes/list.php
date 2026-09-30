@@ -1,10 +1,7 @@
 <?php
 
 /**
- * Explicit resource list mode - "!list<refs>" / "!listall<refs>".
- *
- * Refs are colon-separated (e.g. !list12:34:56). Both variants show the listed resources in any
- * archive state (the default-archive restriction is suppressed), matching core.
+ * Resource list mode - "!list<refs>" / "!listall<refs>", refs separated by colons.
  */
 class TypesenseListMode implements TypesenseSearchComponent
 {
@@ -27,13 +24,13 @@ class TypesenseListMode implements TypesenseSearchComponent
         }
 
         if (count($refs) === 0) {
-            // No valid refs - return nothing (core uses WHERE r.ref IS NULL).
+            // No valid refs - return nothing.
             $plan->addFilter('ref:<0');
         } else {
             $plan->addFilter('ref:=[' . implode(',', $refs) . ']');
         }
 
-        // A list references specific resources regardless of workflow state.
+        // Listed resources are shown in any archive state.
         $plan->suppressRestriction('archive');
     }
 }

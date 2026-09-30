@@ -1,10 +1,7 @@
 <?php
 
 /**
- * Catch-all for any special ("!") command not claimed by a dedicated mode.
- *
- * Vetoes the search so the plugin falls back to core MySQL processing, which handles the
- * remaining special searches (e.g. !geo, !duplicates, !related, !report).
+ * Catch-all for special ("!") searches with no mode of their own - leaves them to core.
  */
 class TypesenseUnsupportedSpecialMode implements TypesenseSearchComponent
 {

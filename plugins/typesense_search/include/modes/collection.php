@@ -1,14 +1,8 @@
 <?php
 
 /**
- * Collection view mode - "!collection<id>".
- *
- * Constrains results to a collection's members (via a join to the memberships collection) and
- * orders them by the collection sort order. Collection membership does not itself grant resource
- * access - resource-level visibility is still enforced by the restrictions layer.
- *
- * Selection and upload collections (and negative refs) are not indexed, so a search of one is
- * vetoed and core answers it - see typesense_search_membership_indexed().
+ * Collection view mode - "!collection<id>". Restricts results to the collection's members, in
+ * the collection's sort order.
  */
 class TypesenseCollectionMode implements TypesenseSearchComponent
 {
@@ -24,21 +18,19 @@ class TypesenseCollectionMode implements TypesenseSearchComponent
 
         $collection = typesense_search_collection_ref($ctx);
 
-        // Selection and upload collections are deliberately not indexed (the selection bar and
-        // upload-then-edit are served by core), whatever the user's permissions.
+        // Selection and upload collections are not indexed; leave them to core.
         if (!typesense_search_collection_indexed($collection)) {
             $plan->markUnsupported('collection ' . $collection . ' is not indexed (selection/upload collection)');
             return;
         }
 
-        // Collection readability gate. If the user can't view this collection, fall back to core
-        // (which returns an empty result set) rather than exposing its members.
+        // Leave a collection the user can't view to core.
         if (!checkperm('a') && !$ctx->access_override && !collection_readable($collection)) {
             $plan->markUnsupported('collection ' . $collection . ' not readable');
             return;
         }
 
-        // Preserve the smart-collection refresh side effect that core performs for !collection.
+        // Refresh a smart collection, as core does.
         if ($allow_smart_collections && !$ctx->return_disk_usage) {
             $smartsearch_ref = ps_value('SELECT savedsearch value FROM collection WHERE ref = ?', array('i', $collection), '');
             if ($smartsearch_ref !== '') {
@@ -58,27 +50,17 @@ class TypesenseCollectionMode implements TypesenseSearchComponent
         // Restrict to this collection's members.
         $plan->addJoinFilter('resource_collection_memberships', 'collection_ref:=' . $collection);
 
-        // Collections may contain resources in any archive state - suppress the default archive
-        // restriction, then re-apply the archived-hide rule when configured.
+        // Any archive state, except archived when $collections_omit_archived is set.
         $plan->suppressRestriction('archive');
         if (!empty($collections_omit_archived) && !checkperm('e2')) {
             $plan->addFilter('archive:!=2');
         }
 
-        // Ordering. The collection's own stored order (RS "collection" sort) can only be expressed
-        // via the memberships reference join - the standard sort mapping can't handle a
-        // "c.sortorder ..." fragment. So apply the reference-collection sort here ONLY when the
-        // search is using the default collection order; for any explicit sort (Resource ID, Date,
-        // Modified, Relevance, ...) leave sort_by unset so the standard mapping applies the user's
-        // choice, or vetoes to core for sorts Typesense can't do. This mirrors core's !collection,
-        // whose outer query re-sorts the members by the requested order_by.
+        // Use the collection's own order unless another sort was requested.
         global $typesense_search_collection_prefix;
         $order_by = trim((string)$ctx->order_by);
         if ($order_by === '' || strpos($order_by, 'c.sortorder') === 0) {
-            // Honour the sort direction (default collection order is ascending). Break ties the way
-            // core does - "c.sortorder <dir>, c.date_added <reversed dir>, r.ref <dir>" - since most
-            // members share a sortorder (a collection that was never reordered has NULL for every
-            // member, indexed as the same value).
+            // Break ties as core does: date added (reversed), then ref.
             $direction = strtolower($ctx->sort) === 'desc' ? 'desc' : 'asc';
             $reverse_direction = $direction === 'desc' ? 'asc' : 'desc';
             $plan->addRawSort(

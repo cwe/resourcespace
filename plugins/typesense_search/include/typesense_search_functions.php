@@ -3,8 +3,7 @@
 require_once __DIR__ . '/typesense_search_query.php';
 
 /**
- * Build the Typesense query_by field list for the current schema (there is no wildcard
- * query_by, so the searchable fields are enumerated from the RS schema).
+ * Build the Typesense query_by list from the indexed fields visible to the user.
  *
  * @return array
  */
@@ -183,13 +182,8 @@ function typesense_search_get_query_field(array $field): ?string
 
 
 /**
- * The SELECT column list core built, made runnable against the resource table alone.
- *
- * For a search with node buckets core rewrites the hit-count column to aggregate the per-node
- * join rows - ", (SUM(r.hit_count) + SUM(rn0.hit_count +rn1.hit_count))  total_hit_count"
- * (do_search_nodes.php) - and those rn<N> joins exist only in core's own query. Hydrate has no
- * such joins, so the expression fails to prepare (every fixed-list or "@@" search errored).
- * The plain hit count is used instead; nothing in the plugin ranks by it.
+ * The SELECT column list core built, made runnable against the resource table alone: core's
+ * node-bucket hit count refers to joins hydrate does not have, so the plain hit count is used.
  *
  * @param string $sql The $select->sql passed to the search hook.
  */
@@ -209,8 +203,7 @@ function typesense_search_hydrate_select_sql(string $sql): string
  * @param bool $return_refs_only Whether only resource refs should be returned.
  * @param PreparedStatementQuery $select Existing ResourceSpace SELECT fields.
  * @param string $order_by The order by SQL from the standard ResourceSpace search construction.
- * @param bool $special_search Whether core answers the search in search_special(), which zero-pads
- *                             refs-only results as well.
+ * @param bool $special_search Whether core answers the search in search_special().
  *
  * @return array ResourceSpace-compatible search results.
  */
@@ -232,10 +225,8 @@ function typesense_search_hydrate_refs(
             $select_sql = 'SELECT r.ref FROM resource r';
             $select_params = array();
         } else {
-            // For non-'v' users, $select (built by do_search) references the rca/rca2 custom-access
-            // columns (group_access/user_access/resultant_access). Reproduce the resource_custom_access
-            // joins from do_search so those columns resolve; otherwise MySQL errors on unknown columns.
-            // Placeholder order in the SQL: SELECT (select params) -> JOIN (rca params) -> WHERE (refs).
+            // For users without "v", $select references the rca/rca2 columns, so add their joins.
+            // Placeholder order: SELECT, JOIN, WHERE.
             $custom_access_join = '';
             $custom_access_params = array();
             if (strpos($select->sql, 'rca.') !== false || strpos($select->sql, 'rca2.') !== false) {
@@ -259,8 +250,7 @@ function typesense_search_hydrate_refs(
 
         debug('typesense_search_hydrate_refs(): candidate refs=' . count($refs));
 
-        // Query 1,000 refs at a time. One query for a large result would pass MySQL's limit of
-        // 65,535 placeholders.
+        // 1,000 refs per query, to stay under MySQL's limit of 65,535 placeholders.
         $rows_by_ref = array();
         foreach (array_chunk($refs, 1000) as $batch) {
             $sql = $select_sql . ' WHERE r.ref IN (' . ps_param_insert(count($batch)) . ') AND r.ref > 0 GROUP BY r.ref';
@@ -274,8 +264,7 @@ function typesense_search_hydrate_refs(
             }
         }
 
-        // Return the rows in Typesense's order. A ref with no row (a resource deleted since it was
-        // indexed) is dropped.
+        // Keep Typesense's order. A ref with no row (deleted since it was indexed) is dropped.
         foreach ($refs as $ref) {
             if (isset($rows_by_ref[$ref])) {
                 $rows[] = $return_refs_only ? array('ref' => (int)$ref) : $rows_by_ref[$ref];
@@ -287,9 +276,7 @@ function typesense_search_hydrate_refs(
         return array('total' => $total, 'data' => $rows);
     }
 
-    // Like core, pad an integer fetchrows result with 0 entries up to the total, so callers can
-    // count() it. do_search() pads full rows only; search_special() pads refs-only results too.
-    // fetchrows -1 returns every row, so there's nothing to pad.
+    // As core, pad an integer fetchrows result with zeros up to the total.
     if ($search_chunk_size > 0 && count($rows) > 0 && ($special_search || !$return_refs_only)) {
         // Padded 1,000,000 at a time, as core does.
         for ($missing = $total - count($rows); $missing > 0; $missing -= 1000000) {
@@ -327,8 +314,7 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
         . $typesense_search_port
         . $endpoint;
 
-    // Reuse a single cURL handle across calls so the connection is kept alive - a reindex makes
-    // thousands of requests and would otherwise open a new connection each time.
+    // Reuse one cURL handle so the connection is kept alive across requests.
     static $curl = null;
     if (!($curl instanceof CurlHandle) && $curl === null) {
         $curl = curl_init();
@@ -354,8 +340,7 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
     curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $typesense_search_timeout);
     curl_setopt($curl, CURLOPT_TIMEOUT, $typesense_search_timeout);
 
-    // Always set the body (empty when no payload) so a stale body from a previous reused request
-    // is never resent.
+    // Always set the body, so one from an earlier request on this handle is never resent.
     $body = '';
     if ($payload !== null) {
         if ($batch) {
@@ -408,9 +393,7 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
 
     // Process response
     if ($batch) {
-        // An import answers HTTP 200 even when documents are rejected. The body is JSONL with one
-        // result per document, e.g. {"success":false,"error":"...","document":"..."}, so check
-        // every line. (Matching the literal '{"success":false}' never matched a real failure line.)
+        // An import answers HTTP 200 even when documents are rejected, so check each result line.
         $imported = 0;
         $failed = 0;
         $errors = array();
@@ -428,8 +411,7 @@ function typesense_search_request(string $method, string $endpoint, $batch = fal
             if ($failed <= 5) {
                 debug('typesense_search_request(): Import failed for document: ' . substr($line, 0, 500));
             }
-            // Group failures by reason. The same error for different documents differs only in the
-            // document id (e.g. "Could not find a document with id: 123"), so mask the id.
+            // Group failures by reason, with the document id masked.
             $reason = is_array($line_result) ? (string) ($line_result['error'] ?? 'Unknown error') : 'Unreadable response line';
             $reason = preg_replace('/\bid: ?[^`\s,]+/', 'id: <id>', $reason);
             $errors[$reason] = ($errors[$reason] ?? 0) + 1;
@@ -477,27 +459,24 @@ function typesense_search_import_failure(array $documents, string $reason): arra
 
 
 /**
- * The resource date fields that replace created_date. That field held the $date_field value under a
- * misleading name and served both the date sort and the recent-days limit, but core uses different
- * columns for the two.
+ * The resource date fields: creation_date for the recent-days limit and date_field_sort for the
+ * date sort.
  *
  * @return array Typesense field definitions.
  */
 function typesense_search_resource_date_fields(): array
 {
     return array(
-        // When the resource record was created: the recent-days limit ($recent_search_daylimit).
+        // For the recent-days limit.
         array('name' => 'creation_date', 'type' => 'int64', 'sort' => true, 'optional' => true, 'range_index' => true),
-        // The $date_field value as a text sort key: the date sort. See typesense_search_date_sort_key().
+        // For the date sort - see typesense_search_date_sort_key().
         array('name' => 'date_field_sort', 'type' => 'string', 'sort' => true, 'optional' => true),
     );
 }
 
 
 /**
- * The resource created_by field. It's optional because resource.created_by is NULL for a resource
- * created without a user (e.g. by a CLI import or staticsync). Such a resource is indexed with no
- * value, which - like SQL's NULL - never equals a user in a created_by filter.
+ * The resource created_by field. Optional, because resource.created_by can be NULL.
  *
  * @return array Typesense field definition.
  */
@@ -508,13 +487,8 @@ function typesense_search_resource_created_by_field(): array
 
 
 /**
- * Bring an existing resources collection up to date: add the date fields if they're missing, drop
- * created_date, which they replace, and make created_by optional. typesense_search_ensure_collection()
- * only creates missing collections, so without this an existing collection would keep its old schema
- * until it was rebuilt.
- *
- * Only the reindex script calls this: changing the schema of a large collection can take a while,
- * too long for a web request.
+ * Bring an existing resources collection up to date with the current schema. Called by the
+ * reindex script only, as it can take a while.
  *
  * @return array|false What was changed (empty if nothing needed changing), or false on failure.
  */
@@ -541,8 +515,7 @@ function typesense_search_upgrade_resource_schema()
         $changes[] = array('name' => 'created_date', 'drop' => true);
         $changed[] = 'dropped created_date';
     }
-    // A field can't be altered in place, so drop created_by and add it back in the same request;
-    // Typesense keeps the stored values.
+    // A field can't be altered in place: drop created_by and add it back in the same request.
     if (isset($existing['created_by']) && empty($existing['created_by']['optional'])) {
         $changes[] = array('name' => 'created_by', 'drop' => true);
         $changes[] = typesense_search_resource_created_by_field();
@@ -564,10 +537,8 @@ function typesense_search_upgrade_resource_schema()
 
 
 /**
- * Drop the plugin's Typesense collections, so that typesense_search_ensure_collection() creates them
- * again, empty and with the current schema. Used by the reindex script's --drop option.
- *
- * The memberships and grants collections go first, because they reference the resources collection.
+ * Drop the plugin's Typesense collections, for the reindex script's --drop option. The
+ * collections that reference resources go first.
  *
  * @return array|false Collection name => "dropped" or "not found", or false if a drop failed.
  */
@@ -595,12 +566,8 @@ function typesense_search_drop_collections()
 
 
 /**
- * The characters Typesense splits indexed text on, in addition to whitespace - the same ones RS's
- * keyword indexing turns into spaces: $config_separators plus the comma and colon that
- * cleanse_string() (include/search_functions.php) always adds. Without this Typesense keeps
- * "file_name.jpg" or "iron-tree" as one token (special characters are dropped, not split on), so
- * RS's keyword matches on the parts are missed. Typesense accepts single-byte characters only,
- * so the curly quotes in the default RS list are left out; RS drops those characters too.
+ * The characters Typesense splits indexed text on, as RS's keyword indexing does:
+ * $config_separators plus the comma and colon. Typesense accepts single-byte characters only.
  *
  * @return string[]
  */
@@ -618,12 +585,8 @@ function typesense_search_token_separators(): array
 
 
 /**
- * The schema of the resources collection. Every text field stems if and only if RS's $stemming
- * is on: RS then indexes and searches stems for every field, fixed-list values included, and
- * Typesense combines a multi-word query across fields correctly only when the fields agree on
- * stemming. (Before 2026-09-29 title and the multi-line fields stemmed unconditionally and the
- * single-line and fixed-list fields never, which missed plurals and broke multi-word matching -
- * found by the RS-API A/B run.) Changing stem or token_separators needs a --drop reindex.
+ * The schema of the resources collection. Text fields stem only if $stemming is on. Changing stem
+ * or token_separators needs a --drop reindex.
  *
  * @return array
  */
@@ -788,8 +751,7 @@ function typesense_search_ensure_collection(): bool
 
     // }
 
-    // Grants collection - one doc per non-confidential resource_custom_access row, joined at
-    // query time by the access restriction for confidential/custom resources.
+    // Grants collection - one document per resource_custom_access row (access <> 2).
     $existing_grants_collection = typesense_search_request('GET', '/collections/' . rawurlencode($typesense_search_collection_prefix . 'resource_access_grants'));
 
     if ($existing_grants_collection === false) {
@@ -965,12 +927,8 @@ function typesense_search_reindex_node_resources(int $node): int
 
 
 /**
- * Timestamp to index for a resource table datetime column: creation_date (the recent-days limit) or
- * modified (the modified sort).
- *
- * Read in PHP's default timezone, which ResourceSpace expects MySQL's to match. NULL or a zero date
- * ("0000-00-00 00:00:00") has no point in time and is indexed as the start of year 0: it sorts where
- * MySQL puts NULL (first ascending, last descending) and never passes a "created since" filter.
+ * Timestamp to index for a resource datetime column. NULL or a zero date is indexed as the start
+ * of year 0, which sorts where MySQL puts NULL.
  *
  * @param string|null $value Column value, e.g. "2024-05-01 10:30:00".
  *
@@ -988,13 +946,8 @@ function typesense_search_timestamp(?string $value): int
 
 
 /**
- * Sort key to index for the $date_field value, so that sorting on it matches core's date sort,
- * "ORDER BY field<$date_field>, r.ref": a text sort of the resource table column, not a date sort.
- *
- * Typesense sorts text as MySQL's case-insensitive collation does, but it puts an empty or missing
- * value last when ascending, where MySQL puts NULL first, then empty strings. So the key is ranked:
- * "0:" for NULL, "1:" for an empty string, and "2:<value>" for everything else, which keeps values
- * in their own order after the other two.
+ * Sort key for the $date_field value, so that a text sort matches core's date sort: "0:" for
+ * NULL, "1:" for an empty string and "2:<value>" otherwise.
  *
  * @param string|null $value The resource table's field<$date_field> column.
  *
@@ -1066,9 +1019,7 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
         $resources[$key]['id'] = (string) $resource['ref'];
         $resources[$key]['ref_s'] = (string) $resource['ref'];
         
-        // Default both node-derived array fields to the 0 sentinel. The attributes pass replaces
-        // them with the real lists (which keep the sentinel), but it only visits resources that have
-        // at least one node, so a resource with no metadata would otherwise get nodes only.
+        // Default the node-derived fields to the 0 sentinel; the attributes pass fills them in.
         $resources[$key]['nodes'] = [0];
         $resources[$key]['populated_field_ids'] = [0];
 
@@ -1078,11 +1029,10 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
 
         // $resources[$key]['title'] = trim((string) get_data_by_field($resource['ref'], (int) $GLOBALS['view_title_field']));
 
-        // No value for a resource created without a user - see typesense_search_resource_created_by_field().
+        // No value for a resource created without a user.
         $resources[$key]['created_by'] = $resource['created_by'] === null ? null : (int) $resource['created_by'];
 
-        // Dates: creation_date for the recent-days limit, the $date_field text for the date sort and
-        // modified for the modified sort.
+        // Dates for the recent-days limit, the date sort and the modified sort.
         $resources[$key]['creation_date'] = typesense_search_timestamp($resource['creation_date']);
         $resources[$key]['date_field_sort'] = typesense_search_date_sort_key($resource['date_field_sort']);
         $resources[$key]['modified_date'] = typesense_search_timestamp($resource['modified_date']);
@@ -1124,12 +1074,8 @@ function typesense_search_reindex_resources(int $limit = 100, int $after = 0): a
 }
 
 /**
- * Reindex collection memberships in batches. A collection can hold more resources than one batch,
- * so pagination uses a keyset cursor on the composite (collection, resource) key - paging by
- * collection alone would skip the rest of a collection that straddles a batch boundary.
- *
- * Selection and upload collections, and negative refs, are not indexed - see
- * typesense_search_membership_indexed(); the reindex script counts with the same rule.
+ * Reindex collection memberships in batches, paging on (collection, resource). Selection and
+ * upload collections, and negative refs, are not indexed.
  *
  * @param int $limit           Batch size.
  * @param int $after_collection Cursor: last collection processed.
@@ -1180,11 +1126,8 @@ function typesense_search_reindex_resource_collection_memberships(int $limit = 1
         $rcms[$key]['collection_ref'] = $last_collection;
         $rcms[$key]['collection_type'] = (int) $rcm['collection_type'];
 
-        // sortorder and date_added are required int fields in the schema, so a NULL would make
-        // Typesense reject the whole document. add_resource_to_collection() leaves sortorder NULL
-        // unless the collection has been reordered, so NULL is the common case. Index a NULL
-        // sortorder as the lowest int32, which sorts where MySQL puts NULLs (first ascending,
-        // last descending), and a NULL date_added as 0.
+        // Both are required ints. A NULL sortorder is indexed as the lowest int32, which sorts
+        // where MySQL puts NULLs, and a NULL date_added as 0.
         $rcms[$key]['sortorder'] = is_numeric($rcm['sortorder']) ? (int) $rcm['sortorder'] : -2147483648;
         $rcms[$key]['date_added'] = is_numeric($rcm['date_added']) ? (int) $rcm['date_added'] : 0;
     }
@@ -1252,18 +1195,14 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         $param_array
     );
 
-    // Paginate by resource ref (the resource_list is ordered ASC), so the cursor always advances
-    // past every resource in the batch - not just the last one that happened to have attributes.
+    // The cursor is the last resource in the batch, whether or not it had attributes.
     $resource_list_count = count($resource_list);
     $last = (int) $resource_list[$resource_list_count - 1];
 
     $resource_array_info = array();
     $date_range_info = array();
 
-    // nodes[] and populated_field_ids[] are built from ALL of the resource's nodes - every field
-    // type, whether or not the field is keyword-indexed - so node_bucket filters and !hasdata work
-    // for fields that aren't keyword-indexed. (field_*_* below drive keyword matching and so stay
-    // limited to indexed fields.)
+    // nodes[] and populated_field_ids[] take every node of the resource, not only indexed fields.
     $all_nodes = ps_query(
         "SELECT rn.resource AS resource_ref, rn.node AS node_ref, n.resource_type_field AS field_ref
             FROM resource_node rn
@@ -1278,8 +1217,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         $resource_array_info[$rref]['populated_field_ids'][] = (int) $all_node['field_ref'];
     }
 
-    // Merge every indexed attribute row for a resource into a single per-resource entry, so the
-    // import sends one document per resource instead of one per field value.
+    // Merge the attribute rows into one entry per resource.
     foreach ($resource_attributes as $resource_attribute) {
         $rref = (int) $resource_attribute['resource_ref'];
         $fref = (int) $resource_attribute['field_ref'];
@@ -1289,10 +1227,8 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         switch ((int) $resource_attribute['field_type']) {
             case FIELD_TYPE_TEXT_BOX_SINGLE_LINE:
             case FIELD_TYPE_WARNING_MESSAGE:
-                // A single-line field flagged numeric in RS (field_constraint == 1) is indexed as a
-                // float so numeric range/sort work; the value string still goes into _q for exact/
-                // word matching. Everything else (incl. a non-numeric value in a numeric field) is
-                // indexed as a plain string in _s.
+                // A numeric value in a numeric field (field_constraint 1) is indexed as a float,
+                // with its text in _q. Anything else is a string.
                 if ((int) $resource_attribute['field_constraint'] === 1 && is_numeric($value)) {
                     // numeric type
                     $resource_array_info[$rref][$prefix . '_f'] = (float) $value;
@@ -1359,10 +1295,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
         foreach ($fields as $field_ref => $dates) {
             $prefix = 'field_' . $field_ref;
 
-            /*
-            * Combine the searchable text representations from
-            * both ResourceSpace nodes.
-            */
+            // Combine the text representations of both nodes.
             $representations = array();
 
             foreach ($dates as $date) {
@@ -1384,10 +1317,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
                 ] = $representations;
             }
 
-            /*
-            * Both endpoints need to map to absolute timestamp
-            * intervals before we can create an accurate range.
-            */
+            // Endpoints that map to a point in time.
             $rangeable = array_filter(
                 $dates,
                 static function ($date) {
@@ -1396,13 +1326,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
                 }
             );
 
-            /*
-            * ResourceSpace date range fields should have two
-            * endpoint nodes.
-            *
-            * Don't create a misleading numeric range if one
-            * endpoint cannot be represented as an epoch range.
-            */
+            // A range needs both endpoints.
             if (count($rangeable) !== 2) {
                 continue;
             }
@@ -1417,10 +1341,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
                 'range_end'
             );
 
-            /*
-            * ResourceSpace's nodes don't need to arrive in
-            * start/end order.
-            */
+            // The nodes may arrive in either order.
             $resource_array_info[
                 $resource_ref
             ][
@@ -1442,7 +1363,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
 
         foreach ($info as $field => $value) {
             if ($field === 'nodes' || $field === 'populated_field_ids') {
-                // Unique, plus the intentional 0 sentinel so the array field always exists.
+                // Unique, plus the 0 sentinel so the field always exists.
                 $values = array_values(array_unique($value));
                 array_unshift($values, 0);
                 $values = array_values(array_unique($values));
@@ -1496,9 +1417,7 @@ function typesense_search_index_document(array $document): bool
 }
 
 /**
- * Import documents into a collection, splitting into chunks that never exceed a maximum document
- * count or byte size per HTTP POST (so a large batch cannot produce an oversized request).
- * Caps are overridable via $typesense_search_import_max_docs / _max_bytes.
+ * Import documents into a collection, in chunks limited by document count and byte size.
  *
  * @param string     $collection_suffix Collection name after the prefix (e.g. "resources").
  * @param array      $documents         Documents to import.
@@ -1549,7 +1468,7 @@ function typesense_search_import(string $collection_suffix, array $documents, st
     foreach ($documents as $doc) {
         $len = strlen(json_encode($doc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) + 1;
 
-        // Flush the current chunk before it would exceed a cap (always keep >= 1 doc per chunk).
+        // Send the chunk before it would exceed a cap.
         if (count($chunk) > 0 && (count($chunk) >= $max_docs || ($chunk_bytes + $len) > $max_bytes)) {
             $send($chunk);
             $chunk = array();
@@ -1598,9 +1517,7 @@ function typesense_search_grant_document(array $row): array
     $usergroup = (int) ($row['usergroup'] ?? 0);
     $expires = ($user > 0 && !empty($row['user_expires'])) ? (int) strtotime($row['user_expires']) : 0;
 
-    // A row is either a user grant or a group grant. Store -1 (never a real ref) in the unused
-    // field so the query filter's user:=<userref> / usergroup:=<usergroup> can never match the
-    // placeholder for an anonymous / no-group user (whose userref or usergroup is 0).
+    // Store -1 in the unused field, so it can never match a user or group ref of 0.
     if ($user > 0) {
         $id = $resource . '_u' . $user;
         $usergroup = -1;
@@ -1635,10 +1552,8 @@ function typesense_search_index_grants_batch(array $documents, ?array &$stats = 
 
 
 /**
- * Reindex resource_custom_access grants in batches (access <> 2 only). Used by the reindex CLI.
- *
- * A batch takes whole resources - every grant for the next $limit resources - because the cursor is
- * a resource ref: a batch cut off part-way through a resource's grants would skip the rest of them.
+ * Reindex resource_custom_access grants (access <> 2 only), all the grants of the next $limit
+ * resources per batch.
  *
  * @param int $limit Number of resources per batch.
  * @param int $after Only grants for resources with ref greater than this.
@@ -1688,8 +1603,7 @@ function typesense_search_reindex_grants(int $limit = 1000, int $after = 0): arr
 
 
 /**
- * (Re)index all grants for a single resource: delete its existing grant docs, then add the
- * current non-confidential ones. For future incremental sync from custom-access hooks.
+ * Reindex all the grants of a single resource.
  *
  * @param int $resource Resource ID.
  *
@@ -1724,10 +1638,6 @@ function typesense_search_index_grants(int $resource): bool
 
 /**
  * Synchronise ResourceSpace related keywords to Typesense synonyms.
- *
- * Creates or updates synonym groups in the configured Typesense collection
- * based on ResourceSpace related keyword relationships so that searches
- * automatically match related terms using OR-style expansion.
  *
  * @return bool True if the sync completed successfully.
  */
@@ -1805,26 +1715,10 @@ function typesense_parse_date(
         return null;
     }
 
-    /*
-     * Use UTC unless your ResourceSpace dates have a specific timezone
-     * that you want to preserve in the index.
-     */
+    // UTC, unless a timezone is given.
     $timezone ??= new DateTimeZone('UTC');
 
-    /*
-     * Match:
-     *
-     * YYYY
-     * YYYY-MM
-     * YYYY-MM-DD
-     *
-     * with optional time only after YYYY-MM-DD:
-     *
-     * YYYY-MM-DD HH:MM
-     * YYYY-MM-DD HH:MM:SS
-     * YYYY-MM-DDTHH:MM
-     * YYYY-MM-DDTHH:MM:SS
-     */
+    // YYYY, YYYY-MM or YYYY-MM-DD, with an optional HH:MM or HH:MM:SS after a full date.
     $pattern = '/^
         (?<year>\d{4})
         (?:
@@ -1854,10 +1748,7 @@ function typesense_parse_date(
         return null;
     }
 
-    /*
-     * Preserve the original textual components so month/day remain
-     * zero-padded in the Typesense query representations.
-     */
+    // Keep the text, so month and day stay zero-padded.
     $year_text   = $matches['year'];
     $month_text  = $matches['month'];
     $day_text    = $matches['day'];
@@ -1865,9 +1756,7 @@ function typesense_parse_date(
     $minute_text = $matches['minute'];
     $second_text = $matches['second'];
 
-    /*
-     * Numeric forms for validation.
-     */
+    // Numeric forms for validation.
     $year = (int) $year_text;
 
     $month = $month_text !== null
@@ -1892,11 +1781,7 @@ function typesense_parse_date(
 
     $has_time = $hour !== null;
 
-    /*
-     * -----------------------------------------------------------------
-     * YYYY
-     * -----------------------------------------------------------------
-     */
+    // YYYY
     if ($month === null) {
         if ($year === 0) {
             return null;
@@ -1930,23 +1815,12 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * Validate month.
-     *
-     * 00 is allowed because ResourceSpace uses it to represent an
-     * unknown component.
-     */
+    // Month 00 is allowed: ResourceSpace uses it for an unknown component.
     if ($month < 0 || $month > 12) {
         return null;
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * YYYY-MM
-     * -----------------------------------------------------------------
-     *
-     * The short YYYY-MM form must have an actual year and month.
-     */
+    // YYYY-MM, which must have an actual year and month.
     if ($day === null) {
         if ($year === 0 || $month === 0) {
             return null;
@@ -1982,20 +1856,12 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * Validate day.
-     *
-     * Again, 00 is valid as an "unknown" ResourceSpace component.
-     */
+    // Day 00 is allowed too.
     if ($day < 0 || $day > 31) {
         return null;
     }
 
-    /*
-     * Explicitly define the ResourceSpace partial-date combinations
-     * that we support.
-     */
-
+    // The ResourceSpace partial-date combinations that are supported.
     // 2024-00-00
     $year_only =
         $year > 0 &&
@@ -2026,13 +1892,7 @@ function typesense_parse_date(
         $month > 0 &&
         $day > 0;
 
-    /*
-     * Reject other zero-component combinations, for example:
-     *
-     * 2024-00-11
-     * 0000-08-11
-     * 0000-00-00
-     */
+    // Reject other zero-component combinations, e.g. 2024-00-11 or 0000-00-00.
     if (
         !$year_only &&
         !$year_month &&
@@ -2043,16 +1903,12 @@ function typesense_parse_date(
         return null;
     }
 
-    /*
-     * Time is only meaningful against a complete date.
-     */
+    // A time needs a complete date.
     if ($has_time && !$full_date) {
         return null;
     }
 
-    /*
-     * Validate time.
-     */
+    // Validate time.
     if ($has_time) {
         if (
             $hour < 0 ||
@@ -2069,11 +1925,7 @@ function typesense_parse_date(
         }
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * YYYY-00-00
-     * -----------------------------------------------------------------
-     */
+    // YYYY-00-00
     if ($year_only) {
         $start = typesense_date_create(
             $year,
@@ -2103,11 +1955,7 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * YYYY-MM-00
-     * -----------------------------------------------------------------
-     */
+    // YYYY-MM-00
     if ($year_month) {
         $start = typesense_date_create(
             $year,
@@ -2139,14 +1987,7 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * 0000-MM-00
-     * -----------------------------------------------------------------
-     *
-     * "August in any year" does not describe a single continuous
-     * position on the absolute timeline, so no epoch range is emitted.
-     */
+    // 0000-MM-00: a month in any year is not one interval, so there is no range.
     if ($month_only) {
         return array(
             'representations' => array(
@@ -2160,14 +2001,7 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * 0000-00-DD
-     * -----------------------------------------------------------------
-     *
-     * Likewise, "11th day of any month/year" cannot map to one epoch
-     * interval.
-     */
+    // 0000-00-DD: likewise, no range.
     if ($day_only) {
         return array(
             'representations' => array(
@@ -2181,19 +2015,12 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * Complete YYYY-MM-DD
-     * -----------------------------------------------------------------
-     */
-
+    // Complete YYYY-MM-DD
     if (!checkdate($month, $day, $year)) {
         return null;
     }
 
-    /*
-     * No time supplied: the value represents the whole calendar day.
-     */
+    // No time: the whole calendar day.
     if (!$has_time) {
         $start = typesense_date_create(
             $year,
@@ -2225,12 +2052,7 @@ function typesense_parse_date(
                 $date_text,
             ),
 
-            /*
-             * A complete date can have a useful sortable timestamp.
-             * Midnight is the canonical beginning of that date, while
-             * range_start/range_end preserve the fact that it represents
-             * the entire day.
-             */
+            // Midnight as the sortable timestamp; the range covers the whole day.
             'timestamp' => $start->getTimestamp(),
             'range_start' => $start->getTimestamp(),
             'range_end' => $end->getTimestamp(),
@@ -2239,12 +2061,7 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * -----------------------------------------------------------------
-     * Complete date + time
-     * -----------------------------------------------------------------
-     */
-
+    // Complete date and time
     $actual_second = $second ?? 0;
 
     $start = typesense_date_create(
@@ -2280,9 +2097,7 @@ function typesense_parse_date(
         $minute_text_value,
     );
 
-    /*
-     * HH:MM means the value has minute precision.
-     */
+    // HH:MM is minute precision.
     if ($second === null) {
         $end = $start->modify('+1 minute');
 
@@ -2296,9 +2111,7 @@ function typesense_parse_date(
         );
     }
 
-    /*
-     * HH:MM:SS means second precision.
-     */
+    // HH:MM:SS is second precision.
     $second_text_value =
         $minute_text_value . ':' . $second_text;
 
@@ -2352,9 +2165,7 @@ function typesense_date_create(
 
     $errors = DateTimeImmutable::getLastErrors();
 
-    /*
-     * getLastErrors() returns false when there were no warnings/errors.
-     */
+    // getLastErrors() returns false when there were none.
     if (
         is_array($errors) &&
         (
@@ -2365,9 +2176,7 @@ function typesense_date_create(
         return null;
     }
 
-    /*
-     * Ensure PHP hasn't normalised the date behind our back.
-     */
+    // Make sure PHP hasn't normalised the date.
     if ($date->format('Y-m-d H:i:s') !== $value) {
         return null;
     }

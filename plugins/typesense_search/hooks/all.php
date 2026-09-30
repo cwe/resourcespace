@@ -84,19 +84,14 @@ function HookTypesense_searchAllExternal_search(
         'select' => $select,
     ));
 
-    // Special request modes (SQL passthrough, disk usage totals, editable-only, smart search)
-    // are not results Typesense produces - always let core handle them.
+    // SQL passthrough, disk usage, editable-only and smart searches are always left to core.
     if ($ctx->returnsql || $ctx->return_disk_usage || $ctx->editable_only || $ctx->smartsearch) {
         return false;
     }
 
     $results = typesense_search_run($ctx);
     if ($results !== false) {
-        // Record that Typesense served the *main results grid* this request (used by the UI
-        // indicator). The grid uses a chunked [offset, count] fetchrows; incidental searches on
-        // the page (the selection-collection bar, counts, refs-only lookups) use -1 and must not
-        // flip the flag - otherwise e.g. a fallback !locked search shows the Typesense badge
-        // because the selection-collection !collection search was served.
+        // Flag that Typesense served the main results grid (chunked fetchrows), for the indicator.
         if (!$ctx->return_refs_only && is_array($ctx->fetchrows)) {
             $GLOBALS['typesense_search_served'] = true;
         }
@@ -180,8 +175,7 @@ function HookTypesense_searchAllAfter_save_related_keywords(string $keyword, str
 
 
 /**
- * Show a small badge next to the search title indicating which engine served the results -
- * Typesense or the standard (MySQL) search. Enable/disable via $typesense_search_show_indicator.
+ * Show a badge next to the search title indicating which engine served the results.
  *
  * @return void
  */

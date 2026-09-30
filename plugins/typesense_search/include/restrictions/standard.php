@@ -1,12 +1,8 @@
 <?php
 
 /**
- * Standard visibility/scope restrictions applied under every mode - the Typesense equivalent of
- * the bulk of core search_filter(): resource type, archive state (defaults + workflow perms),
- * created-by filter, recent-search day limit and pending-state hiding (with the "ert" resource
- * type exemption, $uploader_view_override and the external-share exemption, as in core).
- *
- * Confidential / custom access grants are handled by AccessRestriction, not here.
+ * Standard restrictions applied under every mode, as core's search_filter(): resource type,
+ * archive state, created-by filter, recent-search day limit and pending-state hiding.
  */
 class TypesenseStandardRestrictions implements TypesenseSearchComponent
 {
@@ -30,9 +26,7 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
     }
 
     /**
-     * Resource type filters: the requested restypes plus any "T" permission exclusions.
-     * Special searches only honour restypes when $special_search_honors_restypes is set (and
-     * never for !collection), mirroring core.
+     * The requested resource types, plus any "T" permission exclusions.
      */
     private function applyResourceTypes(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
     {
@@ -70,8 +64,7 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
     }
 
     /**
-     * $resource_created_by_filter - restrict to resources created by the given users (-1 aliases
-     * the current user).
+     * $resource_created_by_filter - only resources created by the given users (-1 = current user).
      */
     private function applyCreatedByFilter(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
     {
@@ -95,8 +88,7 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
         if ($ctx->recent_search_daylimit === '' || !is_numeric($ctx->recent_search_daylimit)) {
             return;
         }
-        // Core: "creation_date > (curdate() - interval n DAY)" - created after the midnight that
-        // began the day n days ago, not n x 24 hours ago.
+        // As core: since midnight n days ago, not n x 24 hours ago.
         $cutoff = strtotime(sprintf('today %+d days', -(int)$ctx->recent_search_daylimit));
         if ($cutoff !== false) {
             $plan->addFilter('creation_date:>' . $cutoff);
@@ -104,15 +96,15 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
     }
 
     /**
-     * Archive state filtering: default search states (or the explicit request), the "z"
-     * permission exclusions and the pending-state hide, honouring a mode's suppression.
+     * Archive states (the defaults or those requested), "z" permission exclusions and the
+     * pending-state hide.
      */
     private function applyArchive(TypesenseSearchContext $ctx, TypesenseQueryPlan $plan): void
     {
         global $search_all_workflow_states, $archive_standard, $additional_archive_states, $userpermissions;
         global $uploader_view_override, $collection_allow_not_approved_share;
 
-        // Match core: only valid integer archive states count (a stray "" must not become 0).
+        // Only valid integer states count, as in core.
         $archive = array_values(array_filter($ctx->archive, 'is_int_loose'));
 
         if (!$plan->isSuppressed('archive')) {
@@ -129,8 +121,7 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
             }
         }
 
-        // "z" permission: exclude the blocked archive states. With $uploader_view_override a user
-        // still sees their own resources in a blocked state, as in core.
+        // "z" permission: exclude blocked states, except own resources with $uploader_view_override.
         $blocked = array();
         for ($n = -2; $n <= 3; $n++) {
             if (checkperm('z' . $n)) {
@@ -151,12 +142,8 @@ class TypesenseStandardRestrictions implements TypesenseSearchComponent
             }
         }
 
-        // Hide resources in a pending state (-2 / -1) from users without "v", except the user's own
-        // resources and the resource types the user has "ert" permission for. Core's
-        // ((archive<>-2 OR created_by=U) AND (archive<>-1 OR created_by=U)) OR resource_type IN (ert)
-        // is archive NOT IN (-2,-1) OR created_by=U OR resource_type IN (ert). As in core, the hide
-        // is skipped when a collection is viewed through an external share key and
-        // $collection_allow_not_approved_share is set.
+        // Hide pending states (-2, -1) from users without "v", except their own resources and "ert"
+        // resource types. Skipped for an external share with $collection_allow_not_approved_share.
         $shared_pending_allowed = $ctx->command === 'collection'
             && $ctx->k !== ''
             && !empty($collection_allow_not_approved_share);

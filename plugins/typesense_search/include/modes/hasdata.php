@@ -1,10 +1,8 @@
 <?php
 
 /**
- * Has-data mode - "!hasdata<fieldref>".
- *
- * Resources that hold a value in the given field. Like core, it does not apply the default
- * workflow-state restriction (the default-archive restriction is suppressed).
+ * Has-data mode - "!hasdata<fieldref>". Resources with a value in the given field, in any
+ * archive state.
  */
 class TypesenseHasDataMode implements TypesenseSearchComponent
 {

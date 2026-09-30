@@ -1,10 +1,7 @@
 <?php
 
 /**
- * User-pending mode - "!userpending".
- *
- * Resources pending review (archive state -1). The default-archive restriction is suppressed and
- * replaced with the fixed state.
+ * User-pending mode - "!userpending". Resources in archive state -1.
  */
 class TypesenseUserPendingMode implements TypesenseSearchComponent
 {
