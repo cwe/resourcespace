@@ -99,6 +99,15 @@ $page_def[] = config_add_text_input(
     $lang['typesense_search_max_rows_help']
 );
 
+$page_def[] = config_add_text_input(
+    'typesense_search_filter_max_ops',
+    $lang['typesense_search_filter_max_ops'],
+    false,
+    420,
+    false,
+    $lang['typesense_search_filter_max_ops_help']
+);
+
 config_gen_setup_post($page_def, $plugin_name);
 
 include '../../../include/header.php';

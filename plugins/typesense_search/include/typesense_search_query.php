@@ -1173,58 +1173,77 @@ function typesense_search_collect_refs(array $hits, array &$refs): void
 
 
 /**
- * Run one documents/search request for rows $offset to $offset + $limit - 1 of a compiled query.
- * $limit can be at most 250, the most hits Typesense returns per request; 0 fetches just the total.
- *
- * @return array{found:int,refs:int[]}|false
+ * How many operations a filter_by expression costs against Typesense's --filter-by-max-ops limit
+ * (default 100). Every operand and every connector counts one, so N clauses joined by && or ||
+ * cost 2N - 1: 50 clauses pass, 51 are refused. Parentheses and the values inside an array
+ * (nodes:=[1,2,3]) are free, and a connector inside a backtick-quoted value is not one.
+ * Live-verified on Typesense 30.2 (2026-09-29).
  */
-function typesense_search_fetch_window(TypesenseQueryPlan $plan, array $params, int $offset, int $limit)
+function typesense_search_filter_ops(string $filter_by): int
 {
-    global $typesense_search_collection_prefix;
-
-    $params['offset'] = $offset;
-    $params['limit'] = $limit;
-
-    $endpoint =
-        '/collections/'
-        . rawurlencode($typesense_search_collection_prefix . $plan->collection)
-        . '/documents/search?'
-        . http_build_query($params);
-
-    $result = typesense_search_request('GET', $endpoint);
-    if ($result === false || !isset($result['hits']) || !is_array($result['hits'])) {
-        return false;
+    $filter_by = trim($filter_by);
+    if ($filter_by === '') {
+        return 0;
     }
 
-    $refs = array();
-    typesense_search_collect_refs($result['hits'], $refs);
+    $connectors = 0;
+    $quoted = false;
+    $length = strlen($filter_by);
+    for ($i = 0; $i < $length; $i++) {
+        $char = $filter_by[$i];
+        if ($char === '`') {
+            $quoted = !$quoted;
+        } elseif (!$quoted && ($char === '&' || $char === '|') && $i + 1 < $length && $filter_by[$i + 1] === $char) {
+            $connectors++;
+            $i++;
+        }
+    }
 
-    return array('found' => (int)($result['found'] ?? count($refs)), 'refs' => $refs);
+    return 2 * $connectors + 1;
 }
 
 
 /**
- * Fetch $count rows of a compiled query from $offset on, 250 per page. The pages are sent in
- * multi_search requests of up to 50 searches (Typesense's default limit_multi_searches), which
- * saves a round trip per page.
+ * Run one or more windows of a compiled query as multi_search requests (batches of up to 50
+ * searches, Typesense's default limit_multi_searches). Every search request goes this way, the
+ * first window included: GET /documents/search caps the query string at 4,000 bytes, which a node
+ * bucket of a few hundred ids fills on its own, while multi_search carries the same parameters in
+ * the request body with no such cap (5,000 ids in one nodes:=[...] verified) and returns the same
+ * totals.
  *
- * @return int[]|false Refs in result order.
+ * A filter_by costing more than $typesense_search_filter_max_ops operations is refused here,
+ * before any request is made - Typesense would reject it with HTTP 400 - so the search falls back
+ * to the MySQL search (or returns nothing in Typesense-only mode).
+ *
+ * @param array $windows [offset, limit] pairs, one per search; a limit of 0 fetches just the total.
+ * @return array[]|false One decoded search result per window, in order, each with 'found' and 'hits'.
  */
-function typesense_search_fetch_pages(TypesenseQueryPlan $plan, array $params, int $offset, int $count)
+function typesense_search_multi_search(TypesenseQueryPlan $plan, array $params, array $windows)
 {
-    global $typesense_search_collection_prefix;
+    global $typesense_search_collection_prefix, $typesense_search_filter_max_ops;
 
-    $page_size = 250;
+    if (isset($params['filter_by'])) {
+        $max_ops = isset($typesense_search_filter_max_ops) ? (int)$typesense_search_filter_max_ops : 100;
+        $ops = typesense_search_filter_ops((string)$params['filter_by']);
+        if ($max_ops > 0 && $ops > $max_ops) {
+            debug(
+                'typesense_search_multi_search(): filter_by costs ' . $ops . ' operations, more than '
+                . '$typesense_search_filter_max_ops (' . $max_ops . '), so the MySQL search will handle it'
+            );
+            return false;
+        }
+    }
+
     $searches = array();
-    for ($start = $offset; $start < $offset + $count; $start += $page_size) {
+    foreach ($windows as $window) {
         $searches[] = array_merge($params, array(
             'collection' => $typesense_search_collection_prefix . $plan->collection,
-            'offset' => $start,
-            'limit' => min($page_size, $offset + $count - $start),
+            'offset' => (int)$window[0],
+            'limit' => (int)$window[1],
         ));
     }
 
-    $refs = array();
+    $results = array();
     foreach (array_chunk($searches, 50) as $batch) {
         $response = typesense_search_request('POST', '/multi_search', false, array('searches' => $batch));
         if (
@@ -1239,11 +1258,59 @@ function typesense_search_fetch_pages(TypesenseQueryPlan $plan, array $params, i
         foreach ($response['results'] as $result) {
             // A search that fails reports its error in place of hits; the response is still HTTP 200.
             if (!isset($result['hits']) || !is_array($result['hits'])) {
-                debug('typesense_search_fetch_pages(): search failed: ' . ($result['error'] ?? 'no hits returned'));
+                debug('typesense_search_multi_search(): search failed: ' . ($result['error'] ?? 'no hits returned'));
                 return false;
             }
-            typesense_search_collect_refs($result['hits'], $refs);
+            $results[] = $result;
         }
+    }
+
+    return $results;
+}
+
+
+/**
+ * Fetch rows $offset to $offset + $limit - 1 of a compiled query, with the total. $limit can be at
+ * most 250, the most hits Typesense returns per request; 0 fetches just the total.
+ *
+ * @return array{found:int,refs:int[]}|false
+ */
+function typesense_search_fetch_window(TypesenseQueryPlan $plan, array $params, int $offset, int $limit)
+{
+    $results = typesense_search_multi_search($plan, $params, array(array($offset, $limit)));
+    if ($results === false) {
+        return false;
+    }
+
+    $refs = array();
+    typesense_search_collect_refs($results[0]['hits'], $refs);
+
+    return array('found' => (int)($results[0]['found'] ?? count($refs)), 'refs' => $refs);
+}
+
+
+/**
+ * Fetch $count rows of a compiled query from $offset on, 250 per page, all the pages in as few
+ * multi_search requests as possible.
+ *
+ * @return int[]|false Refs in result order.
+ */
+function typesense_search_fetch_pages(TypesenseQueryPlan $plan, array $params, int $offset, int $count)
+{
+    $page_size = 250;
+    $windows = array();
+    for ($start = $offset; $start < $offset + $count; $start += $page_size) {
+        $windows[] = array($start, min($page_size, $offset + $count - $start));
+    }
+
+    $results = typesense_search_multi_search($plan, $params, $windows);
+    if ($results === false) {
+        return false;
+    }
+
+    $refs = array();
+    foreach ($results as $result) {
+        typesense_search_collect_refs($result['hits'], $refs);
     }
 
     return $refs;

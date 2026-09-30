@@ -17,5 +17,7 @@ $lang['typesense_search_show_indicator'] = 'Show search engine indicator';
 $lang['typesense_search_show_indicator_help'] = 'Show a badge next to the search title indicating whether the displayed results came from Typesense or the standard search.';
 $lang['typesense_search_max_rows'] = 'Most results to fetch from Typesense';
 $lang['typesense_search_max_rows_help'] = 'Typesense returns at most 250 results per request, so a search that needs more (for example every result of a large search) is fetched a page at a time, which gets slower as the pages get deeper. A search that needs more results than this uses the standard search instead, unless "Only use Typesense for searching" is enabled. 0 means no limit.';
+$lang['typesense_search_filter_max_ops'] = 'Most filter operations to send to Typesense';
+$lang['typesense_search_filter_max_ops_help'] = 'Typesense refuses a filter with more operations than its --filter-by-max-ops setting (default 100). Every filter clause and every AND or OR between clauses counts as one, so a search that ANDs many individual nodes (the category tree AND option, or checkbox lists searched with AND) can exceed it. A search whose filter would cost more than this uses the standard search instead. Set this to match the Typesense server. 0 sends the filter regardless.';
 $lang['typesense_search_served_typesense'] = 'Typesense';
 $lang['typesense_search_served_mysql'] = 'Standard search';

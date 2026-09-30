@@ -498,6 +498,15 @@ Most combinations are served by Typesense (the ✅ rows above). The remaining di
 - **`-field:value`** and **`field:value` on a non-viewable field** — deliberate vetoes.
 - **`!collection` of a selection or upload collection** (type 2, type 1, or a negative ref) — these
   volatile per-user collections are deliberately not indexed, so the mode vetoes.
+- **AND-shaped node searches of about 45 nodes or more** (`$category_tree_search_use_and_logic`, or
+  checkbox lists searched with `$checkbox_and`) — one `nodes:=[n]` clause per node runs into
+  Typesense's 100-operation `filter_by` cap (every clause and every `&&` counts one), so the plugin
+  vetoes above `$typesense_search_filter_max_ops` before sending. Core's own path is bounded on the
+  same shape by MySQL's 61-table join limit (one join per node): live, a non-`v` user's search of
+  57 ANDed `@@` words runs (in 30 s) and 58 fails with a database error. Large **OR** buckets are
+  unaffected: a checkbox list, category tree or fixed-list `a;b;c` searched as any-of is one
+  `nodes:=[…]` array (one operation), and every request is a POST `multi_search`, so a bucket of
+  thousands of ids is served (verified: 5,000).
 - Beyond the combination matrix, every special without a dedicated mode also vetoes here:
   `!images`, `!nopreview`, `!geo`, `!colour`/`!colourkey`, `!rgb`, `!related`/`!relatedpushed`,
   `!duplicates`, `!nodownloads`, `!integrityfail`, `!locked`, `!noningested`, `!report`, `!unused`

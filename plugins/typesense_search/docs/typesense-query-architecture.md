@@ -138,6 +138,26 @@ request sends Typesense's `offset`/`limit`, so any offset works (the search page
   rest of a bigger window is fetched 250 at a time in `multi_search` requests of up to 50 searches
   (Typesense's default `limit_multi_searches`). Refs are de-duplicated, keeping the first position,
   in case the index changes between requests. Only `ref` is requested.
+- **Transport:** every search request, the first window included, is a POST `multi_search` (one
+  search, or up to 50 pages). `GET /documents/search` caps the query string at 4,000 bytes
+  (Typesense 30.2: "Query string exceeds max allowed length of 4000"), which one `nodes:=[…]` bucket
+  of about 560 five-digit ids fills by itself, fewer once `query_by` and the restriction filters
+  are alongside; `multi_search` carries the same parameters in the body with no such cap (5,000 ids
+  in one bucket, about 1 s) and returns the same totals. Live-verified 2026-09-29. [**FIXED** — the
+  first window used to be a GET, so a large checkbox or category-tree bucket silently fell back
+  to MySQL, or showed nothing in Typesense-only mode]
+- **Filter operation cap:** Typesense refuses a `filter_by` costing more than `--filter-by-max-ops`
+  (default 100) operations. Every operand and every `&&` / `||` counts one; parentheses, the values
+  inside an array and a connector inside a backtick-quoted value are free — so 50 clauses is the
+  most, or 25 `(a || b)` groups. [`typesense_search_filter_ops()`](../include/typesense_search_query.php:1182)
+  counts the compiled filter and [`typesense_search_multi_search()`](../include/typesense_search_query.php:1221)
+  vetoes above `$typesense_search_filter_max_ops` (default 100, on the setup page; 0 = send
+  regardless) before any request, so the search falls back instead of failing. Only AND-of-single-
+  node shapes get near it — `$category_tree_search_use_and_logic` or `$checkbox_and` with about 45
+  nodes once the restriction clauses are counted; an OR bucket of any size costs one. Core is
+  bounded on the same shape by MySQL's 61-table join limit (one `resource_node` join per node,
+  [do_search_nodes.php:11](../../../include/do_search_nodes.php:11)). Live-verified 2026-09-29.
+  [**BUILT**]
 - **Cost:** each page costs more the deeper it is, because Typesense ranks every row before it. On
   the live index (2026-09-24, through `typesense_search_execute()`): 10,000 rows 0.3 s, 25,000
   1.5 s, 50,000 about 5 s, all 114,596 about 20 s. With one GET per page instead of `multi_search`
@@ -545,6 +565,42 @@ fallbacks are needed for syntax reasons:
     user or the option off → the normal path; the hydrate SELECT gets `rca.access`/`rca2.access`
     replaced by 0 (so no grant joins), a `v` SELECT untouched. Not live-testable on `ysp_`, where the
     option is off.
+
+19. **Large node buckets and the filter operation cap:** ✅ live probe (2026-09-29, Typesense 30.2,
+    read-only, `ysp_resources` 114,596 docs): the GET query string is capped at 4,000 bytes (564
+    five-digit ids in a minimal query pass, 565 fail); POST `multi_search` takes 5,000 ids in one
+    `nodes:=[…]` (1.0 s) and 1,000 in a `nodes:!=[…]`, with totals identical to GET wherever GET
+    succeeded. Operation cap: 50 clauses pass and 51 fail, `&&` and `||` alike, parenthesised or
+    not; 25 `(a || b)` groups pass, 26 fail; 2 restriction clauses + 48 node clauses pass, 49 fail;
+    a backtick-quoted `&&` is not counted. Stub harness (47 checks): the operation count for each of
+    those shapes, the first window and the pages going out as one `multi_search` with every param,
+    a limit-0 count, a per-search error inside an HTTP 200 failing the search, the guard vetoing 51
+    clauses (and a `!last` cutoff query) with zero requests, 0 disabling it, 60 pages in two
+    requests. Live through `typesense_search_execute()`: 500 / 1,000 / 5,000-id buckets return
+    114,489 / 114,513 / 114,562, equal to a direct POST of the same filter; 48 clauses served, 49
+    and 60 vetoed with no request where a direct POST is refused; the `!last` cutoff with a
+    1,000-id bucket takes 2 requests.
+    **RS-API A/B (2026-09-29, `standard_user_ts` Typesense-only vs `standard_user_no_ts`, resourceid
+    ASC, `[0,48]`, archive 0; host on e388faa9, i.e. the hydrate fix but not yet this transport
+    change):** node cases match exactly — `@@389` (58,028), `@@389 @@6123` (27,039), `@@388 @@389`
+    (0), `@@388@@389` (94,936), `@@!389` alone (42,834), `@@389 @@!388`, `keywords:sculpture`,
+    `keywords:sculpture;nature` and `keywords:sculpture;nosuchvalue` (30 each), `!hasdata88`
+    (101,666), `!hasdata150` (105,651), `@@389` with restypes / relevance / page 2, and
+    `!collection3058` plain, `@@389`, `@@!389` and `sculpture` refines. `sculpture @@389` and
+    `sculpture @@!389` differ only by the keyword side (`sculpture` alone: 47,536 vs 49,468 — the
+    stemming / related-keyword divergences already in the inventory). AND chains of N `@@389` words:
+    core serves 57 (4 base tables + 57 joins = 61) and fails at 58 with "Bad prepared SQL statement"
+    ([do_search.php:453](../../../include/do_search.php:453)) — MySQL's 61-table join limit, live;
+    it also takes 22–30 s from 40 joins up, against 60–130 ms in Typesense. On the un-updated
+    host the Typesense user got an empty set for the 600- and 1,000-id buckets (GET cap) and from
+    45 ANDed nodes (the operation cap, about 5 restriction clauses counted), exactly the two
+    failures this change removes or turns into a clean veto.
+    Parser quirks match too, since core resolves every token before the hook: `@@389@@!388` (a NOT
+    inside an OR word is kept positive) = 94,936, the same as `@@388@@389`; `@@!!389` (double NOT,
+    treated as positive) = 58,028; `@@!389 @@!388` = 5,926; `@@389 keywords:sculpture` = 3;
+    `@@99999999` (no such node, dropped) = 0; and `@@389` under archive `0,1,2`, date DESC and
+    modified DESC all match.
+
 
 ### Planned: Typesense-vs-core parity testing via the RS API
 
