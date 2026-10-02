@@ -4,181 +4,71 @@ A review of every kind of search core ResourceSpace supports, what the `typesens
 and where the two differ. It was done from the code, not from the other documents in this folder, and every
 difference listed was measured by running both engines.
 
-- **Code reviewed:** branch `typesense` at `c72fe64e`.
-- **Dates:** 1 and 2 October 2026.
+- **Code reviewed:** branch `typesense` at `c72fe64e`, on 1 and 2 October 2026.
 - **Nothing was fixed.** This is a record of behaviour.
 - **How to reproduce:** [`../harness/README.md`](../harness/README.md). Raw output is in `../harness/results/`.
-
-Counts are written **core / plugin**: the number of resources each engine returned for the same search.
+- Figures are written **core / plugin**: the number of resources each engine returned for the same search.
+  "Local" figures come from a small fixture and use its own equivalent of the example; "test system" figures
+  use the example shown.
+- Findings are referred to as A1, B3 and so on. [Appendix A](#appendix-a-earlier-numbering) maps them to the
+  numbers used in earlier notes.
 
 ---
 
-## 1. Summary
+## 1. The short version
 
-Most searches the plugin serves return the same resources as core, in the same order where the order is
-defined, and everything it has no mode for is handed back to core correctly. Paging is exact at every window
-shape tried. Combining terms does not change this: across about 2,500 generated combinations of terms,
-arguments, special searches and permissions, the plugin returned the expected resources in every form but one
-(item 33; see "Combinations" in section 4).
+The plugin returns the same resources as core for most searches, but 48 differences were found. They fall into
+eight themes, grouped by cause, each shown with its worst case on the test system.
 
-There are 33 numbered differences below, plus the ones already known before this review. The ones that matter
-most on the test system (about 100,000 visible resources, `$stemming` on), with what was measured there:
-
-| What a user does | Core | Plugin | Item |
+| Theme | Findings | Worst case on the test system | To decide |
 |---|---|---|---|
-| Exports search results as CSV metadata | Works | PHP TypeError, for every user group | 17 |
-| Searches a quoted phrase, `"sculpture park"` | 6,883 | 0 | 26 |
-| Uses the year dropdown on the simple search bar | 8,838 | 0 | 1 |
-| Clicks a metadata value, then searches again from the search box (option name with a space) | 148 | 0 | 4 |
-| Types part of an option name, `usagerights:social` | 148 | 100,862 (everything) | 3 |
-| Searches a plain word, `land` | 3,172 | 69,408 | 2 |
-| Includes a stop word, `the sculpture` | 49,468 | 17,228 | 22 |
-| Wildcard in a field, `title:con*` | 1,317 | 262 | 18 |
-| Leading wildcard, `*scape` | 68,601 | 381 | 11 |
-| Date range ending in a month with no day chosen (February) | 822 | 21,151 | 6 |
-| Hand-typed search on a date field that is not indexed | 3,676 | 0 | 20 |
-
-The first row was measured locally and follows from the code for any system with the plugin active; it was not
-triggered on the live system. Every other row is a live figure.
-
-Also relevant there: nothing reaches the index between reindexes (K1), and next / previous on the resource page
-follows a different order from the result grid for large relevance-sorted searches (23).
-
-Not relevant on that system today, from a survey of its database: it has no formatted (HTML) fields, no
-translated values, no category trees, no search filters, and one value longer than 500 characters in an indexed
-field. Items 7, 8, 9 and 16 therefore have no effect there.
+| [A. Features that fail outright](#a-features-that-fail-outright) | 2 | CSV metadata export stops with a PHP error, for every user group | Change the plugin's hook, or core's call? |
+| [B. Search forms the plugin does not recognise](#b-search-forms-the-plugin-does-not-recognise) | 17 | Year dropdown 8,838 / 0. Part of an option name 148 / 100,862 | For each form: teach the plugin the rule, or have it decline so core answers? |
+| [C. Typesense defaults left as they are](#c-typesense-defaults-left-as-they-are) | 4 | Plain word `land` 3,172 / 69,408 | Send stricter search parameters with every query? |
+| [D. Stemming](#d-stemming) | 2 | Quoted phrase `"sculpture park"` 6,883 / 0 | How should phrases work when stemming is on? |
+| [E. What the index holds](#e-what-the-index-holds) | 10 | Nothing reaches the index between reindexes | What happens until incremental indexing lands? |
+| [F. Access and permissions](#f-access-and-permissions) | 6 | Not run there; locally a private collection is shown to the wrong user, 0 / 2 | Share core's collection check, or copy it? |
+| [G. Order and navigation](#g-order-and-navigation) | 2 | Next / previous follows a different order above 25,000 results | Is the relevance order acceptable as it is? |
+| [H. Smaller items](#h-smaller-items) | 5 | Hand-typed searches only | Accept as they are? |
+| [Core's own bugs and quirks](#4-cores-own-bugs-and-quirks) | 4 | `!last` with a node filter returns one row | Decision so far: leave core as it is |
 
 ---
 
-## 2. Method and limits
+## 2. What works
 
-Three instruments, all in `../harness/`:
+Everything in this table returned the same resources from both engines, and the same order where an order is
+defined.
 
-1. **Local A/B** (`ab/`). Core's real `do_search()` and the plugin's real indexer, query builder and hydrate on
-   the same small fixture. Core's SQL ran on SQLite; the plugin talked to a local Typesense 30.2, the version
-   on the test system. About 440 hand-written cases, plus 2,481 generated combinations run with `$stemming` off
-   and again with it on.
-2. **Trace** (`trace/`). No database, no Typesense: shows the SQL core builds and the request the plugin would
-   send.
-3. **Live A/B** (`live/`). 59 searches sent through the API as two users with the same permissions, one in a
-   group with the plugin switched off, one in a group with it on. Paced and kept light. Plus one read-only
-   survey of the database.
-
-Limits to keep in mind:
-
-- SQLite is not MySQL. Core's wildcard and full-text matching is emulated, and accent folding (which MySQL does
-  through its collation) is not. Statements about those on the core side are inferred unless a live figure is
-  given.
-- The fixture shows behaviour, not scale. Where scale changes the picture (prefix matching, wildcards) the live
-  figures are the ones to read.
-- On the live system the plugin's group is in Typesense-only mode, so a search the plugin declines returns
-  nothing there instead of falling back. Whether a live zero is a decline or a served zero was decided from the
-  local run of the same search.
-- Not checked: non-space-delimited scripts (Chinese, Japanese, Thai), and anything that only shows in a browser.
-- Searching *for collections* (`do_collections_search()`) never reaches the plugin and is always MySQL.
-
----
-
-## 3. How a search reaches the plugin
-
-Core does a lot before it asks ([`do_search()`](../../../include/do_search.php:44)):
-
-1. Pulls `@@` node tokens out of the search string into node buckets.
-2. Splits the rest into keywords and builds the standard filter (resource types, workflow states, permissions).
-3. Processes every keyword ([`do_search_keywords.php`](../../../include/do_search_keywords.php)): resolves
-   `field:value` on fixed-list fields into nodes, date fields into joins, and looks every plain word up in the
-   `keyword` table.
-4. Calls the `external_search` hook ([`do_search.php:342`](../../../include/do_search.php:342)) with the
-   keywords, node buckets and arguments. The plugin answers with rows, or `false` to let core continue.
-
-Two consequences:
-
-- **Core returns before the plugin is asked** when a plain word is not in the `keyword` table (it returns a
-  "did you mean" string) or a field is not viewable by the user (it returns `false`). The plugin never sees
-  those searches, so they cannot differ.
-- The plugin is handed core's keyword list, not the raw string. Where core has already turned a term into a node
-  the plugin only has to honour the bucket. Where core treats a term specially without changing the list (a
-  date dropdown, a punctuated token, a stop word), the plugin has to know the rule too. Most differences below
-  are rules of that kind that the plugin does not have.
-
-The plugin ([`typesense_search_run()`](../include/typesense_search_query.php:1303)) picks one mode from the
-search (collection, last, list, contributions, has-data, archive-pending, user-pending, single resource, or
-standard), adds keyword matching and the restrictions, sends one `multi_search` to Typesense, and fetches the
-rows for the returned refs from MySQL with core's own column list.
-
-It always leaves these to core: `returnsql`, disk-usage totals, `editable_only` and smart-collection searches
-([`all.php:88`](../hooks/all.php:88)).
-
----
-
-## 4. Coverage by search type
-
-"Same" means the same resources. Order is the same for the date, resource ID and modified sorts and differs for
-relevance (K12).
-
-### Free text
-
-| Search | Outcome |
+| Area | Confirmed the same |
 |---|---|
-| One or more keywords, commas, upper case, empty search | Served, same |
-| Quoted phrase | Served. Same with `$stemming` off unless it contains a stop word (21); nothing with `$stemming` on (26) |
-| `-word`, negative-only search | Served, same, except words in hidden or inactive fields (K5) |
-| Trailing wildcard | Served. Same only while the word has few different completions (18) |
-| Two wildcards; bare number with the default config | Falls back to core |
-| Bare number with `$config_search_for_number` | Served, same |
-| A word that is not in the keyword table; un-fielded `a;b` | Core returns a suggestion before the plugin is asked |
-| Stop words, resource type names, punctuation, leading wildcard, last-word prefix | Differ (22, K3, 10, 11, 2) |
+| Free text | One or more keywords, commas, upper case, the empty search, negative words, a wildcard on a word with few completions, quoted phrases with stemming off |
+| Field terms | Text `field:word`, a fixed-list value that is exactly an option, `a;b` options, `numrange`, dates by year, month or day, full-date ranges, expiry dates |
+| Nodes | `@@n`, OR within a word, AND across words, NOT, tree parent and child, `$category_tree_search_use_and_logic` |
+| Special searches | `!collection`, `!last`, `!list`, `!listall`, `!resource`, `!contributions`, `!hasdata`, `!archivepending`, `!userpending`, alone and with keywords or nodes added |
+| Arguments | Resource types, `Global`, workflow states, `$search_all_workflow_states`, day limit, access level, every result-window shape |
+| Sorts | Date, resource ID and modified, including ties and across page boundaries |
+| Permissions | `v`, `T`, `z`, `ert`, own pending resources, `J` with `j`, search filters ALL / NONE / ANY, contributor override, share keys |
+| Combinations | 2,481 generated combinations of the above, with stemming off and on: the plugin returned the expected resources in 2,477. The other four are C4 and Core 4. 14 more on the test system were all the same |
+| Paging at scale | 26 cases on 620 resources, across Typesense's 250-row page limit |
+| Text matching | Apostrophes, email addresses, decimals, option names as free text, the day and month numbers of dates, upper-case field names and values, accents (Typesense folds them; core does through MySQL's collation, which is inferred) |
+| Handed back to core | Other sorts and special searches, OR within a text field, negative field terms, two wildcards, full-text search, editable-only, disk usage and smart-collection searches; and any search when Typesense is unreachable |
 
-### Field-specific
+A search has one of three outcomes. The plugin serves it. The plugin declines it and core answers, so the two
+cannot differ. Or core answers before asking the plugin, which happens when a word is not in the keyword table
+or the field is hidden from the user. [Appendix B](#appendix-b-how-a-search-reaches-the-plugin) has the detail.
 
-| Search | Outcome |
-|---|---|
-| Text `field:word`, several words, with free text, partial-index field | Served, same |
-| `field:word*` | Served. Same only while the word has at most 4 different completions (18) |
-| Fixed-list value that is exactly an option, `a;b` options, translated option by name | Served, same |
-| `numrange` (both ends, one end, decimals), date by year / month / day, full-date ranges, expiry dates | Served, same, on indexed fields (20); ranges differ for stored dates that are only a year or a month (K7) |
-| Text-field `field:a;b`, `-field:value`, `!empty` first, full-text search | Falls back to core |
-| Field the user cannot view | Core returns `false` before the plugin is asked |
-| Date dropdowns, quoted field search, value that is not exactly an option, plain value on a numeric field, range end that is not a date | Differ (1, 4, 3, 5, 6) |
+Special searches the plugin always declines: `!related`, `!relatedpushed`, `!duplicates`, `!nodownloads`,
+`!unused`, `!geo`, `!colour`, `!colourkey`, `!rgb`, `!nopreview`, `!images`, `!properties`, `!integrityfail`,
+`!locked`, `!noningested`, `!report`, `!empty`, and those added by other plugins. Sorts it declines: popularity,
+rating, colour, title, type, extension, status, random and other fields.
 
-### Nodes
+### Combinations in detail
 
-`@@n`, OR within a word, AND across words, NOT, with keywords, tree parent and child, and
-`$category_tree_search_use_and_logic` all return the same resources.
-
-### Special searches
-
-| Search | Outcome |
-|---|---|
-| `!collection` (own, featured, public), collection order both ways, keyword inside, count only | Served, same |
-| `!last`, `!list`, `!listall`, `!resource`, `!contributions`, `!hasdata`, `!archivepending`, `!userpending` | Served, same |
-| Selection or upload collection, unreadable or missing collection, `J` inside a collection that is not permitted | Falls back to core |
-| `!related`, `!relatedpushed`, `!duplicates`, `!nodownloads`, `!unused`, `!geo`, `!colour`, `!colourkey`, `!rgb`, `!nopreview`, `!images`, `!properties`, `!integrityfail`, `!locked`, `!noningested`, `!report`, plugin specials (`!license`, `!consent`, `!face`, `!clipsearch`) | Falls back to core |
-
-`!last` combined with a node filter differs because of a core bug (section 7).
-
-### Arguments and permissions
-
-| Item | Outcome |
-|---|---|
-| Resource type lists, `Global`, workflow states, `$search_all_workflow_states`, day limit, `access`, every `fetchrows` shape | Same |
-| Sort by date, resource ID, modified | Same order, including ties and across page boundaries |
-| Sort by popularity, rating, colour, title, type, extension, status, random, other fields | Falls back to core |
-| `v`, `T`, `z`, `ert`, own pending resources, `J` with `j*` or `j<n>`, filters ALL / NONE / ANY, contributor override, share key | Same |
-| Resource types on special searches, `access_override`, `ignore_filters`, `J` with no `j` | Differ (K8, K10, K11, 14) |
-
-### Combinations
-
-The tables above are about one kind of term at a time. Combinations were tested separately
-(`harness/ab/50_combinations.php`) on a fixture built for the purpose: 512 resources, one for every mix of nine
-two-valued attributes (a title word, a phrase, a caption word, a dropdown option, a dynamic keyword, a date, a
-number, the resource type, the workflow state). Any AND of terms then has a known answer, and each case was
-checked three ways: core against the expected set, the plugin against it, and the two against each other.
-
-Only terms that agree on their own were combined (29 forms: keyword, wildcard, field term, field wildcard,
-negative word, phrase, negative phrase, fixed-list value, node, NOT node, date by year / month / day, date
-range, `numrange`), so a difference here would come from the combination. A combination that includes a term
-from section 5 behaves as that item describes.
+Combinations were tested on a fixture built for the purpose (`harness/ab/50_combinations.php`): 512 resources,
+one for every mix of nine two-valued attributes, so any AND of terms has a known answer. Each case was checked
+three ways: core against the expected set, the plugin against it, and the two against each other. Only terms that
+agree on their own were combined (29 forms), so a difference here comes from the combination. A combination that
+includes a term from section 3 behaves as that finding describes.
 
 | Group | Cases | Plugin returned the expected set | Core returned the expected set |
 |---|---|---|---|
@@ -193,354 +83,359 @@ from section 5 behaves as that item describes.
 | Permissions (`T`, `J`, search filter) with terms and arguments | 240 | 240 | 240 |
 | OR groups of nodes | 9 | 7 | 7 |
 
-- The order was identical in all 323 cases where an order is defined (date, resource ID, modified, collection).
-- The two plugin misses in the pairs are one form in both orders: item 33.
-- The core misses are the `!last` bug of section 7 and two quirks listed there. In the two OR-group cases both
-  engines return the same (empty) result.
+- The order was identical in all 323 cases where an order is defined.
+- The two plugin misses in the pairs are C4, in both orders.
+- The core misses are Core 1, Core 3 and Core 4. In the two OR-group cases both engines return the same result.
 - With `$stemming` on the outcome was identical, case for case.
 - 13 searches fell back to core. The only form in the list that the plugin declines is two free-text wildcards
   in one search.
-- **Live:** 14 combinations on the test system (keyword with nodes, a field term, a field wildcard, a date, a
-  NOT node, a negative word; resource type and workflow states; date and resource ID sorts; a collection and
-  `!last` with a keyword) gave the same totals, and the same first rows where an order was checked.
+- On the test system, 14 combinations gave the same totals, and the same first rows where an order was checked.
 
 ---
 
-## 5. Differences
+## 3. Findings
 
-Each item gives what was measured on the fixture and, where it was run, on the live system.
+### A. Features that fail outright
 
-### Errors
+Two actions stop with a PHP TypeError when the plugin is active.
 
-**17. CSV metadata export fails with a TypeError.**
-The export page passes `null` for `$smartsearch`
-([`csv_export_results_metadata.php:35`](../../../pages/csv_export_results_metadata.php:35)); the hook declares
-that parameter `bool` ([`all.php:53`](../hooks/all.php:53)), and PHP refuses a null for a typed parameter before
-the function body runs. Core calls hooks with no exception handling, so the export stops. It happens with the
-plugin's own toggle off too (`$typesense_search_enabled = false`): only deactivating the plugin avoids it. It is
-the only `do_search()` call of 80 that passes a literal null to a typed hook parameter
-(`harness/results/callscan.txt`).
+| Ref | What the user does | Core | Plugin | Where |
+|---|---|---|---|---|
+| A1 | Exports search results as CSV metadata | Works | TypeError. It also happens with the plugin's own toggle off, so only deactivating the plugin avoids it | The page passes `null` for `$smartsearch` ([`csv_export_results_metadata.php:35`](../../../pages/csv_export_results_metadata.php:35)). The hook declares that parameter `bool` ([`all.php:53`](../hooks/all.php:53)) |
+| A2 | Searches as a user with the `J` permission and no `j` permission | No results | TypeError | `false` is passed to `array_map()` ([`featured_collections.php:33`](../include/restrictions/featured_collections.php:33), `:45`) |
 
-**14. `J` permission with no `j` permission: TypeError.**
-`compute_featured_collections_access_control()` returns `false` for such a user and the restriction passes it
-to `array_map()` ([`featured_collections.php:33`](../include/restrictions/featured_collections.php:33), `:45`).
-Core returns no results.
+- **A1** was measured locally and not triggered on the test system. The plugin is active for all 14 user groups
+  there, so it would affect every group. PHP refuses a null for a typed parameter before the function body runs,
+  and core calls hooks with no exception handling. Of 80 `do_search()` calls in the codebase it is the only one
+  that passes a null to a typed hook parameter (`harness/results/callscan.txt`).
 
-### Returns nothing where core finds resources
+**To decide:** A1 can be changed on either side: loosen the hook's parameter types, or stop core passing null.
 
-**1. Simple-search date dropdowns (`basicyear:`, `basicmonth:`, `basicday:`).**
-Core matches them against the date field
-([`do_search_keywords.php:163`](../../../include/do_search_keywords.php:163)). The plugin does not know the
-names, treats the colon as incidental and searches for the text "basicyear 2024"
-([`query.php:603`](../include/typesense_search_query.php:603)).
-Fixture `basicyear:2024` 3 / 0. Live 8,838 / 0; with a month 723 / 0.
-Reach: the "By date" dropdowns shown on the simple search bar by default (`$simple_search_date`).
+### B. Search forms the plugin does not recognise
 
-**4. Quoted field search, `"field:two words"`.**
-Core resolves it to the option or to a phrase within the field. The plugin only checks a quoted keyword for
-full-text syntax and then sends the whole string, field name included, as a phrase
-([`query.php:558`](../include/typesense_search_query.php:558)).
-Fixture `"title:launch party"` 1 / 0, `"country:United Kingdom"` 1 / 0, `"keywords:modern art"` 2 / 0.
-Live `"usagerights:Social media"` 148 / 0.
-Reach: this is common. Advanced search emits it for a quoted phrase in a text box
-([`search_functions.php:275`](../../../include/search_functions.php:275)). The search bar writes it into its own
-box after any node search on a field that is not on the simple search bar
-([`searchbar.php:141`](../../../include/searchbar.php:141)), for example after clicking a metadata value on a
-resource; searching again from the box then sends it.
+Core applies a rule to certain terms before it searches. The plugin receives the same terms without the rule,
+so it returns nothing, everything, or a different set, and does not fall back.
 
-**26. Quoted phrases when `$stemming` is on.**
-The index holds stems. Typesense does not stem the words of a quoted phrase, so a phrase containing any word the
-stemmer changes cannot match. Core indexes the original word alongside the stem and looks phrases up unstemmed.
-Fixture (stemming variant) `"launch party"` 1 / 0, `"sculpture park"` 1 / 0, a quoted single word `"sculpture"`
-5 / 0; `"red car"`, whose words the stemmer leaves alone, 1 / 1. A negative phrase stops excluding: 1 / 2.
-Asking Typesense directly for the stems as a phrase finds the resource.
-Live `"sculpture park"` 6,883 / 0, `"sculpture"` 49,069 / 0, `"black and white"` 3,179 / 3,179.
+#### Sent by the standard search pages
 
-**5. Plain value on a numeric field.**
-The filter targets the text form of the field ([`query.php:777`](../include/typesense_search_query.php:777));
-numeric values are indexed only as number and exact-match forms
-([`functions.php:1269`](../include/typesense_search_functions.php:1269)).
-Fixture `price:100` 1 / 0. `numrange` searches on the same field are the same.
+| Ref | What the user does | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| B1 | Picks a year or month on the simple search bar, which sends `basicyear:2024` | Matches the date field | Searches for the text "basicyear 2024" | Local 3 / 0. Test system 8,838 / 0 | [`query.php:603`](../include/typesense_search_query.php:603) |
+| B2 | Clicks a metadata value whose name has a space, then searches again from the search box, which now holds `"usagerights:Social media"`. Advanced search sends the same form for a quoted phrase | Finds the option, or the phrase in that field | Sends the whole string, field name included, as a phrase | Local 1 / 0. Test system 148 / 0 | [`query.php:558`](../include/typesense_search_query.php:558), [`searchbar.php:141`](../../../include/searchbar.php:141) |
+| B3 | Gives a fixed-list field a value that is not exactly an option: one word of it, a wildcard, or a tree child by name. Example `usagerights:social` | Searches for the word within that field | Drops the term, so nothing is restricted | Local 1 / 29. Test system 148 / 100,862 | [`query.php:580`](../include/typesense_search_query.php:580) |
+| B4 | Picks a date range that ends in a month with no day. The form sends `end2024-02-31` | Treats it as the end of that month | Cannot read the date and drops the end of the range | Local 1 / 4. Test system 822 / 21,151 | [`query.php:832`](../include/typesense_search_query.php:832) |
+| B5 | Includes a stop word: `the sculpture`, `title:the` | Ignores the word | Requires the word | Local 5 / 1. Test system 49,468 / 17,228 | [`do_search_keywords.php:325`](../../../include/do_search_keywords.php:325) |
+| B6 | Searches a phrase containing a stop word: `"black and white"` | Any word may fill the gap, so "black or white" also matches | Exact phrase only | Local 2 / 1. Test system 3,179 / 3,179 | [`do_search_keywords.php:780`](../../../include/do_search_keywords.php:780) |
+| B7 | Searches a hyphenated word or a filename: `black-and-white` | Treats it as a phrase | Matches the parts anywhere | Local 1 / 3. Test system 3,179 / 3,194 | [`do_search_keywords.php:270`](../../../include/do_search_keywords.php:270) |
 
-**20. Date value, date range or `numrange` on a field that is not flagged for indexing.**
-Core reads node values directly for these, so the field's index flag does not matter. The plugin's indexer only
-writes values for indexed fields ([`functions.php:1229`](../include/typesense_search_functions.php:1229)), so
-the filter finds nothing, and nothing falls back.
-Fixture 1 / 0 for each of the three forms. Live `datephototaken:2024` 3,676 / 0.
-Reach on the live system: that is its only such field, and it is not on either search form, so hand-typed only.
+- **B1** is reached from the "By date" dropdowns that the simple search bar shows by default
+  (`$simple_search_date`). With a month as well: test system 723 / 0.
+- **B2**: advanced search emits the quoted form for a quoted phrase in a text box
+  ([`search_functions.php:275`](../../../include/search_functions.php:275)). The search bar writes it into its
+  own box after any node search on a field that is not on the simple search bar. Local `"title:launch party"`
+  1 / 0, `"country:United Kingdom"` 1 / 0, `"keywords:modern art"` 2 / 0. With a typed word added, test system
+  100 / 0.
+- **B3** is also what the search box holds after a click on a tree child node; core's option lookup only reads
+  top-level options. Local `country:united` 1 / 29, `country:fran*` 2 / 29, `keywords:modern` 2 / 29,
+  `subject:Birds` 1 / 29, a value in another language 1 / 29, options that do not exist 0 / 29.
+- **B4** needs `$daterange_search`, which is off by default and not known for the test system. The form appends
+  `-31` ([`search_functions.php:3369`](../../../include/search_functions.php:3369)); core compares text, so it
+  works as "end of month". Every EDTF range loses its end the same way, because core pads it with `-99`
+  (`:3343`); that needs `$daterange_edtf_support`.
+- **B5** reaches the search from the search page too, because `$use_refine_searchstring` is off by default.
+  Test system `the` alone 100,862 / 32,537, `title:the` 100,862 / 10,564.
+- **B6**: core skips the stop word and only checks that the next word is two positions on. Local
+  `"foo the bar"` 2 / 0.
+- **B7** applies when the token is the whole search, or when the search also holds a field term or a quoted
+  phrase (those searches are split on spaces only). Local `title:launch foo-bar` 1 / 2.
 
-**27. Older and hand-typed date forms.**
-Core matches a date value as a prefix with `n` as a wildcard and `|` as a separator
-([`do_search_keywords.php:146`](../../../include/do_search_keywords.php:146)); the plugin matches whole years,
-months, days or dates.
-Fixture `date:nnnn|05` 1 / 0, `date:202` 9 / 0, `date:2024-0` 3 / 0. The other way round, `date:05` 0 / 1 and
-`date:2024*` 0 / 4, because the plugin indexes the month and day on their own.
-Live `date:nnnn|05` 9,511 / 0.
-Reach: no current form emits these; saved searches and dash tiles from older versions may hold them.
+#### Typed, configured or sent through the API
 
-### Returns far more than core
+| Ref | What the user does | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| B8 | Gives a numeric field a plain value: `price:100` | Matches | Nothing. The filter looks at the text form, and numbers are indexed as numbers | Local 1 / 0 | [`query.php:777`](../include/typesense_search_query.php:777), [`functions.php:1269`](../include/typesense_search_functions.php:1269) |
+| B9 | Uses an older date form: `date:nnnn\|05`, `date:202` | Matches by prefix, with `n` as a wildcard | Matches whole years, months, days or dates only | Local 1 / 0. Test system 9,511 / 0 | [`do_search_keywords.php:146`](../../../include/do_search_keywords.php:146) |
+| B10 | Uses a leading or middle wildcard: `*scape` | Matches word endings | Sends it as literal text | Local 1 / 0. Test system 68,601 / 381 | [`query.php:612`](../include/typesense_search_query.php:612) |
+| B11 | Searches a resource type name: `document` | Also returns every resource of that type | Text matches only | Local 3 / 1. Test system 490 / 375 | [`do_search_keywords.php:56`](../../../include/do_search_keywords.php:56) |
+| B12 | Searches a word that has related keywords | Matches the related words too | No related words. The sync posts to a URL with no collection name and gets a 404 | Local 2 / 0 | [`functions.php:1689`](../include/typesense_search_functions.php:1689) |
+| B13 | Searches a contributor's username, with `$index_contributed_by` on | Returns their resources | Text matches only | Local 29 / 1 | [`do_search_keywords.php:62`](../../../include/do_search_keywords.php:62) |
+| B14 | Searches with `$wildcard_always_applied` on | Every word and field value is a prefix | Only the last word is | Local 1 / 0 | [`query.php:521`](../include/typesense_search_query.php:521) |
+| B15 | Sends resource types of `FeaturedCollections` only | Nothing | No type filter | Local 0 / 2 | [`standard.php:42`](../include/restrictions/standard.php:42) |
+| B16 | Passes resource types with a special search, as the API and CSV export do | Applies them | Ignores them unless `$special_search_honors_restypes` is on | Local 1 / 3 | [`standard.php:36`](../include/restrictions/standard.php:36) |
+| B17 | Includes a number among several keywords: `sunset 8` | Keyword only | Also matches resource 8 by its ID | Local 0 / 1 | [`query.php:529`](../include/typesense_search_query.php:529) |
 
-**3. Fixed-list `field:value` where the value is not exactly an option.**
-Core looks the value up as an option; if that fails it searches for the word within that field. The plugin skips
-every `field:value` on a fixed-list field on the assumption that core already resolved it
-([`query.php:580`](../include/typesense_search_query.php:580)), so an unresolved one restricts nothing.
-Fixture `country:united` 1 / 29, `country:fran*` 2 / 29, `keywords:modern` 2 / 29, a tree child by name
-`subject:Birds` 1 / 29, a value in another language `country:allemagne` 1 / 29, options that do not exist 0 / 29.
-Live `usagerights:social` 148 / 100,862.
-Reach: typed searches; dynamic keyword fields shown as text boxes; and the search bar, which rewrites a tree
-child node into `field:Name` text (same mechanism as item 4), a form core's lookup does not resolve because it
-only reads top-level options.
+- **B9**: no current form emits these; saved searches and dash tiles from older versions may hold them. The
+  other way round, `date:05` is 0 / 1 and `date:2024*` 0 / 4, because the plugin indexes the month and day on
+  their own.
+- **B12**: one related-keyword pair is defined on the test system.
 
-**2. The last word is matched as a prefix.**
-The plugin sends `prefix` only for a wildcard ([`query.php:403`](../include/typesense_search_query.php:403)) and
-Typesense's default is on, for the last word of the query.
-Fixture `car` 2 / 3 ("Carpet"). Live `land` 3,172 / 69,408, `sculpt` 3,685 / 49,610.
-Exact matches are never lost; only extra resources are added, from up to about ten longer words (see 18).
+**To decide:** for each form, teach the plugin the rule, or have it decline so that core answers.
 
-**6. Date range whose end is not a real date.**
-The form appends `-31` when a month is chosen without a day
-([`search_functions.php:3369`](../../../include/search_functions.php:3369)) and `-99` for every EDTF range
-(`:3343`). Core compares strings, so both work as "end of month". The plugin cannot parse them and drops the end
-bound without declining ([`query.php:832`](../include/typesense_search_query.php:832)).
-Fixture end `2024-02-31` 1 / 4, end `2023-04-31` 0 / 5, EDTF February 1 / 4.
-Live end `2024-02-31` 822 / 21,151.
-Reach: `$daterange_search` on and an end month of 30 days or fewer with no day; or `$daterange_edtf_support`.
-Both are off by default.
+### C. Typesense defaults left as they are
 
-**13. A number among several keywords matches a resource ID.**
-`ref_s` is always searched ([`query.php:529`](../include/typesense_search_query.php:529)). Fixture `sunset 8`
-0 / 1.
+Four differences come from search parameters the plugin does not send
+([`query.php:385`](../include/typesense_search_query.php:385)), so Typesense's defaults apply.
 
-**12. Resource types consisting only of `FeaturedCollections`.**
-Core binds the text as resource type 0 and finds nothing; the plugin discards non-numeric entries and applies no
-type filter ([`standard.php:42`](../include/restrictions/standard.php:42)). Fixture 0 / 2.
+| Ref | What the user does | Core | Plugin | Measured | Parameter |
+|---|---|---|---|---|---|
+| C1 | Searches a plain word: `land` | Exact word | The last word is also matched as the start of longer words | Local 2 / 3. Test system 3,172 / 69,408 | `prefix` defaults to on. The plugin only sends it for a wildcard ([`query.php:403`](../include/typesense_search_query.php:403)) |
+| C2 | Uses a wildcard: `title:con*`, `con*` | Every word with that start | About 10 different words in the query, 4 in a field | Local 41 / 10 and 40 / 4. Test system 1,317 / 262 and 61,993 / 53,361 | Locally `max_candidates=100` and `max_filter_by_candidates=100` returned all 40 |
+| C3 | Searches words that match nothing as typed: `sun set`, `basketball` | Nothing | Retries with the words joined or split, and finds "sunset" | Local 0 / 5. Not triggered on the test system | Locally `split_join_tokens=off` returned nothing |
+| C4 | Searches a word together with its own wildcard: `alpha, alph*` | Matches | Nothing | Local 128 / 0 | None found |
 
-**19. Words that match nothing are retried joined or split.**
-Typesense's `split_join_tokens` defaults to trying this when the query has no results.
-Fixture `sun set` 0 / 5 (finds "sunset"), `basketball` 0 / 1 (finds "Basket ball court"), `foobar` 0 / 3. With
-`split_join_tokens=off` Typesense returns nothing for each. On the live system the three pairs tried all had
-direct matches, so nothing was retried and the totals were the same.
+- **C1** never loses an exact match. It only adds resources, from up to about ten longer words. Test system
+  `sculpt` 3,685 / 49,610.
+- **C2**: the field figure isolates the limit. The un-fielded figure also includes E4. Words with few different
+  completions were close or equal: `title:sculpt*` 4,522 / 4,522, `photo*` 23,951 / 23,959, `gar*`
+  15,291 / 14,227. `exhaustive_search=true` also returned all 40 locally.
+- **C3**: on the test system the three pairs tried all had direct matches, so nothing was retried.
+- **C4**: asked directly, Typesense returns nothing for `alpha alph` with the prefix on, 128 for `alph` and 128
+  for `piece alph`. Found by the combination tests.
 
-### Returns fewer, or a different set
+**To decide:** whether to send these parameters with every query. Their effect on speed was not measured.
 
-**18. Wildcards are incomplete.**
-Typesense expands a prefix to a limited number of candidate words: about 10 in the query (`max_candidates`) and
-4 in a filter (`max_filter_by_candidates`). The plugin sets neither
-([`query.php:385`](../include/typesense_search_query.php:385)).
-Fixture, 40 different words starting "zeb": `zeb*` 41 / 10, `title:zeb*` 40 / 4, with
-`$wildcard_always_applied` 41 / 10. Asked directly, `max_candidates=100` or `exhaustive_search=true` returns all
-40, and `max_filter_by_candidates=100` does for the filter.
-Live `title:con*` 1,317 / 262, `con*` 61,993 / 53,361, `gar*` 15,291 / 14,227. Words with few different
-completions were close or equal: `title:sculpt*` 4,522 / 4,522, `photo*` 23,951 / 23,959.
-The un-fielded live figures also include K6 (core's wildcard reads text in fields that are not indexed), so only
-the field figure isolates the cap.
+### D. Stemming
 
-**11. Leading or middle wildcard.**
-Only a trailing `*` is handled ([`query.php:612`](../include/typesense_search_query.php:612)); anything else is
-sent as literal text. Fixture `*bour` 1 / 0. Live `*scape` 68,601 / 381.
+With `$stemming` on, as on the test system, a quoted phrase returns nothing from the plugin if the stemmer
+changes any of its words.
 
-**22. Stop words.**
-Core skips the words in `$noadd` ([`do_search_keywords.php:325`](../../../include/do_search_keywords.php:325));
-the plugin requires them. `$use_refine_searchstring` is off by default, so the search page does not strip them
-first.
-Fixture `the sunset` 5 / 1, `title:the` 34 / 2, `the` alone 34 / 3.
-Live `the sculpture` 49,468 / 17,228, `the` 100,862 / 32,537, `title:the` 100,862 / 10,564.
+| Ref | What the user does | Core | Plugin | Measured |
+|---|---|---|---|---|
+| D1 | Searches a quoted phrase or a quoted single word: `"sculpture park"` | Looks the words up as typed. Core indexes the original word beside its stem | Typesense does not stem the words of a phrase, and the index holds stems | Local 1 / 0. Test system 6,883 / 0, and `"sculpture"` 49,069 / 0 |
+| D2 | Searches another form of a word: `children` for "child" | Uses ResourceSpace's stemmer | Uses Typesense's stemmer | 34 of 40 word pairs agree. Irregular plurals match in core only |
 
-**21. Phrase containing a stop word.**
-Core skips the stop word and only checks that the next word is two positions on
-([`do_search_keywords.php:780`](../../../include/do_search_keywords.php:780)), so any word may sit in the gap.
-The plugin needs the exact phrase.
-Fixture `"black and white"` 2 / 1 (core also finds "Black or white"), `"foo the bar"` 2 / 0.
-Live `"black and white"` 3,179 / 3,179: no visible effect there.
+- `"black and white"` is unaffected (3,179 / 3,179), because the stemmer leaves those words alone. Locally
+  `"red car"` 1 / 1, `"launch party"` 1 / 0.
+- A negative phrase stops excluding: local 1 / 2.
+- Asked directly for the stems as a phrase, Typesense finds the resource.
 
-**10. A punctuated token is a phrase in core.**
-A token such as `foo-bar` is quoted internally by core
-([`do_search_keywords.php:270`](../../../include/do_search_keywords.php:270)) when it is the whole search, or
-when the search also contains a colon or a quote (those searches are split on spaces only). The plugin always
-matches the parts anywhere.
-Fixture `foo-bar` 1 / 3, `caption:foo-bar` 1 / 3, `title:launch foo-bar` 1 / 2. Live `black-and-white`
-3,179 / 3,194.
+**To decide:** how quoted phrases should work when stemming is on.
 
-**7. Formatted (HTML) fields.**
-Core strips tags before indexing; the plugin indexes the stored text
-([`functions.php:1282`](../include/typesense_search_functions.php:1282)), so a word straight after a tag is
-glued to the tag name and tag names become searchable.
-Fixture `hello` 2 / 1, `strong` 1 / 2, `notes:hello` 1 / 0.
+### E. What the index holds
 
-**8. Translated values (`~en:Germany~fr:Allemagne`).**
-Core indexes each translation; the plugin indexes the raw string, which glues the first translation to the next
-language code. Fixture `germany gate` 1 / 0.
+The index is only as current as the last reindex. It also holds some text that core's keyword index does not,
+and lacks some that core reads directly.
 
-**9. Text beyond the first 500 characters.**
-Core indexes only the first `$node_keyword_index_chars` characters; the plugin indexes everything. Fixture
-`zeppelin` 1 / 2.
+#### Freshness
 
-### Access and visibility
+| Ref | What the user does | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| E1 | Edits, deletes or uploads a resource, or changes a collection | Seen at once | Not seen until the next reindex. The save hook posts to a URL with no collection name and gets a 404 | Local: edited title 1 / 0, deleted and new resources 4 / 5, collection members 2 / 3 | [`functions.php:895`](../include/typesense_search_functions.php:895) |
+| E2 | Opens a resource as a user who has a search filter | Decides access from current data | Decides access from the index, because core checks it with a search | Local: opened one resource core denied, denied two core allowed. No search filters on the test system | [`resource_functions.php:5207`](../../../include/resource_functions.php:5207) |
 
-**16. Per-resource access for users with a search filter is decided by the index.**
-`get_resource_access()` runs a `!resource<ref>` search for such users
-([`resource_functions.php:5207`](../../../include/resource_functions.php:5207)), and the plugin serves it. After
-a metadata change with no reindex the plugin opened a resource core denied and denied two that core allowed
-(`harness/results/ab/09_resource_access.txt`).
+#### Fields and values
 
-**15. Expired user grant overrides a search filter.**
-With `$custom_access_overrides_search_filter`, core's join ignores expired user grants; the plugin's override
-clause has no expiry test ([`group_filter.php:68`](../include/restrictions/group_filter.php:68)). Fixture 3 / 4.
+| Ref | What the user does | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| E3 | Searches a date, date range or number range on a field not flagged for indexing | Reads the values directly | Nothing. Those values are not in the index | Local 1 / 0. Test system `datephototaken:2024` 3,676 / 0 | [`functions.php:1229`](../include/typesense_search_functions.php:1229) |
+| E4 | Uses a wildcard that matches text in a field not flagged for indexing | Matches, because its wildcard reads the text directly | No match | Local 1 / 0. Test system `sculpt*` 51,007 / 49,610 | [`do_search_keywords.php:622`](../../../include/do_search_keywords.php:622) |
+| E5 | Searches a date range over dates stored as only a year or a month | Compares the text | Treats the partial date as covering its whole period | Local 3 / 4. Test system 822 / 854 | [`query.php:806`](../include/typesense_search_query.php:806) |
+| E6 | Excludes a word that only appears in a hidden or inactive field | Still excludes the resource | Does not | Local 0 / 1 | [`do_search_keywords.php:478`](../../../include/do_search_keywords.php:478) |
+| E7 | Searches a field that has been made inactive | Nothing | Still served | Local 0 / 1 | A change that makes it fall back existed uncommitted |
+| E8 | Searches text in a formatted (HTML) field | Tags are stripped | Stored text is indexed, so a word after a tag is glued to it and tag names match | Local 2 / 1. No such fields on the test system | [`functions.php:1282`](../include/typesense_search_functions.php:1282) |
+| E9 | Searches a translated value | Each translation is indexed | The raw string is indexed, gluing the first translation to the next language code | Local 1 / 0. None on the test system | [`functions.php:1282`](../include/typesense_search_functions.php:1282) |
+| E10 | Searches a word past the first 500 characters of a value | Not indexed | Indexed | Local 1 / 2. One such value on the test system | `$node_keyword_index_chars` |
 
-**24. Collection gate inside an external upload-share session.**
-Core allows only the session's own collections
-([`search_functions.php:1206`](../../../include/search_functions.php:1206)); the plugin's gate is
-`collection_readable()` alone ([`collection.php:28`](../include/modes/collection.php:28)), which accepts any
-collection once a valid key is present. Fixture 0 / 2 and 0 / 3.
-Measured at `do_search()` level only. Upload-share keys are limited to a few pages; one of them, `edit.php`, runs
-a search taken from the request. That path was not run end to end.
+- **E1**: [`typesense_search_index_resource()`](../include/typesense_search_functions.php:895) reads an unset
+  variable for the collection name.
+- **E3**: on the test system that is the only such field and it is on neither search form, so the search is
+  hand-typed only.
 
-**25. `$typesense_search_global_filter` applies only to searches the plugin serves.**
-Any search that falls back ignores it ([`query.php:365`](../include/typesense_search_query.php:365)). Fixture
-1 with the filter, 2 for the same search with a sort the plugin declines. It cannot be relied on as a
-restriction.
+**To decide:** E1 is the planned incremental indexing; what happens until it lands? E3: should a search on a
+field that is not indexed be declined?
 
-### Order
+### F. Access and permissions
 
-**23. Next / previous on the resource and preview pages.**
-Those pages fetch every row ([`view.php:57`](../../../pages/view.php:57),
-[`preview.php:88`](../../../pages/preview.php:88)). Above `$typesense_search_max_rows` (25,000) that request
-falls back to MySQL while the grid stays on Typesense, and under relevance, the default sort, the two orders
-differ. With the limit lowered to 500 on a 620-resource fixture, the resource after the first grid result was a
-different one by next / previous. On the live system the empty search alone has 100,862 results.
+Six differences change who can see what. All were measured locally; none was run on the test system, where the
+two API users are ordinary users.
 
-### Minor
+| Ref | Situation | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| F1 | A user with `R` or `h`, or a search with access override, opens another user's private collection | Nothing | The collection's contents | 0 / 2 | [`collection.php:28`](../include/modes/collection.php:28), against [`search_functions.php:1203`](../../../include/search_functions.php:1203) |
+| F2 | The same request inside an external upload-share session | Only that session's own collections | Any collection, once a valid key is present | 0 / 2 and 0 / 3 | Same gate |
+| F3 | A user has an expired grant, with `$custom_access_overrides_search_filter` on | The expired grant is ignored | The expired grant still overrides the search filter | 3 / 4 | [`group_filter.php:68`](../include/restrictions/group_filter.php:68) |
+| F4 | A search with access override, by a user who has a search filter | The filter is applied | The filter is skipped | 1 / 10 | [`group_filter.php:11`](../include/restrictions/group_filter.php:11) |
+| F5 | A caller passes `ignore_filters` | Only keyword parsing changes | Resource type, workflow state and the other standard restrictions are dropped | 5 / 8 | [`standard.php:11`](../include/restrictions/standard.php:11) |
+| F6 | `$typesense_search_global_filter` is set | Not applicable | Applied to searches the plugin serves, ignored by any search that falls back | 1 with it, 2 for the same search when it falls back | [`query.php:365`](../include/typesense_search_query.php:365) |
 
-**28. Special search followed directly by a comma term containing digits.** The plugin reads the argument from
-all the digits in the first token. `!contributions1,date:2024, sunset` 5 / 0 (it reads user 12024);
-`!hasdata12,date:2024` 9 / 0. Hand-typed or API only.
+- **F2** was measured at search level only. Upload-share keys work on a few pages; one of them, `edit.php`,
+  runs a search taken from the request. That path was not run end to end.
+- **F4 and F5** are latent. Only smart collections and one AI job pass those flags today, and smart-collection
+  searches always go to core.
 
-**29. `-foo-bar` as the whole search.** Core loses the negation and searches for both words; the plugin excludes
-and finds nothing. 3 / 0.
+**To decide:** share core's collection check with the plugin, or copy it?
 
-**30. `numrange` spanning zero on a numeric field that also holds text.** MySQL counts the text as 0; the
-plugin has no number for it. `price:numrangeneg5|5` 1 / 0 (emulated on SQLite).
+### G. Order and navigation
 
-**31. `!empty` after another term.** Core handles `!empty` anywhere in the keyword list; the plugin only
-declines it when it is first. `title:sunset !empty18` 4 / 0.
+Relevance order differs between the engines by design, and one page depends on the two orders matching.
 
-**33. A word together with a wildcard that only completes to that word.** `alpha, alph*` 128 / 0, in either
-order. The plugin sends both as query words with the second as a prefix; Typesense returns nothing when the
-prefix can only complete to a word already in the query (asked directly: `alpha alph` 0, `alph` 128,
-`piece alph` 128). Found by the combination battery; the only combination-specific difference.
+| Ref | What the user does | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| G1 | Sorts by relevance, which is the default | Orders by a hit-count score, then rating, date and ID | Orders by Typesense's text match, or by ID when there are no keywords | Same resources, different order. Test system: `!collection3808` through the API returned the same 55 with different first rows | [`query.php:686`](../include/typesense_search_query.php:686) |
+| G2 | Uses next / previous on the resource or preview page, after a relevance-sorted search with more than 25,000 results | Follows the grid | The grid comes from Typesense, next / previous from MySQL, in a different order | Local, with the limit lowered to 500: a different resource came next. The empty search has 100,862 results on the test system | [`view.php:57`](../../../pages/view.php:57), [`preview.php:88`](../../../pages/preview.php:88) |
 
-**32. Typesense-only mode.** With `$typesense_search_only` every search the plugin declines, and any Typesense
-outage, returns nothing; `returnsql`, disk usage, `editable_only` and smart searches still go to core. It is
-described as a testing aid. Without it an unreachable Typesense falls back to core correctly.
+- **G1** affects every API call that asks for a collection without naming a sort, because the API's default
+  sort is relevance.
+- **G2**: those pages ask for every row. Above `$typesense_search_max_rows` that request falls back to core.
+- Date, resource ID and modified sorts are identical, so G2 does not arise with them.
+
+**To decide:** is the relevance order acceptable as it is? G2 follows from it.
+
+### H. Smaller items
+
+Five differences arise only from hand-typed or API searches, or from a testing setting.
+
+| Ref | Search or setting | Core | Plugin | Measured |
+|---|---|---|---|---|
+| H1 | A special search followed directly by a comma and a term with digits: `!contributions1,date:2024, sunset` | Reads user 1 | Reads the user from every digit in the first token: 12024 | 5 / 0 |
+| H2 | `-foo-bar` as the whole search | Loses the negation and searches for both words | Excludes, and finds nothing | 3 / 0 |
+| H3 | A number range that spans zero, on a numeric field that also holds text | Counts the text as 0 | Has no number for it | 1 / 0, emulated |
+| H4 | `!empty` after another term: `title:sunset !empty18` | Handles it anywhere | Only declines it when it comes first | 4 / 0 |
+| H5 | Typesense-only mode, `$typesense_search_only` | Not applicable | Every declined search, and any Typesense outage, returns nothing | By design: a testing aid |
+
+- **H1**: the same happens with `!hasdata12,date:2024`, 9 / 0.
+- **H5**: `returnsql`, disk usage, `editable_only` and smart searches still go to core in that mode.
+
+**To decide:** accept these as they are?
 
 ---
 
-## 6. Differences known before this review, re-measured
+## 4. Core's own bugs and quirks
 
-| | Search or situation | Fixture | Live |
-|---|---|---|---|
-| K1 | **Index freshness.** The save hook posts to `/collections//documents` and gets a 404, because [`typesense_search_index_resource()`](../include/typesense_search_functions.php:895) reads an unset variable for the collection name. Nothing changes between reindexes: an edited title is not found (1 / 0), deleted or newly confidential resources still show and new ones are missing (4 / 5), removed collection members remain (2 / 3) | as stated | |
-| K2 | Stop word plus keyword | `the sunset` 5 / 1 | see 22 |
-| K3 | Resource type name as a keyword: core returns every resource of that type | `video` 3 / 1 | `document` 490 / 375 |
-| K4 | Related keywords. The sync also posts to `/collections//synonyms` (404) | `automobile` 2 / 0 | one pair defined |
-| K5 | `-word` when the word is only in a hidden or inactive field: core's exclusion ignores field visibility | 0 / 1 | |
-| K6 | Wildcard on text in a field that is not indexed: core's wildcard reads node text directly | `zeb*` 1 / 0 | `sculpt*` 51,007 / 49,610 |
-| K7 | Year-only or partial dates inside a range: the plugin treats them as covering their whole period | 3 / 4 | 822 / 854 |
-| K8 | Resource types on special searches, when a caller passes them (the search page blanks them) | `!list1:2:3` type 2: 1 / 3 | |
-| K9 | Collection gate: `R` or `h` users, or `access_override`, see another user's private collection | 0 / 2 | |
-| K10 | Group search filter under `access_override` | 1 / 10 | |
-| K11 | `ignore_filters` drops the standard restrictions | 5 / 8 | |
-| K12 | Relevance order differs whenever relevance is the sort. This includes `!collection<n>` through the API, whose default sort is relevance | same set | same 55, different first rows |
-| K13 | Stemmer drift with `$stemming` on: 34 of 40 word-form pairs agree; irregular plurals match in core only | | |
-| K14 | `$wildcard_always_applied`: only the last word is prefixed and field values are not | `laun part` 1 / 0 | |
-| K15 | `$index_contributed_by`: usernames are not matched | `admin` 29 / 1 | |
-| K16 | Field-specific search on an inactive field is served. A change that makes it fall back, and stops indexing inactive text, existed uncommitted when this was written | `oldfield:legacy` 0 / 1 | |
+Four core behaviours are wrong in core itself, in files identical to `master`. The decision so far is to leave
+core as it is.
 
----
+| Ref | Search | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| Core 1 | `!last` with a node filter: `!last10, @@201` | One row, or one empty row when nothing matches | The right resources | 1 / 2, and 1 / 0 when nothing matches | The inner query has an aggregate and no `GROUP BY` ([`search_functions.php:1141`](../../../include/search_functions.php:1141)) |
+| Core 2 | An exact value on a date-range field: `eventdates:2024` | Nothing | Matches the year, month, day or date of either end | Local 0 / 1. Test system 0 / 2 | The SQL parameters are bound in the wrong order ([`do_search_keywords.php:151`](../../../include/do_search_keywords.php:151)) |
+| Core 3 | `!resource<n>` followed by a term containing digits | Nothing. It builds the resource number from every digit in the search | The resource | 0 / 1 | [`search_functions.php:1422`](../../../include/search_functions.php:1422) |
+| Core 4 | The same node alone and then inside an OR group: `@@201, @@201@@203` | Nothing | Nothing, agreeing with core | 0 / 0, where 128 were expected | Removing the first token also breaks the group ([`do_search.php:529`](../../../include/do_search.php:529)) |
 
-## 7. Two core bugs
+- **Core 1**: a node filter turns the hit-count column into an aggregate
+  ([`do_search_nodes.php:24`](../../../include/do_search_nodes.php:24)). Keywords alone do not trigger it. MySQL
+  accepts the query because core removes `ONLY_FULL_GROUP_BY` at connect
+  ([`database_functions.php:298`](../../../include/database_functions.php:298)).
+- **Core 2**: the join has four placeholders in the order field, value, field, value, and binds field, field,
+  value, value. Neither engine does what core intends, which is "the value falls inside the range": a day inside
+  the range is 0 / 0, the start date 0 / 1. With the parameters swapped, core's own SQL finds it. Advanced search
+  sends this form when `$daterange_search` is off.
+- **Core 3**: `!resource1100, date:2023-03` looks for resource 1100202303.
+- **Core 4**: the other order, `@@201@@203, @@201`, works.
 
-Both are in files identical to `master`. They are recorded because they make core the odd one out. Decision
-taken during the review: leave core as it is.
-
-**`!last` combined with a node filter returns one row.**
-A node filter turns the hit-count column into an aggregate
-([`do_search_nodes.php:24`](../../../include/do_search_nodes.php:24)). The `!last` inner query has no `GROUP BY`
-([`search_functions.php:1141`](../../../include/search_functions.php:1141)), so the aggregate collapses it to a
-single row, or to one all-NULL row when nothing matches. MySQL accepts it because core removes
-`ONLY_FULL_GROUP_BY` at connect ([`database_functions.php:298`](../../../include/database_functions.php:298)).
-Fixture `!last10, @@201` 1 / 2, with nothing matching 1 / 0. Keywords alone do not trigger it.
-
-**An exact value on a date-range field never matches.**
-The join has four placeholders in the order field, value, field, value, and binds field, field, value, value
-([`do_search_keywords.php:151`](../../../include/do_search_keywords.php:151)). With the parameters swapped the
-same SQL finds the resource for a date inside the range.
-The plugin uses a different rule, a match on the year, month, day or date of either end, so neither engine does
-what core intends: a day inside the range 0 / 0, the start date 0 / 1, the year 0 / 1. Live year 0 / 2.
-Reach: advanced search with `$daterange_search` off shows a date-range field as dropdowns, which produce this
-search.
+**To decide:** should the plugin copy core for Core 2, keep its own rule, or decline that search?
 
 ---
 
-### Core quirks seen in combinations
+## 5. The test system: which findings apply there
 
-Not plugin differences, but they explain where core misses its own expected result in the combination table.
+On the test system users would meet A1, B1 to B3, B5, C1, C2, D1, E1 and G2 today. E2, E8 and E9 do not apply.
 
-- **`!resource<n>` followed by a term containing digits.** Core builds the resource number from every digit in
-  the search string ([`search_functions.php:1422`](../../../include/search_functions.php:1422)), so
-  `!resource1100, date:2023-03` looks for resource 1100202303 and returns nothing. The plugin reads the number
-  from the first token and returns the resource: 0 / 1.
-- **The same node alone and then inside an OR group**, `@@201, @@201@@203`. Removing the first token from the
-  string also removes it from the group ([`do_search.php:529`](../../../include/do_search.php:529)), leaving a
-  stray token. Both engines return nothing, where the expected answer is the resources with node 201. The
-  other order works.
-
----
-
-## 8. Checked and the same
-
-- **Combinations.** See section 4: 2,481 generated cases, with and without stemming, and 14 on the live system.
-
-- **Paging and order at scale.** 26 cases on 620 resources: windows across Typesense's 250-row page limit, tied
-  dates, missing and year-only dates, all rows, integer `fetchrows` padded with zeros, refs only, an offset past
-  the end. Identical rows in identical order.
-- **Special searches.** Every served mode with keywords and nodes added; `!hasdata` on inactive, hidden and
-  non-indexed fields; the collection gate for a missing collection, collection 0, an `a` admin and
-  `$ignore_collection_access`.
-- **Text matching.** Apostrophes (straight and curly), email addresses, decimals, negative words, a negative
-  wildcard, option names as free text, the day and month numbers of dates as free text (core indexes them too),
-  upper-case field names and values, a colon that is not a field.
-- **Accents.** Typesense folds them (`cafe` finds "Café"). Core does through MySQL's collation; that side is
-  inferred.
-- **Typesense unreachable.** Falls back to core.
-- **Hooks.** No bundled plugin implements a search-pipeline hook that the plugin's path would skip.
-- **Keyword usage statistics** are still logged for searches the plugin serves (read from the code,
-  [`do_search.php:374`](../../../include/do_search.php:374), not measured).
-
----
-
-## 9. The live system at the time
+| Findings | Applies today | Why |
+|---|---|---|
+| A1 CSV export | Yes, all 14 user groups | The plugin is active for every group |
+| B1 date dropdowns | Yes, if the "By date" dropdowns are shown | They are shown by default |
+| B2, B3 search-box text after a click | Yes | Only one fixed-list field is on the simple search bar, so most clicked values are rewritten as text |
+| B4 date range end | Not known | Depends on `$daterange_search` |
+| B5 stop words, C1 prefix, C2 wildcards | Yes | Any search can meet them |
+| D1 quoted phrases | Yes | `$stemming` is on |
+| E1 freshness | Yes | Nothing updates between reindexes |
+| E2 access from the index | No | No group or user has a search filter |
+| E3 non-indexed date field | Hand-typed only | The one such field is on neither search form |
+| E8, E9 HTML and translations | No | No formatted fields and no translated values |
+| E10 long values | Barely | One value over 500 characters in an indexed field |
+| G2 next / previous | Yes | The empty search alone has 100,862 results |
+| F access items | Not run | The two API users are ordinary users |
 
 From the read-only survey (`harness/results/live/db_survey.txt`):
 
-- 100,862 resources in the default workflow state; 110 metadata fields, 22 inactive.
+- 100,862 resources in the default workflow state; 110 metadata fields, 22 of them inactive.
 - No formatted-text fields, no category trees, no values in translation syntax, no search filters.
 - 3,060 values longer than 500 characters, one of them in an indexed field.
-- One date field not flagged for indexing, on neither search form. No such numeric field.
 - Two fields on the simple search bar: the date field and one checkbox list.
-- The plugin is active for every user group, with Typesense-only mode off in its own settings. Two of the 14
-  groups override that: the group of the "plugin" API user turns Typesense-only mode on, and the group of the
-  "core" API user switches the plugin off. The other 12 groups run the plugin with fallback to core.
+- The plugin is active for every user group. One group runs it in Typesense-only mode, so a declined search
+  returns nothing for its users. One group has it switched off. The other 12 fall back to core.
 
-Not from the survey:
-
-- `$stemming` is on. Known from earlier work on that system and consistent with the live phrase results (26).
-- Not established: whether `$daterange_search` is on there (decides item 6).
+Not from the survey: `$stemming` is on (known from earlier work there and consistent with D1). Whether
+`$daterange_search` is on was not established.
 
 ---
 
-## 10. Open questions
+## 6. How it was tested, and its limits
+
+Every difference was measured by running both engines on the same search, locally and, for the main ones, on
+the test system.
+
+| Instrument | What it is | Size |
+|---|---|---|
+| Local comparison (`harness/ab/`) | Core's real search code with SQLite standing in for MySQL, and the plugin's real code on a local Typesense 30.2 | About 440 hand-written cases, plus 2,481 generated combinations run with stemming off and on |
+| Trace (`harness/trace/`) | No database and no Typesense: shows the SQL core builds and the request the plugin would send | 7 scripts |
+| Test system (`harness/live/`) | The same search sent through the API as two users with the same permissions, one with the plugin off and one with it on | 59 searches, paced to keep the load light |
+| Database survey (`harness/live/db_survey.php`) | Read-only queries on the test system's database | Fields, values, plugin settings |
+
+- **Local figures** come from a small fixture and use its own equivalent of the example shown. They show
+  behaviour, not scale.
+- **SQLite is not MySQL.** Core's wildcard and full-text matching is emulated locally. Accent folding, which
+  MySQL does through its collation, is inferred.
+- **Typesense-only mode on the test system.** The plugin user's group has it on, so a declined search returns
+  nothing there. Whether a zero was a decline or a served zero was decided from the local run of the same search.
+- **Not checked:** scripts without spaces between words (Chinese, Japanese, Thai), anything that only shows in
+  a browser, and searching for collections (`do_collections_search()`), which never reaches the plugin.
+
+---
+
+## 7. Open questions
 
 1. Is searching for collections still out of scope?
-2. Should the plugin copy core for the date-range exact search (section 7), stay as it is, or decline it?
-3. Item 24: is the upload-share path reachable in practice? It needs a run on a real system.
+2. Is `$daterange_search` on for the target system? It decides whether B4 matters.
+3. F2: is the upload-share path reachable in practice? It needs a run on a real system.
+
+---
+
+## Appendix A: earlier numbering
+
+Earlier notes numbered the findings 1 to 33 and K1 to K16 in the order they were found.
+
+| Theme | New reference = earlier number |
+|---|---|
+| A | A1 = 17, A2 = 14 |
+| B | B1 = 1, B2 = 4, B3 = 3, B4 = 6, B5 = 22 and K2, B6 = 21, B7 = 10, B8 = 5, B9 = 27, B10 = 11, B11 = K3, B12 = K4, B13 = K15, B14 = K14, B15 = 12, B16 = K8, B17 = 13 |
+| C | C1 = 2, C2 = 18, C3 = 19, C4 = 33 |
+| D | D1 = 26, D2 = K13 |
+| E | E1 = K1, E2 = 16, E3 = 20, E4 = K6, E5 = K7, E6 = K5, E7 = K16, E8 = 7, E9 = 8, E10 = 9 |
+| F | F1 = K9, F2 = 24, F3 = 15, F4 = K10, F5 = K11, F6 = 25 |
+| G | G1 = K12, G2 = 23 |
+| H | H1 = 28, H2 = 29, H3 = 30, H4 = 31, H5 = 32 |
+| Core | Core 1 and Core 2 were "the two core bugs"; Core 3 and Core 4 were the quirks found by the combination tests |
+
+---
+
+## Appendix B: how a search reaches the plugin
+
+Core does a lot before it asks ([`do_search()`](../../../include/do_search.php:44)):
+
+1. Pulls `@@` node tokens out of the search string into node buckets.
+2. Splits the rest into keywords and builds the standard filter (resource types, workflow states, permissions).
+3. Processes every keyword ([`do_search_keywords.php`](../../../include/do_search_keywords.php)): resolves
+   `field:value` on fixed-list fields into nodes, date fields into joins, and looks every plain word up in the
+   `keyword` table.
+4. Calls the `external_search` hook ([`do_search.php:342`](../../../include/do_search.php:342)) with the
+   keywords, node buckets and arguments. The plugin answers with rows, or `false` to let core continue.
+
+Two consequences:
+
+- **Core returns before the plugin is asked** when a plain word is not in the `keyword` table (it returns a
+  "did you mean" string) or a field is not viewable by the user (it returns `false`).
+- The plugin is handed core's keyword list, not the raw string. Where core has already turned a term into a node
+  the plugin only has to honour the bucket. Where core treats a term specially without changing the list (a
+  date dropdown, a punctuated token, a stop word), the plugin has to know the rule too. Theme B is the set of
+  rules it does not have.
+
+The plugin ([`typesense_search_run()`](../include/typesense_search_query.php:1303)) picks one mode from the
+search (collection, last, list, contributions, has-data, archive-pending, user-pending, single resource, or
+standard), adds keyword matching and the restrictions, sends one `multi_search` to Typesense, and fetches the
+rows for the returned refs from MySQL with core's own column list.
+
+It always leaves these to core: `returnsql`, disk-usage totals, `editable_only` and smart-collection searches
+([`all.php:88`](../hooks/all.php:88)). Keyword usage statistics are still logged for searches the plugin serves
+([`do_search.php:374`](../../../include/do_search.php:374), read from the code).

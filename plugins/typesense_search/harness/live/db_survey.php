@@ -74,7 +74,7 @@ echo '    inactive: ' . $count(fn($f) => (int)$f['active'] === 0)
     . ', partially indexed: ' . $count(fn($f) => (int)$f['partial_index'] === 1)
     . ', not flagged for indexing: ' . $count(fn($f) => (int)$f['keywords_index'] === 0 && (int)$f['active'] === 1) . "\n";
 
-echo "\n== date and numeric fields that are not flagged for indexing (review item 20)\n";
+echo "\n== date and numeric fields that are not flagged for indexing (review E3)\n";
 $hits = array_filter($fields, fn($f) => (int)$f['keywords_index'] === 0 && (in_array((int)$f['type'], array(4, 6, 10, 14), true) || (int)$f['field_constraint'] === 1));
 foreach ($hits as $f) {
     echo sprintf("    %-5s %-26s %-14s advanced search: %s  simple search: %s  active: %s\n", $f['ref'], $f['name'], $TYPE[$f['type']] ?? $f['type'],
@@ -122,16 +122,16 @@ foreach ($scan as $r) {
     }
 }
 echo '    values in total: ' . number_format($totals['total']) . "\n";
-echo '    longer than 500 characters: ' . number_format($totals['long_values']) . ' (' . number_format($long_indexed) . " in indexed fields; core indexes only the first 500 characters, review item 9)\n";
-echo '    starting with < and ending with >: ' . number_format($totals['html_like']) . ' (' . number_format($html_indexed) . " in indexed fields; core strips the tags, review item 7)\n";
-echo '    in translation syntax (~en:…): ' . number_format($totals['translated']) . (count($translated_fields) ? ' (' . implode('; ', $translated_fields) . ')' : '') . " (review item 8)\n";
+echo '    longer than 500 characters: ' . number_format($totals['long_values']) . ' (' . number_format($long_indexed) . " in indexed fields; core indexes only the first 500 characters, review E10)\n";
+echo '    starting with < and ending with >: ' . number_format($totals['html_like']) . ' (' . number_format($html_indexed) . " in indexed fields; core strips the tags, review E8)\n";
+echo '    in translation syntax (~en:…): ' . number_format($totals['translated']) . (count($translated_fields) ? ' (' . implode('; ', $translated_fields) . ')' : '') . " (review E9)\n";
 echo '    formatted-text fields: ' . $count(fn($f) => (int)$f['type'] === 8) . "\n";
 
 echo "\n== words in the keyword table: ";
 echo number_format((int)(rows($db, 'SELECT COUNT(*) c FROM keyword')[0]['c'] ?? 0)) . "\n";
 
 echo "\n== related keywords defined: ";
-echo number_format((int)(rows($db, 'SELECT COUNT(*) c FROM keyword_related')[0]['c'] ?? 0)) . " (review: not synced to Typesense)\n";
+echo number_format((int)(rows($db, 'SELECT COUNT(*) c FROM keyword_related')[0]['c'] ?? 0)) . " (review B12: not synced to Typesense)\n";
 
 echo "\n== collections\n";
 foreach (rows($db, 'SELECT type, COUNT(*) c, SUM(savedsearch IS NOT NULL AND savedsearch > 0) smart FROM collection GROUP BY type ORDER BY type') as $r) {
@@ -167,4 +167,4 @@ echo '    groups in total: ' . (rows($db, 'SELECT COUNT(*) c FROM usergroup')[0]
 
 echo "\n== users with a search filter: ";
 $r = rows($db, 'SELECT (SELECT COUNT(*) FROM usergroup WHERE search_filter_id > 0) g, (SELECT COUNT(*) FROM user WHERE search_filter_o_id > 0) u');
-echo ($r[0]['g'] ?? '?') . ' groups, ' . ($r[0]['u'] ?? '?') . " users with an override (review item 16: their per-resource access is decided by a search)\n";
+echo ($r[0]['g'] ?? '?') . ' groups, ' . ($r[0]['u'] ?? '?') . " users with an override (review E2: their per-resource access is decided by a search)\n";

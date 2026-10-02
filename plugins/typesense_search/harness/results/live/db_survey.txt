@@ -25,7 +25,7 @@ server: 8.0.46-0ubuntu0.24.04.4
     date range           1
     inactive: 22, on the simple search bar: 2, partially indexed: 1, not flagged for indexing: 9
 
-== date and numeric fields that are not flagged for indexing (review item 20)
+== date and numeric fields that are not flagged for indexing (review E3)
     93    datephototaken             date           advanced search: no  simple search: no  active: yes
 
 == fixed-list fields on the simple search bar shown as text (dynamic keywords) or tree
@@ -35,14 +35,14 @@ server: 8.0.46-0ubuntu0.24.04.4
 == values per field that the two engines index differently (one scan of the node table)
     (1126 ms)
     values in total: 479,243
-    longer than 500 characters: 3,060 (1 in indexed fields; core indexes only the first 500 characters, review item 9)
-    starting with < and ending with >: 0 (0 in indexed fields; core strips the tags, review item 7)
-    in translation syntax (~en:…): 0 (review item 8)
+    longer than 500 characters: 3,060 (1 in indexed fields; core indexes only the first 500 characters, review E10)
+    starting with < and ending with >: 0 (0 in indexed fields; core strips the tags, review E8)
+    in translation syntax (~en:…): 0 (review E9)
     formatted-text fields: 0
 
 == words in the keyword table: 369,131
 
-== related keywords defined: 1 (review: not synced to Typesense)
+== related keywords defined: 1 (review B12: not synced to Typesense)
 
 == collections
     type 0  2,361    smart: 5
@@ -63,4 +63,4 @@ server: 8.0.46-0ubuntu0.24.04.4
     group 18: $typesense_search_enabled = false
     groups in total: 14
 
-== users with a search filter: 0 groups, 0 users with an override (review item 16: their per-resource access is decided by a search)
+== users with a search filter: 0 groups, 0 users with an override (review E2: their per-resource access is decided by a search)

@@ -35,12 +35,12 @@ L5 a sort the plugin declines:  "sculpture"  [order_by=popularity]
 L10 simple-search year dropdown:  "basicyear:2024"
     core:   total=8838  (7060 ms)
     plugin: total=0  (54 ms)
-    => DIFFERENT   (item 1)
+    => DIFFERENT   (B1)
 
 L11 year and month dropdowns:  "basicyear:2023, basicmonth:05"
     core:   total=723  (70 ms)
     plugin: total=0  (70 ms)
-    => DIFFERENT   (item 1)
+    => DIFFERENT   (B1)
 
 L12 date field by year:  "date:2024"
     core:   total=8838  (6592 ms)
@@ -55,17 +55,17 @@ L13 date range, full dates:  "date:rangestart2024-01-01end2024-02-29"
 L14 date range, end month without a day:  "date:rangestart2024-01-01end2024-02-31"
     core:   total=822  (7619 ms)
     plugin: total=21151  (59 ms)
-    => DIFFERENT   (item 6)
+    => DIFFERENT   (B4)
 
 L15 date field not flagged for indexing:  "datephototaken:2024"
     core:   total=3676  (6501 ms)
     plugin: total=0  (45 ms)
-    => DIFFERENT   (item 20)
+    => DIFFERENT   (E3)
 
 L16 date-range field, exact year:  "daterangetest:2020"
     core:   total=0  (42 ms)
     plugin: total=2  (58 ms)
-    => DIFFERENT   (core bug 2)
+    => DIFFERENT   (Core 2)
 
 L17 date-range field, range:  "daterangetest:rangestart2020-06-01end2020-12-31"
     core:   total=1  (40 ms)
@@ -75,59 +75,59 @@ L17 date-range field, range:  "daterangetest:rangestart2020-06-01end2020-12-31"
 L18 legacy date syntax: any year, May:  "date:nnnn|05"
     core:   total=9511  (6559 ms)
     plugin: total=0  (39 ms)
-    => DIFFERENT   (item 27)
+    => DIFFERENT   (B9)
 
 ---- last word as a prefix, wildcards
 
 L20 plain word that begins longer words:  "land"
     core:   total=3172  (198 ms)
     plugin: total=69408  (288 ms)
-    => DIFFERENT   (item 2)
+    => DIFFERENT   (C1)
 
 L21 plain word that begins longer words:  "sculpt"
     core:   total=3685  (133 ms)
     plugin: total=49610  (86 ms)
-    => DIFFERENT   (item 2)
+    => DIFFERENT   (C1)
 
 L22 wildcard:  "sculpt*"
     core:   total=51007  (2244 ms)
     plugin: total=49610  (164 ms)
-    => DIFFERENT   (item 18)
+    => DIFFERENT   (C2)
 
 L23 wildcard:  "land*"
     core:   total=70209  (1704 ms)
     plugin: total=69408  (182 ms)
-    => DIFFERENT   (item 18)
+    => DIFFERENT   (C2)
 
 L24 wildcard:  "photo*"
     core:   total=23951  (721 ms)
     plugin: total=23959  (155 ms)
-    => DIFFERENT   (item 18)
+    => DIFFERENT   (C2)
 
 L25 wildcard in a field:  "title:sculpt*"
     core:   total=4522  (509 ms)
     plugin: total=4522  (109 ms)
-    => SAME   (item 18)
+    => SAME   (C2)
 
 L26 leading wildcard:  "*scape"
     core:   total=68601  (1908 ms)
     plugin: total=381  (59 ms)
-    => DIFFERENT   (item 11)
+    => DIFFERENT   (B10)
 
 L27 wildcard with many different completions:  "con*"
     core:   total=61993  (2020 ms)
     plugin: total=53361  (102 ms)
-    => DIFFERENT   (item 18)
+    => DIFFERENT   (C2)
 
 L28 wildcard with many different completions:  "gar*"
     core:   total=15291  (417 ms)
     plugin: total=14227  (64 ms)
-    => DIFFERENT   (item 18)
+    => DIFFERENT   (C2)
 
 L29 the same in a field:  "title:con*"
     core:   total=1317  (471 ms)
     plugin: total=262  (50 ms)
-    => DIFFERENT   (item 18)
+    => DIFFERENT   (C2)
 
 ---- fixed-list fields
 
@@ -139,22 +139,22 @@ L30 option by exact name:  "orientation:landscape"
 L31 one word of an option:  "usagerights:social"
     core:   total=148  (52 ms)
     plugin: total=100862  (75 ms)
-    => DIFFERENT   (item 3)
+    => DIFFERENT   (B3)
 
 L32 quoted field search, as the search bar rebuilds it:  "\"usagerights:Social media\""
     core:   total=148  (126 ms)
     plugin: total=0  (61 ms)
-    => DIFFERENT   (item 4)
+    => DIFFERENT   (B2)
 
 L33 the same plus a typed word:  "\"usagerights:Social media\" sculpture"
     core:   total=100  (407 ms)
     plugin: total=0  (104 ms)
-    => DIFFERENT   (item 4)
+    => DIFFERENT   (B2)
 
 L34 option wildcard:  "usagerights:soc*"
     core:   total=148  (68 ms)
     plugin: total=100862  (60 ms)
-    => DIFFERENT   (item 3)
+    => DIFFERENT   (B3)
 
 ---- stop words, phrases, punctuation
 
@@ -166,17 +166,17 @@ L40 stop word plus keyword:  "the sculpture"
 L41 only a stop word:  "the"
     core:   total=100862  (719 ms)
     plugin: total=32537  (75 ms)
-    => DIFFERENT   (item 22)
+    => DIFFERENT   (B5)
 
 L42 stop word as a field value:  "title:the"
     core:   total=100862  (710 ms)
     plugin: total=10564  (54 ms)
-    => DIFFERENT   (item 22)
+    => DIFFERENT   (B5)
 
 L43 phrase:  "\"black and white\""
     core:   total=3179  (244 ms)
     plugin: total=3179  (59 ms)
-    => SAME   (item 21)
+    => SAME   (B6)
 
 L44 phrase with a word the stemmer changes:  "\"sculpture park\""
     core:   total=6883  (723 ms)
@@ -196,7 +196,7 @@ L48 the phrase words unquoted:  "sculpture park"
 L45 hyphenated single word:  "black-and-white"
     core:   total=3179  (107 ms)
     plugin: total=3194  (60 ms)
-    => DIFFERENT   (item 10)
+    => DIFFERENT   (B7)
 
 L46 resource type name:  "document"
     core:   total=490  (59 ms)
@@ -208,17 +208,17 @@ L46 resource type name:  "document"
 L50:  "land scape"
     core:   total=379  (66 ms)
     plugin: total=379  (70 ms)
-    => SAME   (item 19)
+    => SAME   (C3)
 
 L51:  "sun set"
     core:   total=169  (68 ms)
     plugin: total=169  (66 ms)
-    => SAME   (item 19)
+    => SAME   (C3)
 
 L52:  "water fall"
     core:   total=7  (138 ms)
     plugin: total=7  (142 ms)
-    => SAME   (item 19)
+    => SAME   (C3)
 
 ---- numeric field
 
