@@ -528,12 +528,12 @@ From the read-only survey (`harness/results/live/db_survey.txt`):
 - 3,060 values longer than 500 characters, one of them in an indexed field.
 - One date field not flagged for indexing, on neither search form. No such numeric field.
 - Two fields on the simple search bar: the date field and one checkbox list.
-- The plugin is active for every user group, with Typesense-only mode off in its own settings.
+- The plugin is active for every user group, with Typesense-only mode off in its own settings. Two of the 14
+  groups override that: the group of the "plugin" API user turns Typesense-only mode on, and the group of the
+  "core" API user switches the plugin off. The other 12 groups run the plugin with fallback to core.
 
 Not from the survey:
 
-- The two API users nevertheless behave differently (one is never served by the plugin, the other gets nothing
-  for a declined search), so their groups must override the plugin's settings. Inferred from the live results.
 - `$stemming` is on. Known from earlier work on that system and consistent with the live phrase results (26).
 - Not established: whether `$daterange_search` is on there (decides item 6).
 

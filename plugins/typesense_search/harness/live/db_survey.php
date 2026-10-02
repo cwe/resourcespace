@@ -152,6 +152,19 @@ foreach (rows($db, "SELECT name, inst_version, enabled_groups, config_json FROM 
     }
 }
 
+// Group config can hold other settings and secrets, so only these plugin settings are picked out and printed.
+echo "\n== user groups that override a plugin setting\n";
+$overrides = 0;
+foreach (rows($db, "SELECT ref, config_options FROM usergroup WHERE config_options LIKE '%typesense_search%' ORDER BY ref") as $r) {
+    preg_match_all('/\\$typesense_search_(enabled|only|max_rows|filter_max_ops|global_filter)\s*=\s*([^;]*);/', (string)$r['config_options'], $m, PREG_SET_ORDER);
+    foreach ($m as $setting) {
+        $overrides++;
+        echo '    group ' . $r['ref'] . ': $typesense_search_' . $setting[1] . ' = ' . ($setting[1] === 'global_filter' ? '(set)' : trim($setting[2])) . "\n";
+    }
+}
+echo $overrides === 0 ? "    none\n" : '';
+echo '    groups in total: ' . (rows($db, 'SELECT COUNT(*) c FROM usergroup')[0]['c'] ?? '?') . "\n";
+
 echo "\n== users with a search filter: ";
 $r = rows($db, 'SELECT (SELECT COUNT(*) FROM usergroup WHERE search_filter_id > 0) g, (SELECT COUNT(*) FROM user WHERE search_filter_o_id > 0) u');
 echo ($r[0]['g'] ?? '?') . ' groups, ' . ($r[0]['u'] ?? '?') . " users with an override (review item 16: their per-resource access is decided by a search)\n";

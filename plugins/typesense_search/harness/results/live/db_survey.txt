@@ -33,7 +33,7 @@ server: 8.0.46-0ubuntu0.24.04.4
     162   masterartworkimage         checkbox list
 
 == values per field that the two engines index differently (one scan of the node table)
-    (1044 ms)
+    (1126 ms)
     values in total: 479,243
     longer than 500 characters: 3,060 (1 in indexed fields; core indexes only the first 500 characters, review item 9)
     starting with < and ending with >: 0 (0 in indexed fields; core strips the tags, review item 7)
@@ -56,5 +56,11 @@ server: 8.0.46-0ubuntu0.24.04.4
     typesense_search_enabled = "1"
     typesense_search_only = "0"
     typesense_search_show_indicator = "1"
+
+== user groups that override a plugin setting
+    group 17: $typesense_search_enabled = true
+    group 17: $typesense_search_only = true
+    group 18: $typesense_search_enabled = false
+    groups in total: 14
 
 == users with a search filter: 0 groups, 0 users with an override (review item 16: their per-resource access is decided by a search)
