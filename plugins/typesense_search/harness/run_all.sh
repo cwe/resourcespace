@@ -13,6 +13,8 @@ for f in ab/[0-9]*.php; do
     echo "ab/$name"
     php "$f" > "results/ab/$name.txt" 2>&1
 done
+echo "ab/50_combinations with stemming"
+HARNESS_COMBO_STEMMING=1 php ab/50_combinations.php > results/ab/50_combinations_stemming.txt 2>&1
 for f in trace/[0-9]*.php; do
     name=$(basename "$f" .php)
     echo "trace/$name"

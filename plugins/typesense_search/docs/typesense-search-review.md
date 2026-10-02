@@ -17,9 +17,11 @@ Counts are written **core / plugin**: the number of resources each engine return
 
 Most searches the plugin serves return the same resources as core, in the same order where the order is
 defined, and everything it has no mode for is handed back to core correctly. Paging is exact at every window
-shape tried.
+shape tried. Combining terms does not change this: across about 2,500 generated combinations of terms,
+arguments, special searches and permissions, the plugin returned the expected resources in every form but one
+(item 33; see "Combinations" in section 4).
 
-There are 32 numbered differences below, plus the ones already known before this review. The ones that matter
+There are 33 numbered differences below, plus the ones already known before this review. The ones that matter
 most on the test system (about 100,000 visible resources, `$stemming` on), with what was measured there:
 
 | What a user does | Core | Plugin | Item |
@@ -54,10 +56,11 @@ Three instruments, all in `../harness/`:
 
 1. **Local A/B** (`ab/`). Core's real `do_search()` and the plugin's real indexer, query builder and hydrate on
    the same small fixture. Core's SQL ran on SQLite; the plugin talked to a local Typesense 30.2, the version
-   on the test system. About 440 cases.
+   on the test system. About 440 hand-written cases, plus 2,481 generated combinations run with `$stemming` off
+   and again with it on.
 2. **Trace** (`trace/`). No database, no Typesense: shows the SQL core builds and the request the plugin would
    send.
-3. **Live A/B** (`live/`). 45 searches sent through the API as two users with the same permissions, one in a
+3. **Live A/B** (`live/`). 59 searches sent through the API as two users with the same permissions, one in a
    group with the plugin switched off, one in a group with it on. Paced and kept light. Plus one read-only
    survey of the database.
 
@@ -163,6 +166,43 @@ relevance (K12).
 | Sort by popularity, rating, colour, title, type, extension, status, random, other fields | Falls back to core |
 | `v`, `T`, `z`, `ert`, own pending resources, `J` with `j*` or `j<n>`, filters ALL / NONE / ANY, contributor override, share key | Same |
 | Resource types on special searches, `access_override`, `ignore_filters`, `J` with no `j` | Differ (K8, K10, K11, 14) |
+
+### Combinations
+
+The tables above are about one kind of term at a time. Combinations were tested separately
+(`harness/ab/50_combinations.php`) on a fixture built for the purpose: 512 resources, one for every mix of nine
+two-valued attributes (a title word, a phrase, a caption word, a dropdown option, a dynamic keyword, a date, a
+number, the resource type, the workflow state). Any AND of terms then has a known answer, and each case was
+checked three ways: core against the expected set, the plugin against it, and the two against each other.
+
+Only terms that agree on their own were combined (29 forms: keyword, wildcard, field term, field wildcard,
+negative word, phrase, negative phrase, fixed-list value, node, NOT node, date by year / month / day, date
+range, `numrange`), so a difference here would come from the combination. A combination that includes a term
+from section 5 behaves as that item describes.
+
+| Group | Cases | Plugin returned the expected set | Core returned the expected set |
+|---|---|---|---|
+| Single terms | 30 | 30 | 30 |
+| Every ordered pair, comma separated | 870 | 868 | 870 |
+| Ordered pairs, space separated (sample) | 216 | 216 | 216 |
+| Three to seven terms | 300 | 300 | 300 |
+| Terms with resource types, workflow states, day limit, sort and result window | 300 | 300 | 300 |
+| Special searches alone | 6 | 6 | 6 |
+| Special search plus one term | 360 | 360 | 340 |
+| Special search plus two to four terms and workflow states | 150 | 150 | 133 |
+| Permissions (`T`, `J`, search filter) with terms and arguments | 240 | 240 | 240 |
+| OR groups of nodes | 9 | 7 | 7 |
+
+- The order was identical in all 323 cases where an order is defined (date, resource ID, modified, collection).
+- The two plugin misses in the pairs are one form in both orders: item 33.
+- The core misses are the `!last` bug of section 7 and two quirks listed there. In the two OR-group cases both
+  engines return the same (empty) result.
+- With `$stemming` on the outcome was identical, case for case.
+- 13 searches fell back to core. The only form in the list that the plugin declines is two free-text wildcards
+  in one search.
+- **Live:** 14 combinations on the test system (keyword with nodes, a field term, a field wildcard, a date, a
+  NOT node, a negative word; resource type and workflow states; date and resource ID sorts; a collection and
+  `!last` with a keyword) gave the same totals, and the same first rows where an order was checked.
 
 ---
 
@@ -384,6 +424,11 @@ plugin has no number for it. `price:numrangeneg5|5` 1 / 0 (emulated on SQLite).
 **31. `!empty` after another term.** Core handles `!empty` anywhere in the keyword list; the plugin only
 declines it when it is first. `title:sunset !empty18` 4 / 0.
 
+**33. A word together with a wildcard that only completes to that word.** `alpha, alph*` 128 / 0, in either
+order. The plugin sends both as query words with the second as a prefix; Typesense returns nothing when the
+prefix can only complete to a word already in the query (asked directly: `alpha alph` 0, `alph` 128,
+`piece alph` 128). Found by the combination battery; the only combination-specific difference.
+
 **32. Typesense-only mode.** With `$typesense_search_only` every search the plugin declines, and any Typesense
 outage, returns nothing; `returnsql`, disk usage, `editable_only` and smart searches still go to core. It is
 described as a testing aid. Without it an unreachable Typesense falls back to core correctly.
@@ -437,7 +482,24 @@ search.
 
 ---
 
+### Core quirks seen in combinations
+
+Not plugin differences, but they explain where core misses its own expected result in the combination table.
+
+- **`!resource<n>` followed by a term containing digits.** Core builds the resource number from every digit in
+  the search string ([`search_functions.php:1422`](../../../include/search_functions.php:1422)), so
+  `!resource1100, date:2023-03` looks for resource 1100202303 and returns nothing. The plugin reads the number
+  from the first token and returns the resource: 0 / 1.
+- **The same node alone and then inside an OR group**, `@@201, @@201@@203`. Removing the first token from the
+  string also removes it from the group ([`do_search.php:529`](../../../include/do_search.php:529)), leaving a
+  stray token. Both engines return nothing, where the expected answer is the resources with node 201. The
+  other order works.
+
+---
+
 ## 8. Checked and the same
+
+- **Combinations.** See section 4: 2,481 generated cases, with and without stemming, and 14 on the live system.
 
 - **Paging and order at scale.** 26 cases on 620 resources: windows across Typesense's 250-row page limit, tied
   dates, missing and year-only dates, all rows, integer `fetchrows` padded with zeros, refs only, an offset past

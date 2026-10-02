@@ -32,7 +32,7 @@ php ab/03_field_specific.php
 ```
 
 ```bash
-./run_all.sh && php summarise.php      # everything, into results/
+./run_all.sh && php summarise.php      # everything, into results/ (about six minutes)
 ```
 
 Environment variables:
@@ -61,8 +61,15 @@ B23 dropdown word that is not a whole option:  "country:united"
 - `PHP ERROR`: the plugin's hook threw.
 - `same set, different order` matters only for the sort that was asked for; relevance order is known to differ.
 
+`ab/50_combinations.php` is different: it generates about 2,500 combinations of terms, arguments, special
+searches and permissions on a fixture where every mix of attributes exists, checks core and the plugin against
+the expected set, and prints only the cases where something disagrees, then a summary. It takes about two and a
+half minutes; `HARNESS_COMBO_SCALE=0.1` shrinks the sampled groups and `HARNESS_COMBO_STEMMING=1` runs it with
+`$stemming` on.
+
 A case is written `ab('label', 'search string', array(...do_search arguments...))`. The fixture
-(`ab/fixture_body.php`) is about 35 resources chosen to separate behaviours; scripts add their own where needed.
+(`ab/fixture_body.php`, built with the helpers in `ab/fixture_lib.php`) is about 35 resources chosen to separate
+behaviours; scripts add their own where needed.
 The session is a standard user (`$userpermissions` in `ab/boot.php`); scripts change globals to try other
 permissions and config options.
 

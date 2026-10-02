@@ -1,0 +1,203 @@
+$stemming is ON
+Typesense index built by the plugin's reindex functions: {"resources":512,"failed":0,"errors":[],"memberships":225,"attributes":512,"grants":0}
+
+---- 2 ordered pairs, comma separated
+
+  "alpha, alph*"
+      expected 128 | core 128 | plugin 0 (WRONG)
+      plugin is missing: 128 resources, all with title=alpha, archive=0; plugin has extra: none
+
+  "alph*, alpha"
+      expected 128 | core 128 | plugin 0 (WRONG)
+      plugin is missing: 128 resources, all with title=alpha, archive=0; plugin has extra: none
+
+---- 7 special search plus one term
+
+  "!last60, country:france"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=201, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 country:france"
+      expected 128 | core 1 (WRONG) | plugin 128
+      core is missing: 127 resources, all with country=201, archive=0; core has extra: none
+
+  "!last60, @@201"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=201, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 @@201"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=201, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60, @@203"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=203, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=203, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 @@203"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=203, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=203, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60, country:spain"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=203, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=203, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 country:spain"
+      expected 128 | core 1 (WRONG) | plugin 128
+      core is missing: 127 resources, all with country=203, archive=0; core has extra: none
+
+  "!last60, keywords:landscape"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with keyword=303, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=303, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 keywords:landscape"
+      expected 128 | core 1 (WRONG) | plugin 128
+      core is missing: 127 resources, all with keyword=303, archive=0; core has extra: none
+
+  "!last60, @@301"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with keyword=301, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 @@301"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with keyword=301, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60, country:france;spain"
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with price=500, type=2, archive=0; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60 country:france;spain"
+      expected 256 | core 1 (WRONG) | plugin 256
+      core is missing: 255 resources, all with archive=0; core has extra: none
+
+  "!resource1100, date:2023-03"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!resource1100 date:2023-03"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!resource1100, date:rangeend2023-12-31"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!resource1100 date:rangeend2023-12-31"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!resource1100, price:numrange100|1000"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!resource1100 price:numrange100|1000"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+---- 8 special search plus two to four terms and workflow states
+
+  "!last60, \"red car\", @@203, title:alpha, harbour"
+      expected 16 | core 1 (WRONG) | plugin 16
+      core is missing: 15 resources, all with title=alpha, phrase=red car, place=harbour, country=203, archive=0; core has extra: none
+
+  "!last60, date:2024-05-17, country:france;spain, @@201, -\"red car\""
+      expected 32 | core 1 (WRONG) | plugin 32
+      core is missing: 31 resources, all with phrase=car red, country=201, date=2024-05-17, archive=0; core has extra: none
+
+  "!resource1100, price:numrange100|1000, -\"red car\""  [archive="0,2"]
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!resource1100, -landscape, date:2023-03"  [archive="0,2"]
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!last60, -harbour, date:2024, -omega, country:france;spain"
+      expected 32 | core 1 (WRONG) | plugin 32
+      core is missing: 31 resources, all with title=alpha, place=marina, date=2024-05-17, archive=0; core has extra: none
+
+  "!last60, country:france;spain, @@!203, price:numrange10|100, -landscape"  [archive="0,2"]
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with country=201, keyword=301, price=50; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!last60, -\"red car\", keywords:landscape, country:spain, date:2024-05-17"
+      expected 16 | core 1 (WRONG) | plugin 16
+      core is missing: 15 resources, all with phrase=car red, country=203, keyword=303, date=2024-05-17, archive=0; core has extra: none
+
+  "!last60, @@301, date:2023-03"  [archive="2"]
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with keyword=301, date=2023-03-10, archive=2; core has extra: 1 resources, all with title=alpha, phrase=red car, place=harbour, country=201, keyword=301, date=2023-03-10, price=50, type=1, archive=2
+
+  "!last60, caption:marina, @@301, title:alpha"  [archive="0,2"]
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with title=alpha, place=marina, keyword=301; core has extra: 1 resources, all with title=alpha, phrase=red car, place=marina, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=0
+
+  "!resource1100, harbour, date:rangeend2023-12-31"
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+  "!last60, country:france, marin*"  [archive="2"]
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with place=marina, country=201, archive=2; core has extra: 1 resources, all with title=alpha, phrase=red car, place=marina, country=201, keyword=301, date=2024-05-17, price=50, type=1, archive=2
+
+  "!last60, country:spain, -\"red car\""  [archive="2"]
+      expected 60 | core 1 (WRONG) | plugin 60
+      core is missing: 60 resources, all with phrase=car red, country=203, archive=2; core has extra: 1 resources, all with title=alpha, phrase=car red, place=harbour, country=203, keyword=301, date=2024-05-17, price=50, type=1, archive=2
+
+  "!last60, @@301, harbour, date:2024"
+      expected 32 | core 1 (WRONG) | plugin 32
+      core is missing: 31 resources, all with place=harbour, keyword=301, date=2024-05-17, archive=0; core has extra: none
+
+  "!last60, harbour, country:spain, price:numrange10|100, keywords:landscape"  [archive="0,2"]
+      expected 32 | core 1 (WRONG) | plugin 32
+      core is missing: 31 resources, all with place=harbour, country=203, keyword=303, price=50; core has extra: none
+
+  "!last60, country:france;spain, -landscape, -harbour, -\"red car\""
+      expected 32 | core 1 (WRONG) | plugin 32
+      core is missing: 31 resources, all with phrase=car red, place=marina, keyword=301, archive=0; core has extra: none
+
+  "!last60, caption:marina, country:france, \"red car\""  [archive="2"]
+      expected 32 | core 1 (WRONG) | plugin 32
+      core is missing: 31 resources, all with phrase=red car, place=marina, country=201, archive=2; core has extra: none
+
+  "!resource1100, country:france;spain, harbour, date:rangeend2023-12-31"  [archive="0,2"]
+      expected 1 | core 0 (WRONG) | plugin 1
+      core is missing: 1 resources, all with title=omega, phrase=car red, place=harbour, country=201, keyword=301, date=2023-03-10, price=500, type=1, archive=0; core has extra: none
+
+---- 10 OR groups of nodes
+
+  "@@201, @@201@@203"
+      expected 128 | core 0 (WRONG) | plugin 0 (WRONG)
+      core is missing: 128 resources, all with country=201, archive=0; core has extra: none
+      plugin is missing: 128 resources, all with country=201, archive=0; plugin has extra: none
+
+  "@@301, @@301@@303"
+      expected 128 | core 0 (WRONG) | plugin 0 (WRONG)
+      core is missing: 128 resources, all with keyword=301, archive=0; core has extra: none
+      plugin is missing: 128 resources, all with keyword=301, archive=0; plugin has extra: none
+
+---- asked of Typesense directly: a word together with a wildcard that only completes to that word
+q=alpha alph prefix=true (what the plugin sends for: alpha, alph*)     found=0 refs=[]
+q=alph prefix=true                                                     found=128
+q=piece alph prefix=true                                               found=128
+q=alpha alpha prefix=false                                             found=128
+
+
+################ COMBINATIONS: summary ################
+group                                                               cases  served  fallback  core ok  plugin ok   both agree      order  flagged
+1 single terms                                                         30      30         0       30         30           30          -        0
+2 ordered pairs, comma separated                                      870     868         2      870        868          868          -        2
+3 ordered pairs, space separated (sample)                             216     216         0      216        216          216          -        0
+4 three to seven terms                                                300     292         8      300        300          300          -        0
+5 terms with arguments                                                300     300         0      300        300          300    243/243        0
+6 special searches alone                                                6       6         0        6          6            6        1/1        0
+7 special search plus one term                                        360     360         0      340        360          340      60/60       20
+8 special search plus two to four terms and workflow states           150     150         0      133        150          133      19/19       17
+9 permissions: T2 (type 2 hidden)                                      80      79         1       80         80           80          -        0
+9 permissions: J (featured collections only)                           80      78         2       80         80           80          -        0
+9 permissions: search filter (France)                                  80      80         0       80         80           80          -        0
+10 OR groups of nodes                                                   9       9         0        7          7            9          -        2
+
+"core ok" / "plugin ok": the result equals the expected set. "both agree": core and the plugin return the same
+resources (and the same order where an order was checked). Cases listed above the summary are the ones where
+any of the three failed; at most 25 are printed per group.
+cases whose expected set is empty: 133 of 2481

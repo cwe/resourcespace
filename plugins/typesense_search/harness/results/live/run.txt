@@ -232,6 +232,78 @@ L61 numrange, one bound (exact):  "numberfield:numrangeneg50|"
     plugin: total=1  (51 ms)
     => SAME
 
+---- combinations of terms that agree on their own
+
+L80 keyword and node:  "sculpture, @@389"
+    core:   total=26893  (1307 ms)
+    plugin: total=26893  (102 ms)
+    => SAME   (orientation = Landscape)
+
+L81 keyword and fixed-list field:  "sculpture, orientation:landscape"
+    core:   total=26893  (1181 ms)
+    plugin: total=26893  (79 ms)
+    => SAME
+
+L82 text field term:  "title:sculpture"
+    core:   total=4226  (146 ms)
+    plugin: total=4226  (59 ms)
+    => SAME
+
+L83 text field term and node:  "title:sculpture, @@389"
+    core:   total=2439  (202 ms)
+    plugin: total=2439  (63 ms)
+    => SAME
+
+L84 keyword and two nodes:  "sculpture, @@425, @@389"
+    core:   total=41  (395 ms)
+    plugin: total=41  (63 ms)
+    => SAME
+
+L85 field wildcard and node:  "title:sculpt*, @@389"
+    core:   total=2507  (598 ms)
+    plugin: total=2507  (59 ms)
+    => SAME
+
+L86 node and NOT node:  "@@425, @@!389"
+    core:   total=99  (43 ms)
+    plugin: total=99  (60 ms)
+    => SAME
+
+L87 keyword and date:  "sculpture, date:2024"
+    core:   total=4517  (4033 ms)
+    plugin: total=4517  (62 ms)
+    => SAME
+
+L88 keyword, node and date, sorted by date:  "sculpture, @@389, date:2024"  [order_by=date]
+    core:   total=2034 first=[75485,75463,75482,75462,75484]  (2793 ms)
+    plugin: total=2034 first=[75485,75463,75482,75462,75484]  (138 ms)
+    => SAME
+
+L89 keyword with a resource type, sorted by resource ID:  "sculpture"  [order_by=resourceid]
+    core:   total=2893 first=[2181,3879,4093,4094,4096]  (429 ms)
+    plugin: total=2893 first=[2181,3879,4093,4094,4096]  (126 ms)
+    => SAME
+
+L90 keyword, node, resource type and two workflow states:  "sculpture, @@389"
+    core:   total=1408  (407 ms)
+    plugin: total=1408  (160 ms)
+    => SAME
+
+L91 collection and keyword, collection order:  "!collection3808, sculpture"  [order_by=collection]
+    core:   total=55 first=[59367,59354,59348,59320,59315]  (674 ms)
+    plugin: total=55 first=[59367,59354,59348,59320,59315]  (58 ms)
+    => SAME
+
+L92 last 100 and keyword:  "!last100, sculpture"
+    core:   total=100 first=[127394,127395,127396,127397,127398]  (645 ms)
+    plugin: total=100 first=[127394,127395,127396,127397,127398]  (110 ms)
+    => SAME
+
+L93 node and negative keyword:  "@@425, -sculpture"
+    core:   total=48  (54 ms)
+    plugin: total=48  (90 ms)
+    => SAME
+
 ---- collections
 
 L70 public collection, collection order:  "!collection3808"  [order_by=collection]
