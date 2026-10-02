@@ -1,0 +1,634 @@
+
+################ C. NODE SEARCHES ################
+
+=== C1 single node:  "@@201"
+    hook   search="" keywords=[] node_bucket=[["201"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C2 OR within a field:  "@@201@@203"
+    hook   search="" keywords=[] node_bucket=[["201","203"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201,203] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C3 AND across words:  "@@201 @@301"
+    hook   search="" keywords=[] node_bucket=[["201"],["301"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && nodes:=[301] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C4 NOT node:  "@@!201"
+    hook   search="" keywords=[] node_not=["201"]
+    CORE   no keyword union; keywords looked up=[]; node NOT
+           filter: NOT EXISTS (SELECT `resource`, node FROM `resource_node` WHERE r.ref=`resource` AND `node` IN (?)) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:!=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C5 node + NOT node:  "@@301 @@!201"
+    hook   search="" keywords=[] node_bucket=[["301"]] node_not=["201"]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins, node NOT
+           filter: NOT EXISTS (SELECT `resource`, node FROM `resource_node` WHERE r.ref=`resource` AND `node` IN (?)) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[301] && nodes:!=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C6 node + keyword:  "@@201 sunset"
+    hook   search="sunset" keywords=["sunset"] node_bucket=[["201"]]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: nodes:=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== C7 node, comma + keyword (form output):  "sunset, @@201, @@301"
+    hook   search="sunset" keywords=["sunset"] node_bucket=[["201"],["301"]]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: nodes:=[201] && nodes:=[301] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== C8 node on a field the user cannot view:  "@@931"
+    hook   search="" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C9 hidden-field node + visible node:  "@@931 @@201"
+    hook   search="" keywords=[] node_bucket=[["201"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C10 unknown node id:  "@@99999999"
+    hook   search="" keywords=[] node_bucket=[["99999999"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[99999999] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C11 mixed NOT inside a word:  "@@201@@!203"
+    hook   search="" keywords=[] node_bucket=[["201","203"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201,203] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== C12 OR word with $category_tree_search_use_and_logic:  "@@201@@203"
+    hook   search="" keywords=[] node_bucket=[["201","203"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && nodes:=[203] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+################ D. SPECIAL SEARCHES ################
+
+---- served or vetoed by a plugin mode
+
+=== D1 own collection:  "!collection5"   [order_by="collection", sort="ASC"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:asc,date_added:desc),ref:asc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D2 own collection, relevance order:  "!collection5"
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D3 collection + keyword:  "!collection5 sunset"   [order_by="collection", sort="ASC"]
+    hook   search="!collection5 sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           result: []
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:asc,date_added:desc),ref:asc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D4 collection + restypes:  "!collection5"   [restypes="1,2", order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D5 another user's private collection (non-admin):  "!collection6"   [order_by="collection"]
+    hook   search="!collection6" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN CORE (veto) - typesense_search: unsupported (collection 6 not readable)
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D6 selection collection:  "!collection7"   [order_by="collection"]
+    hook   search="!collection7" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  c.sortorder DESC,c.date_added ASC,r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (collection 7 is not indexed (selection/upload collection))
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+
+=== D7 featured collection:  "!collection30"   [order_by="collection"]
+    hook   search="!collection30" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=30) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D8 collection that does not exist:  "!collection424242"   [order_by="collection"]
+    hook   search="!collection424242" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN CORE (veto) - typesense_search: unsupported (collection 424242 not readable)
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D9 collection, date order:  "!collection5"   [order_by="date"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: date_field_sort:desc,ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== D10 upload collection (negative ref):  "!collection-5"   [order_by="collection"]
+    hook   search="!collection-5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN CORE (veto) - typesense_search: unsupported (collection -5 is not indexed (selection/upload collection))
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+
+=== D11 !last:  "!last1000"
+    hook   search="!last1000" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  ref DESC LIMIT 1000 ) r2 ORDER BY r2.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48,"result_limit":1000,"recent_selection":1000}
+
+=== D12 !last + keyword (space):  "!last50 sunset"
+    hook   search="!last50 sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  ref DESC LIMIT 1000 ) r2 ORDER BY r2.ref DESC 
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48,"result_limit":1000,"recent_selection":1000}
+
+=== D13 !last + keyword (comma):  "!last50, sunset"
+    hook   search="!last50, sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  ref DESC LIMIT 50 ) r2 ORDER BY r2.ref DESC 
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48,"result_limit":50,"recent_selection":50}
+
+=== D14 !last, lower-case sort:  "!last1000"   [sort="desc"]
+    hook   search="!last1000" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  ref DESC LIMIT 1000 ) r2 ORDER BY r2.ref ASC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:asc   {"offset":0,"limit":48,"result_limit":1000,"recent_selection":1000}
+
+=== D15 !last, date order:  "!last1000"   [order_by="date"]
+    hook   search="!last1000" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  ref DESC LIMIT 1000 ) r2 ORDER BY field12 DESC, r2.ref DESC, r2.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: date_field_sort:desc,ref:desc   {"offset":0,"limit":48,"result_limit":1000,"recent_selection":1000}
+
+=== D16 !last + restypes:  "!last1000"   [restypes="1,2"]
+    hook   search="!last1000" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: resource_type IN (?,?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  ref DESC LIMIT 1000 ) r2 ORDER BY r2.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48,"result_limit":1000,"recent_selection":1000}
+
+=== D17 !list:  "!list1:2:3"
+    hook   search="!list1:2:3" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:=[1,2,3] && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D18 !listall:  "!listall1:2:3"
+    hook   search="!listall1:2:3" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:=[1,2,3] && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D19 !list + node (core test):  "!list1,@@201"
+    hook   search="!list1" keywords=[] node_bucket=[["201"]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:=[1] && nodes:=[201] && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D20 !list empty:  "!list"
+    hook   search="!list" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:<0 && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D21 !resource:  "!resource123"
+    hook   search="!resource123" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:=123 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D22 !contributions other user:  "!contributions9"   [archive="-2,-1,0"]
+    hook   search="!contributions9" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?,?,?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: created_by:=9 && ref:>0 && archive:=[-2,-1,0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D23 !contributions self:  "!contributions5"   [archive="-2"]
+    hook   search="!contributions5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: created_by:=5 && ref:>0 && archive:=[-2] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D24 !hasdata:  "!hasdata18"
+    hook   search="!hasdata18" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: populated_field_ids:=18 && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D25 !hasdata + keyword:  "!hasdata18 sunset"
+    hook   search="!hasdata18 sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: populated_field_ids:=18 && ref:>0 && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== D26 !archivepending:  "!archivepending"
+    hook   search="!archivepending" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: archive:=1 && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D27 !userpending:  "!userpending"
+    hook   search="!userpending" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: archive:=-1 && ref:>0 && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== D28 !userpending, rating order:  "!userpending"   [order_by="rating"]
+    hook   search="!userpending" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  request_count DESC,r.rating DESC, user_rating DESC, score DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: r.rating DESC, user_rating DESC, score DESC, r.ref DESC)
+
+---- no plugin mode (core only)
+
+=== D-core !related:  "!related123"
+    hook   search="!related123" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !related not handled by Typesense)
+
+=== D-core !relatedpushed:  "!relatedpushed123"
+    hook   search="!relatedpushed123" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !relatedpushed not handled by Typesense)
+
+=== D-core !duplicates:  "!duplicates"
+    hook   search="!duplicates" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  file_checksum, ref 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !duplicates not handled by Typesense)
+
+=== D-core !duplicates:  "!duplicates123"
+    hook   search="!duplicates123" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  file_checksum, ref
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !duplicates not handled by Typesense)
+
+=== D-core !nodownloads:  "!nodownloads"
+    hook   search="!nodownloads" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !nodownloads not handled by Typesense)
+
+=== D-core !unused:  "!unused"
+    hook   search="!unused" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !unused not handled by Typesense)
+
+=== D-core !geo:  "!geo51p5b-1p2t52p5b0p2"
+    hook   search="!geo51p5b-1p2t52p5b0p2" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !geo not handled by Typesense)
+
+=== D-core !colour:  "!colour3"
+    hook   search="!colour3" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !colour not handled by Typesense)
+
+=== D-core !colourkey:  "!colourkey1234"
+    hook   search="!colourkey1234" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !colourkey not handled by Typesense)
+
+=== D-core !rgb:  "!rgb:255,0,0"
+    hook   search="!rgb:255,0,0" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  (abs(image_red - ?)+abs(image_green - ?)+abs(image_blue - ?)) ASC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !rgb not handled by Typesense)
+
+=== D-core !nopreview:  "!nopreview"
+    hook   search="!nopreview" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !nopreview not handled by Typesense)
+
+=== D-core !images:  "!images"
+    hook   search="!images" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !images not handled by Typesense)
+
+=== D-core !propertieshmin:  "!propertieshmin:100;wmin:200"
+    hook   search="!propertieshmin:100;wmin:200" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !propertieshmin not handled by Typesense)
+
+=== D-core !integrityfail:  "!integrityfail"
+    hook   search="!integrityfail" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !integrityfail not handled by Typesense)
+
+=== D-core !locked:  "!locked"
+    hook   search="!locked" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !locked not handled by Typesense)
+
+=== D-core !noningested:  "!noningested"
+    hook   search="!noningested" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !noningested not handled by Typesense)
+
+=== D-core !report:  "!report18p7"
+    hook   search="!report18p7" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !report not handled by Typesense)
+
+=== D-core !license:  "!license5"
+    hook   search="!license5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !license not handled by Typesense)
+
+=== D-core !consent:  "!consent5"
+    hook   search="!consent5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !consent not handled by Typesense)
+
+=== D-core !face:  "!face12"
+    hook   search="!face12" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !face not handled by Typesense)
+
+=== D-core !clipsearch:  "!clipsearch dogs on a beach"
+    hook   search="!clipsearch dogs on a beach" keywords=["dogs","on","a","beach"]
+    CORE   3 keyword union(s); keywords looked up=["dogs","beach"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !clipsearch not handled by Typesense)
+
+=== D-core !mplus_invalid_assoc:  "!mplus_invalid_assoc"
+    hook   search="!mplus_invalid_assoc" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !mplus not handled by Typesense)
+
+---- config: $open_access_for_contributor = true
+
+=== D40 own contributions, open access:  "!contributions5"   [archive="-2,0"]
+    hook   search="!contributions5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?,?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*" query_by=(none)
+           filter_by: created_by:=5 && ref:>0 && archive:=[-2,0]
+           sort_by: ref:desc   {"offset":0,"limit":48,"open_access":true}
+
+=== D41 own contributions + keyword, open access:  "!contributions5 sunset"   [archive="0"]
+    hook   search="!contributions5 sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*" query_by=(none)
+           filter_by: created_by:=5 && ref:>0 && archive:=[0]
+           sort_by: ref:desc   {"offset":0,"limit":48,"open_access":true}
+
+=== D42 other user contributions, open access:  "!contributions9"   [archive="0"]
+    hook   search="!contributions9" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: created_by:=9 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+---- config: $special_search_honors_restypes = true
+
+=== D50 !last + restypes:  "!last1000"   [restypes="1,2"]
+    hook   search="!last1000" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: resource_type IN (?,?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  ref DESC LIMIT 1000 ) r2 ORDER BY r2.ref DESC 
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && resource_type:=[1,2] && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48,"result_limit":1000,"recent_selection":1000}
+
+=== D51 !collection + restypes:  "!collection5"   [restypes="1,2", order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+---- config: $collections_omit_archived = true
+
+=== D60 collection, omit archived:  "!collection5"   [order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive<>2 AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*"
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && archive:!=2 && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)

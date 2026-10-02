@@ -1,0 +1,60 @@
+server: 8.0.46-0ubuntu0.24.04.4
+
+== resources by workflow state
+    state -2  1
+    state -1  51
+    state 0   100,862
+    state 1   321
+    state 2   4,029
+    state 3   2,387
+    state 5   365
+    state 6   46
+    state 7   253
+    state 8   6,281
+
+== metadata fields: 110
+    text                 51
+    text (multi-line)    7
+    checkbox list        22
+    dropdown             3
+    date and time        4
+    text (large)         1
+    dynamic keywords     16
+    date                 4
+    radio buttons        1
+    date range           1
+    inactive: 22, on the simple search bar: 2, partially indexed: 1, not flagged for indexing: 9
+
+== date and numeric fields that are not flagged for indexing (review item 20)
+    93    datephototaken             date           advanced search: no  simple search: no  active: yes
+
+== fixed-list fields on the simple search bar shown as text (dynamic keywords) or tree
+    12    date                       date
+    162   masterartworkimage         checkbox list
+
+== values per field that the two engines index differently (one scan of the node table)
+    (1044 ms)
+    values in total: 479,243
+    longer than 500 characters: 3,060 (1 in indexed fields; core indexes only the first 500 characters, review item 9)
+    starting with < and ending with >: 0 (0 in indexed fields; core strips the tags, review item 7)
+    in translation syntax (~en:…): 0 (review item 8)
+    formatted-text fields: 0
+
+== words in the keyword table: 369,131
+
+== related keywords defined: 1 (review: not synced to Typesense)
+
+== collections
+    type 0  2,361    smart: 5
+    type 2  167      smart: 0
+    type 3  24       smart: 0
+    type 4  31       smart: 0
+    type 5  214      smart: 0
+
+== the plugin
+    installed version 0.1, groups: all
+    typesense_search_enabled = "1"
+    typesense_search_only = "0"
+    typesense_search_show_indicator = "1"
+
+== users with a search filter: 0 groups, 0 users with an override (review item 16: their per-resource access is decided by a search)

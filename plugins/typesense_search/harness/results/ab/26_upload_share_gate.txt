@@ -1,0 +1,20 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ T: collection gate inside an external upload-share session ################
+
+T1 upload-share session asking for a collection that is not its own:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => DIFFERENT
+
+T2 upload-share session asking for another public collection:  "!collection5"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=3 refs=[1,2,3]  (order [3,1,2])
+    => DIFFERENT
+
+---- ordinary external share key (not an upload share)
+
+T3 valid key for collection 40, asking for collection 6:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[4,5]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => SAME

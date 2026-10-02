@@ -1,0 +1,345 @@
+
+################ A. FREE TEXT ################
+
+=== A1 single keyword:  "sculpture"
+    hook   search="sculpture" keywords=["sculpture"]
+    CORE   2 keyword union(s); keywords looked up=["sculpture"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A2 two keywords (AND):  "sculpture landscape"
+    hook   search="sculpture landscape" keywords=["sculpture","landscape"]
+    CORE   3 keyword union(s); keywords looked up=["sculpture","landscape"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture landscape"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A3 comma separated:  "sculpture, landscape"
+    hook   search="sculpture, landscape" keywords=["sculpture","landscape"]
+    CORE   3 keyword union(s); keywords looked up=["sculpture","landscape"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture landscape"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A4 stop word in search:  "the sunset"
+    hook   search="the sunset" keywords=["the","sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="the sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A5 resource type name as keyword:  "photo"
+    hook   search="photo" keywords=["photo"]
+    CORE   3 keyword union(s); keywords looked up=["photo"]; UNION all resources of that resource type
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="photo"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A6 number among keywords:  "sunset 2021"
+    hook   search="sunset 2021" keywords=["sunset","2021"]
+    CORE   3 keyword union(s); keywords looked up=["sunset",2021]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset 2021"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A7 hyphenated single token:  "foo-bar"
+    hook   search="foo-bar" keywords=["foo-bar"]
+    CORE   2 keyword union(s); keywords looked up=["foo","bar"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="foo-bar"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A8 hyphenated token among others:  "foo-bar baz"
+    hook   search="foo-bar baz" keywords=["foo","bar","baz"]
+    CORE   4 keyword union(s); keywords looked up=["foo","bar","baz"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found` AND `h`.`keyword_3_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="foo bar baz"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A9 dotted filename:  "IMG_1234.jpg"
+    hook   search="IMG_1234.jpg" keywords=["IMG_1234.jpg"]
+    CORE   2 keyword union(s); keywords looked up=["img",1234,"jpg"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="IMG_1234.jpg"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A10 apostrophe:  "o'brien"
+    hook   search="o'brien" keywords=["o'brien"]
+    CORE   2 keyword union(s); keywords looked up=["o","brien"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="o'brien"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A11 quoted phrase:  "\"red car\""
+    hook   search="\"red car\"" keywords=["\"red car\""]
+    CORE   2 keyword union(s); keywords looked up=["red","car"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="\"red car\""
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A12 quoted phrase + keyword:  "\"red car\" sunset"
+    hook   search="\"red car\" sunset" keywords=["\"red car\"","sunset"]
+    CORE   3 keyword union(s); keywords looked up=["red","car","sunset"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="\"red car\" sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A13 negative keyword:  "sculpture -landscape"
+    hook   search="sculpture -landscape" keywords=["sculpture","-landscape"]
+    CORE   2 keyword union(s); keywords looked up=["sculpture","landscape"]; OMIT(keyword in any field)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND `r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node` WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture -landscape"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A14 negative only:  "-landscape"
+    hook   search="-landscape" keywords=["-landscape"]
+    CORE   no keyword union; keywords looked up=["landscape"]; OMIT(keyword in any field)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND `r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node` WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="-landscape"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A15 negative quoted phrase:  "sculpture -\"red car\""
+    hook   search="sculpture -\"red car\"" keywords=["sculpture","-\"red car\""]
+    CORE   2 keyword union(s); keywords looked up=["sculpture","red","car"]; PHRASE(adjacent positions, same node), OMIT-PHRASE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND r.ref NOT IN (SELECT resource FROM ( SELECT rn_2_1.resource, rn_2_1.hit_count AS score FROM resource_node rn_2_1 LEFT OUTER JOIN `node_keyword` nk_2_1 ON rn_2_1.node=nk_2_1.node AND (nk_2_1.keyword = ? ) JOIN `node_keyword` nk_2_2 ON nk_2_2.node = nk_2_1.node AND nk_2_2.keyword = ? AND nk_2_2.position=nk_2_1.position+1 WHERE nk_2_1.keyword = ? AND nk_2_1.node NOT IN (SELECT ref FROM node WHERE resource_type_field IN (?,?))) qfilter2) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture -\"red car\""
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A16 OR group:  "red;green"
+    hook   search="red;green" keywords=["red;green"]
+    CORE   2 keyword union(s); keywords looked up=["red;green","red","green"]; OR/related keywords
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (OR-group (";") not handled by Typesense)
+
+=== A17 trailing wildcard:  "sculpt*"
+    hook   search="sculpt*" keywords=["sculpt*"]
+    CORE   2 keyword union(s); keywords looked up=["sculpt"]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpt" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A18 leading wildcard:  "*scape"
+    hook   search="*scape" keywords=["*scape"]
+    CORE   2 keyword union(s); keywords looked up=["scape"]; LIKE-on-keyword
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*scape"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A19 middle wildcard:  "land*pe"
+    hook   search="land*pe" keywords=["land*pe"]
+    CORE   2 keyword union(s); keywords looked up=["landpe"]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="land*pe"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A20 two wildcards:  "sam* super*"
+    hook   search="sam* super*" keywords=["sam*","super*"]
+    CORE   3 keyword union(s); keywords looked up=["sam","super"]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (more than one wildcard keyword not handled by Typesense)
+
+=== A21 wildcard + keyword:  "sculpt* park"
+    hook   search="sculpt* park" keywords=["sculpt*","park"]
+    CORE   3 keyword union(s); keywords looked up=["sculpt","park"]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="park sculpt" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A22 keyword + wildcard last:  "park sculpt*"
+    hook   search="park sculpt*" keywords=["park","sculpt*"]
+    CORE   3 keyword union(s); keywords looked up=["park","sculpt"]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="park sculpt" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A23 wildcard only:  "*"
+    hook   search="" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== A24 colon, not a field:  "time 10:30"
+    hook   search="time 10:30" keywords=["time","10:30","10","30"]
+    CORE   4 keyword union(s); keywords looked up=["time",10,30]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found` AND `h`.`keyword_3_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="time 10 30 10 30"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A25 uppercase:  "SCULPTURE Park"
+    hook   search="SCULPTURE Park" keywords=["sculpture","park"]
+    CORE   3 keyword union(s); keywords looked up=["sculpture","park"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture park"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A26 email-like:  "john.smith@example.com"
+    hook   search="john.smith@example.com" keywords=["john.smith@example.com"]
+    CORE   2 keyword union(s); keywords looked up=["john","smith@example","com"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="john.smith@example.com"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A27 special search later in string:  "cat !empty18"
+    hook   search="cat !empty18" keywords=["cat","empty18"]
+    CORE   3 keyword union(s); keywords looked up=["cat","empty18"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="cat empty18"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A28 short wildcard:  "ab*"
+    hook   search="ab*" keywords=["ab*"]
+    CORE   2 keyword union(s); keywords looked up=["ab"]; LIKE-on-keyword
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="ab" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A29 wildcard with dots:  "2010.69*"
+    hook   search="2010.69*" keywords=["2010.69*"]
+    CORE   2 keyword union(s); keywords looked up=["2010.69"]; FULLTEXT, RLIKE-on-node-name
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="2010.69" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A30 keyword not in keyword table:  "zzzunknown"
+    CORE RETURNED BEFORE THE HOOK: ""
+
+=== A31 keyword not in table + known:  "sculpture zzzunknown"
+    CORE RETURNED BEFORE THE HOOK: "sculpture"
+
+---- config: $wildcard_always_applied = true
+
+=== A32 wildcard_always_applied, two words:  "sculpt park"
+    hook   search="sculpt park" keywords=["sculpt","park"]
+    CORE   3 keyword union(s); keywords looked up=["sculpt","park"]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpt park" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A33 wildcard_always_applied, field value:  "title:sculpt"
+    hook   search="title:sculpt" keywords=["title:sculpt"]
+    CORE   2 keyword union(s); keywords looked up=["sculpt"]; FULLTEXT, field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*" prefix=true
+           filter_by: field_8_s:sculpt && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+---- numeric searches
+
+=== A34 number, $config_search_for_number=false:  "123"
+    hook   search="123" keywords=["123"]
+    CORE   3 keyword union(s); keywords looked up=[123]; UNION resource ref
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  (r.ref='123') desc,score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: (r.ref='123') desc,score DESC, user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC)
+
+=== A35 number, $config_search_for_number=true:  "123"
+    hook   search="123" keywords=["123"]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="123"
+           filter_by: ref:=123 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== A36 decimal number, $config_search_for_number=true:  "12.5"
+    hook   search="12.5" keywords=["12.5"]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="12.5"
+           filter_by: ref:=125 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- config: $index_contributed_by = true

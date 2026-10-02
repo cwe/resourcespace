@@ -1,0 +1,121 @@
+Typesense index built by the plugin's reindex functions: {"resources":76,"failed":0,"errors":[],"memberships":10,"attributes":76,"grants":4}
+
+################ A/B WITH $stemming = true ################
+
+S1 plural of a stored singular:  "cars"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,33]  (order [2,1,33])
+    => DIFFERENT
+
+S2 quoted phrase, plural:  "\"red cars\""
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+S3 quoted phrase, exact:  "\"red car\""
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+S4 field value plural:  "title:launches"
+    core:   total=2 refs=[3,4]  (order [4,3])
+    plugin: SERVED by Typesense  total=2 refs=[3,4]  (order [4,3])
+    => SAME
+
+S5 stop word:  "the sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => DIFFERENT
+
+S6 last word prefix of an unrelated stem:  "car"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,33]  (order [2,1,33])
+    => DIFFERENT
+
+S7 negative plural:  "launch -ships"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+---- quoted phrases: Typesense does not stem the words of a quoted phrase, the index holds stems
+stems: sculpture=sculptur park=park party=parti sports=sport
+
+S8 phrase, both words unchanged by the stemmer:  "\"red car\""
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+S9 phrase, second word changed by the stemmer (party -> parti):  "\"launch party\""
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S10 phrase, first word changed (sculpture -> sculptur):  "\"sculpture park\""
+    core:   total=1 refs=[70]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S11 phrase, middle word changed (sports -> sport):  "\"red sports car\""
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S12 the same words unquoted:  "sculpture park"
+    core:   total=4 refs=[1,3,70,71]  (order [1,3,71,70])
+    plugin: SERVED by Typesense  total=4 refs=[1,3,70,71]  (order [71,70,3,1])
+    => same set, different order
+
+S13 quoted single word changed by the stemmer:  "\"sculpture\""
+    core:   total=5 refs=[1,3,4,70,71]  (order [1,4,3,71,70])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S14 negative phrase:  "yorkshire -\"sculpture park\""
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=2 refs=[3,70]
+    => DIFFERENT
+Typesense directly: q="sculpture park" (as typed)                      found=0 refs=[]
+Typesense directly: q="sculptur park" (stems)                          found=1 refs=[70]
+
+---- stemmer agreement: does searching <form B> find the resource that stores <form A>?
+    foxes          searched as fox            core(RS stem fox / fox)=match  typesense=match
+    dancing        searched as dance          core(RS stem danc / danc)=match  typesense=match
+    sculptures     searched as sculpture      core(RS stem sculptur / sculptur)=match  typesense=match
+    photography    searched as photograph     core(RS stem photographi / photograph)=no  typesense=no
+    photographic   searched as photography    core(RS stem photograph / photographi)=no  typesense=no
+    children       searched as child          core(RS stem child / child)=match  typesense=no   <== differs
+    women          searched as woman          core(RS stem woman / woman)=match  typesense=no   <== differs
+    running        searched as run            core(RS stem run / run)=match  typesense=match
+    ran            searched as run            core(RS stem ran / run)=no  typesense=no
+    organisation   searched as organise       core(RS stem organis / organis)=match  typesense=match
+    organization   searched as organizations  core(RS stem organ / organ)=match  typesense=match
+    painted        searched as paint          core(RS stem paint / paint)=match  typesense=match
+    paintings      searched as painting       core(RS stem paint / paint)=match  typesense=match
+    painter        searched as paint          core(RS stem painter / paint)=no  typesense=no
+    archival       searched as archive        core(RS stem archiv / archiv)=match  typesense=match
+    archives       searched as archive        core(RS stem archiv / archiv)=match  typesense=match
+    generously     searched as generous       core(RS stem gener / gener)=match  typesense=match
+    university     searched as universe       core(RS stem univers / univers)=match  typesense=match
+    universal      searched as universe       core(RS stem univers / univers)=match  typesense=match
+    news           searched as new            core(RS stem new / new)=match  typesense=no   <== differs
+    glasses        searched as glass          core(RS stem glass / glass)=match  typesense=match
+    historic       searched as history        core(RS stem histor / histori)=no  typesense=no
+    historical     searched as historic       core(RS stem histor / histor)=match  typesense=match
+    studies        searched as study          core(RS stem studi / studi)=match  typesense=match
+    studying       searched as study          core(RS stem studi / studi)=match  typesense=match
+    flies          searched as fly            core(RS stem fli / fly)=no  typesense=match   <== differs
+    mice           searched as mouse          core(RS stem mous / mous)=match  typesense=no   <== differs
+    geese          searched as goose          core(RS stem goos / goos)=match  typesense=no   <== differs
+    better         searched as good           core(RS stem better / good)=no  typesense=no
+    houses         searched as house          core(RS stem hous / hous)=match  typesense=match
+    housing        searched as house          core(RS stem hous / hous)=match  typesense=match
+    lighting       searched as light          core(RS stem light / light)=match  typesense=match
+    lights         searched as light          core(RS stem light / light)=match  typesense=match
+    maker          searched as make           core(RS stem maker / make)=no  typesense=no
+    making         searched as make           core(RS stem make / make)=match  typesense=match
+    exhibited      searched as exhibition     core(RS stem exhibit / exhibit)=match  typesense=match
+    exhibitions    searched as exhibition     core(RS stem exhibit / exhibit)=match  typesense=match
+    ceramics       searched as ceramic        core(RS stem ceram / ceram)=match  typesense=match
+    artistic       searched as artist         core(RS stem artist / artist)=match  typesense=match
+    arts           searched as art            core(RS stem art / art)=match  typesense=match
+    agreement: 34 of 40

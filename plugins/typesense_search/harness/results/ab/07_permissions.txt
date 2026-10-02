@@ -1,0 +1,146 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ A/B: PERMISSIONS ################
+
+F1 "v" user:  "sunset"
+    core:   total=7 refs=[1,8,11,12,13,36,37]  (order [8,1,37,36,13,12,11])
+    plugin: SERVED by Typesense  total=7 refs=[1,8,11,12,13,36,37]  (order [8,1,37,36,13,12,11])
+    => SAME
+
+F2 "v" user, access=2:  "sunset"  [access=2]
+    core:   total=2 refs=[11,13]  (order [13,11])
+    plugin: SERVED by Typesense  total=2 refs=[11,13]  (order [13,11])
+    => SAME
+
+F3 "v" user, pending:  "sunset"  [archive="-1"]
+    core:   total=1 refs=[10]
+    plugin: SERVED by Typesense  total=1 refs=[10]
+    => SAME
+
+F4 T permissions (types 2,3 hidden):  "launch"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+F5 z2 permission:  "sunset"  [archive="0,2"]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+F6 ert1: pending resources of type 1 visible:  "sunset"  [archive="-1,0"]
+    core:   total=6 refs=[1,8,10,12,36,37]  (order [8,1,37,36,12,10])
+    plugin: SERVED by Typesense  total=6 refs=[1,8,10,12,36,37]  (order [8,1,37,36,12,10])
+    => SAME
+
+F7 own pending resource (as user 9):  "sunset"  [archive="-1,0"]
+    core:   total=6 refs=[1,8,10,12,36,37]  (order [8,1,37,36,12,10])
+    plugin: SERVED by Typesense  total=6 refs=[1,8,10,12,36,37]  (order [8,1,37,36,12,10])
+    => SAME
+
+---- J permission
+
+F10 J + j*: only resources in some collection:  "sunset"
+    core:   total=2 refs=[1,8]  (order [8,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,8]  (order [8,1])
+    => SAME
+
+F11 J + j*: empty search:  ""
+    core:   total=7 refs=[1,2,3,4,5,7,8]  (order [8,2,1,4,3,5,7])
+    plugin: SERVED by Typesense  total=7 refs=[1,2,3,4,5,7,8]  (order [8,7,5,4,3,2,1])
+    => same set, different order
+
+F12 J + j30 only:  ""
+    core:   total=2 refs=[1,7]
+    plugin: SERVED by Typesense  total=2 refs=[1,7]  (order [7,1])
+    => same set, different order
+
+F13 J + j30, inside collection 30:  "!collection30"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[1,7]
+    plugin: SERVED by Typesense  total=2 refs=[1,7]
+    => SAME
+
+F14 J + j30, inside collection 31:  "!collection31"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 31 not readable))
+    => —
+
+F15 J + j30, inside own collection 5:  "!collection5"  [order_by="collection", sort="ASC"]
+    core:   total=1 refs=[1]
+    plugin: fell back to core (unsupported by restriction (J inside collection 5, which is not a permitted collection))
+    => —
+
+F16 J with no j permission:  "sunset"
+    core:   total=0 refs=[]
+    plugin: PHP ERROR TypeError: array_map(): Argument #2 ($array) must be of type array, false given  total=0 refs=[]
+    => —
+
+---- group search filter
+
+F20 filter ALL (must be France):  ""
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+F21 filter NONE (must not be France):  "sunset"
+    core:   total=4 refs=[8,12,36,37]  (order [8,37,36,12])
+    plugin: SERVED by Typesense  total=4 refs=[8,12,36,37]  (order [8,37,36,12])
+    => SAME
+
+F22 filter ANY (France or not sculpture):  "@@301"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+F23 filter ALL + $custom_access_overrides_search_filter (36 = expired grant, 37 = valid grant):  "sunset"
+    core:   total=3 refs=[1,12,37]  (order [1,37,12])
+    plugin: SERVED by Typesense  total=4 refs=[1,12,36,37]  (order [1,37,36,12])
+    => DIFFERENT
+
+F24 filter ALL + $open_access_for_contributor (as user 1, the contributor):  "sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+F25 filter ALL + access_override:  "sunset"  [access_override=true]
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=10 refs=[1,8,9,10,11,12,13,30,36,37]  (order [8,1,37,36,30,13,12,11,10,9])
+    => DIFFERENT
+
+F26 filter ALL inside a collection:  "!collection5"  [order_by="collection", sort="ASC"]
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+---- collection gate
+
+F30 "R" user, another user's private collection:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => DIFFERENT
+
+F31 "h" user, another user's private collection:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => DIFFERENT
+
+F32 standard user, another user's collection + access_override:  "!collection6"  [order_by="collection", sort="ASC", access_override=true]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => DIFFERENT
+
+F33 admin, another user's private collection:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[4,5]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => SAME
+
+---- own contributions with $open_access_for_contributor
+
+F40 own contributions (user 9), pending state:  "!contributions9"  [archive="-1"]
+    core:   total=1 refs=[10]
+    plugin: SERVED by Typesense  total=1 refs=[10]
+    => SAME
+
+F41 own contributions + keyword:  "!contributions9 nosuchword"  [archive="-1"]
+    core:   non-array result ""
+    plugin: not consulted (core returned before the hook)
+    => —

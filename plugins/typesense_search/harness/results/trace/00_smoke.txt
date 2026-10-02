@@ -1,0 +1,30 @@
+
+=== plain keyword:  "sculpture"
+    hook   search="sculpture" keywords=["sculpture"]
+    CORE   2 keyword union(s); keywords looked up=["sculpture"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== two keywords:  "sculpture landscape"
+    hook   search="sculpture landscape" keywords=["sculpture","landscape"]
+    CORE   3 keyword union(s); keywords looked up=["sculpture","landscape"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture landscape"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== empty search:  ""
+    hook   search="" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}

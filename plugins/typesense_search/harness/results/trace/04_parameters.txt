@@ -1,0 +1,491 @@
+
+################ E. PARAMETERS ################
+
+---- restypes
+
+=== E1 restypes list:  "sunset"   [restypes="1,2"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: resource_type IN (?,?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && resource_type:=[1,2] && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E2 restypes Global:  "sunset"   [restypes="Global"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E3 restypes + FeaturedCollections:  "sunset"   [restypes="1,2,FeaturedCollections"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: resource_type IN (?,?,?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && resource_type:=[1,2] && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E4 restypes FeaturedCollections ONLY:  "sunset"   [restypes="FeaturedCollections"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: resource_type IN (?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E5 restypes Collections ONLY:  "sunset"   [restypes="Collections"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: resource_type IN (?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- archive
+
+=== E10 archive multiple:  "sunset"   [archive="0,1,2"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?,?,?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0,1,2] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E11 archive empty string:  "sunset"   [archive=""]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E12 archive deleted:  "sunset"   [archive="3"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[3] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E13 $archive_standard (search page, no archive param):  "sunset"   [archive=""]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E14 $search_all_workflow_states:  "sunset"   [archive="0"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E15 search containing the text integrityfail:  "integrityfail report"   [archive="0"]
+    hook   search="integrityfail report" keywords=["integrityfail","report"]
+    CORE   3 keyword union(s); keywords looked up=["integrityfail","report"]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="integrityfail report"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- order_by / sort
+
+=== E20 order_by="relevance":  "sunset"   [order_by="relevance"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="popularity":  "sunset"   [order_by="popularity"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC)
+
+=== E20 order_by="rating":  "sunset"   [order_by="rating"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  r.rating DESC, user_rating DESC, score DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: r.rating DESC, user_rating DESC, score DESC, r.ref DESC)
+
+=== E20 order_by="date":  "sunset"   [order_by="date"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field12 DESC, r.ref DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: date_field_sort:desc,ref:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="colour":  "sunset"   [order_by="colour"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  has_image DESC, image_blue DESC, image_green DESC, image_red DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: has_image DESC, image_blue DESC, image_green DESC, image_red DESC , field12 DESC,  r.ref DESC)
+
+=== E20 order_by="title":  "sunset"   [order_by="title"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field8 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: field8 DESC, r.ref DESC)
+
+=== E20 order_by="file_path":  "sunset"   [order_by="file_path"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  file_path DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: file_path DESC, r.ref DESC)
+
+=== E20 order_by="resourceid":  "sunset"   [order_by="resourceid"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="resourcetype":  "sunset"   [order_by="resourcetype"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  order_by DESC, resource_type DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: order_by DESC, resource_type DESC, r.ref DESC)
+
+=== E20 order_by="extension":  "sunset"   [order_by="extension"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  file_extension DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: file_extension DESC, r.ref DESC)
+
+=== E20 order_by="status":  "sunset"   [order_by="status"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  archive DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: archive DESC, r.ref DESC)
+
+=== E20 order_by="modified":  "sunset"   [order_by="modified"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  modified DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: modified_date:desc,ref:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="random":  "sunset"   [order_by="random"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  RAND()
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: RAND())
+
+=== E20 order_by="country":  "sunset"   [order_by="country"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field3 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: field3 DESC, r.ref DESC)
+
+=== E20 order_by="titleandcountry":  "sunset"   [order_by="titleandcountry"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field8 DESC, field3 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: field8 DESC, field3 DESC, r.ref DESC)
+
+=== E20 order_by="field8":  "sunset"   [order_by="field8"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field8 DESC,r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: field8 DESC,r.ref DESC)
+
+=== E20 order_by="field12":  "sunset"   [order_by="field12"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field12 DESC,r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: date_field_sort:desc,ref:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="field3":  "sunset"   [order_by="field3"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field3 DESC,r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (unsupported sort order: field3 DESC,r.ref DESC)
+
+=== E20 order_by="collection":  "sunset"   [order_by="collection"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="":  "sunset"   [order_by=""]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E20 order_by="nonsense":  "sunset"   [order_by="nonsense"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E21 relevance ASC:  "sunset"   [sort="ASC"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score ASC, user_rating ASC, total_hit_count ASC , field12 ASC, r.ref ASC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:asc   {"offset":0,"limit":48}
+
+=== E22 date ASC:  "sunset"   [order_by="date", sort="ASC"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  field12 ASC, r.ref ASC, r.ref ASC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: date_field_sort:asc,ref:asc   {"offset":0,"limit":48}
+
+=== E23 empty search, relevance:  ""
+    hook   search="" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== E24 empty search, date:  ""   [order_by="date"]
+    hook   search="" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  field12 DESC, r.ref DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: date_field_sort:desc,ref:desc   {"offset":0,"limit":48}
+
+=== E25 invalid sort value:  "sunset"   [sort="sideways"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score asc, user_rating asc, total_hit_count asc , field12 asc, r.ref asc
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:asc   {"offset":0,"limit":48}
+
+---- other do_search() arguments
+
+=== E30 recent day limit:  ""   [daylimit="60"]
+    hook   search="" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: creation_date > (curdate() - interval ? DAY) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && creation_date:>1785715200 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== E31 access (non-v user):  "sunset"   [access=1]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E32 access_override:  "sunset"   [access_override=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: r.ref>0 AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E33 ignore_filters:  "sunset"   [ignore_filters=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== E34 ignore_filters + date field:  "date:2024"   [ignore_filters=true]
+    hook   search="date:2024" keywords=["date:2024"]
+    CORE   2 keyword union(s); keywords looked up=[2024]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_q:=2024 && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== E35 editable_only:  "sunset"   [editable_only=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND (r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1) OR (rca2.access IS NOT null AND rca2.access <> 1) OR (rca.access IS NULL AND rca2.access IS NULL)))) AND (archive NOT IN (-2,-1) OR (created_by = ?)) AND (archive NOT IN (?,?,?,?,?,?)) AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (hook guard: returnsql / disk usage / editable_only / smartsearch)
+
+=== E36 return_disk_usage:  "sunset"   [return_disk_usage=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC) resourcelist
+    PLUGIN CORE (hook guard: returnsql / disk usage / editable_only / smartsearch)
+
+=== E37 returnsql:  "sunset"   [returnsql=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           result: {"sql":"SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size ,rca.access group_access,rca2.access user_access , LEAST(IFNULL(rca.access, r.access), IFNULL(rca2.access, r.access)) resultant_access , r.field12 , r.field8 , r.field3 , rty.order_by , r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2   LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2  JOIN resource_type AS rty ON r.resource_type = rty.ref  JOIN (\n            SELECT resource,sum(score) AS score,\n            BIT_OR(`keyword_1_found`) AS `keyword_1_found` from\n            ( SELECT resource,  TRUE AS `keyword_1_found`,  hit_count AS score\n                                                        FROM resource_node rn1\n                                                        WHERE rn1.node IN\n                                                            (SELECT node\n                                                                FROM `node_keyword` nk1\n                                                                WHERE ((nk1.keyword = ? )  AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?,?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref  WHERE (r.access<>'2' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND  NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score DESC, user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC","parameters":["i",5,"i",3,"i",1000,"i",93,"i",94,"i","0","i",5,"i",5]}
+    PLUGIN CORE (hook guard: returnsql / disk usage / editable_only / smartsearch)
+
+=== E38 smartsearch:  "sunset"   [smartsearch=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (hook guard: returnsql / disk usage / editable_only / smartsearch)
+
+=== E39 return_refs_only, all rows:  "sunset"   [fetchrows=-1, return_refs_only=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":-1}
+
+=== E40 fetchrows count only [0,0]:  "sunset"   [fetchrows=[0,0]]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":0}
+
+=== E41 fetchrows int 10:  "sunset"   [fetchrows=10]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":10}
+
+=== E42 fetchrows -1:  "sunset"   [fetchrows=-1]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":-1}
+
+=== E43 fetchrows page 3:  "sunset"   [fetchrows=[96,48]]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":96,"limit":48}
+
+=== E44 fetchrows unaligned offset:  "sunset"   [fetchrows=[45,48]]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":45,"limit":48}
+
+---- config: $resource_created_by_filter
+
+=== E50 resource_created_by_filter:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: (created_by = ? OR created_by = ?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && created_by:=[5,9] && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}

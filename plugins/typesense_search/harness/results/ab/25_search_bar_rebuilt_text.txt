@@ -1,0 +1,43 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ S: forms the search bar itself writes back into the search box ################
+
+S1 node search (as linked from a resource view page):  "@@202"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=1 refs=[2]
+    => SAME
+
+S2 the text the search bar rebuilds for that node (option name has a space):  "\"country:United Kingdom\""
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S3 the rebuilt text plus one typed word:  "\"country:United Kingdom\" car"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S4 rebuilt text for an option without a space:  "country:France"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+S5 rebuilt text plus a typed word:  "country:France harbour"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+S6 rebuilt OR text for two options of a dynamic keywords field:  "keywords:sculpture;landscape"
+    core:   total=3 refs=[1,4,23]
+    plugin: SERVED by Typesense  total=3 refs=[1,4,23]  (order [23,4,1])
+    => same set, different order
+
+S7 rebuilt text for a two-word dynamic keyword:  "\"keywords:modern art\""
+    core:   total=2 refs=[2,4]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+S8 rebuilt text for a tree node:  "subject:Birds"
+    core:   total=1 refs=[24]
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => DIFFERENT

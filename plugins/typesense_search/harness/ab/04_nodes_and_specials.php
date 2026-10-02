@@ -1,0 +1,61 @@
+<?php
+// Node (@@) searches and every special (!) search.
+require __DIR__ . '/fixture.php';
+fx_index();
+
+echo "\n################ A/B: NODES ################\n";
+ab('C1 single node', '@@201');
+ab('C2 OR within a field', '@@201@@203');
+ab('C3 AND across words', '@@201 @@301');
+ab('C4 NOT node', '@@!201');
+ab('C5 node + NOT node', '@@301 @@!302');
+ab('C6 node + keyword', '@@201 sunset');
+ab('C7 category tree parent', '@@401');
+ab('C8 category tree child', '@@402');
+$category_tree_search_use_and_logic = true;
+ab('C9 OR word with $category_tree_search_use_and_logic', '@@201@@301');
+$category_tree_search_use_and_logic = false;
+ab('C10 node-only search, relevance order', '@@301');
+
+echo "\n################ A/B: SPECIAL SEARCHES ################\n";
+ab('D1 own collection, collection order', '!collection5', array('order_by' => 'collection', 'sort' => 'ASC'));
+ab('D2 own collection, collection order DESC', '!collection5', array('order_by' => 'collection', 'sort' => 'DESC'));
+ab('D3 own collection, relevance', '!collection5');
+ab('D4 collection + keyword', '!collection5 launch', array('order_by' => 'collection', 'sort' => 'ASC'));
+ab('D5 another user\'s private collection', '!collection6', array('order_by' => 'collection'));
+ab('D6 selection collection', '!collection7', array('order_by' => 'collection'));
+ab('D7 featured collection', '!collection30', array('order_by' => 'collection', 'sort' => 'ASC'));
+ab('D8 public collection', '!collection40', array('order_by' => 'collection', 'sort' => 'ASC'));
+ab('D9 collection that does not exist', '!collection424242', array('order_by' => 'collection'));
+ab('D10 collection count only', '!collection5', array('fetchrows' => array(0, 0)));
+ab('D11 !last', '!last5');
+ab('D12 !last + keyword (space) -> 1000', '!last2 sunset');
+ab('D13 !last + keyword (comma)', '!last2, sunset');
+ab('D14 !last, lower-case sort', '!last5', array('sort' => 'desc'));
+ab('D15 !last, date order', '!last5', array('order_by' => 'date'));
+ab('D16 !last + restypes (documents only)', '!last5', array('restypes' => '2'));
+ab('D17 !list', '!list1:2:9:11:99');
+ab('D18 !listall', '!listall1:2:9');
+ab('D19 !list + node', '!list1:2,@@201');
+ab('D20 !resource', '!resource8');
+ab('D21 !resource, archived', '!resource9');
+ab('D22 !contributions (other user), all states', '!contributions9', array('archive' => '-2,-1,0'));
+ab('D23 !contributions (user 1)', '!contributions1', array('archive' => '0'));
+ab('D24 !hasdata', '!hasdata18');
+ab('D25 !hasdata on a non-indexed field', '!hasdata96');
+ab('D26 !hasdata + keyword', '!hasdata18 car');
+ab('D27 !archivepending', '!archivepending');
+ab('D28 !userpending', '!userpending');
+ab('D29 !related (no plugin mode)', '!related1');
+ab('D30 !duplicates (no plugin mode)', '!duplicates');
+ab('D31 !unused (no plugin mode)', '!unused');
+ab('D32 !properties (no plugin mode)', '!propertiescu:9');
+ab('D33 !nopreview (no plugin mode)', '!nopreview');
+ab('D34 !list + restypes', '!list1:2:3', array('restypes' => '2'));
+ab('D35 !contributions + restypes', '!contributions1', array('restypes' => '2'));
+
+$config_search_for_number = true;
+ab('D40 bare number, $config_search_for_number', '8');
+ab('D41 bare number that is archived', '9');
+$config_search_for_number = false;
+ab('D42 bare number, default config', '8');

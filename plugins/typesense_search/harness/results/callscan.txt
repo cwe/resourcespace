@@ -1,0 +1,25 @@
+do_search() calls scanned: 80
+
+null passed to a typed hook parameter (TypeError when the plugin is active): 1
+    pages/csv_export_results_metadata.php:35  argument 18 -> bool $smartsearch
+
+variables passed to a typed bool / string hook parameter (fine unless they can be null): 19
+    plugins/rse_workflow/pages/batch_action.php:75  argument 11 -> string $recent_search_daylimit = $recent_search_daylimit
+    include/search_functions.php:1903  argument 7 -> bool $access_override = $access_override
+    include/search_functions.php:1903  argument 9 -> bool $ignore_filters = $ignore_filters
+    include/search_functions.php:1903  argument 10 -> bool $return_disk_usage = $return_disk_usage
+    include/search_functions.php:1903  argument 11 -> string $recent_search_daylimit = $recent_search_daylimit
+    include/search_functions.php:1903  argument 14 -> bool $return_refs_only = $return_refs_only
+    include/search_functions.php:1903  argument 15 -> bool $editable_only = $editable_only
+    include/search_functions.php:1903  argument 16 -> bool $returnsql = $returnsql
+    include/reporting_functions.php:114  argument 11 -> string $recent_search_daylimit = $search_params['recentdaylimit']
+    include/collections_functions.php:2454  argument 11 -> string $recent_search_daylimit = $daylimit
+    include/collections_functions.php:2454  argument 15 -> bool $editable_only = $editable_only
+    include/collections_functions.php:6525  argument 7 -> bool $access_override = $smartsearch_accessoverride
+    pages/search.php:612  argument 11 -> string $recent_search_daylimit = $daylimit
+    pages/search.php:612  argument 15 -> bool $editable_only = $editable_only
+    pages/search.php:614  argument 11 -> string $recent_search_daylimit = $daylimit
+    pages/search.php:614  argument 15 -> bool $editable_only = $editable_only
+    pages/search_disk_usage.php:22  argument 11 -> string $recent_search_daylimit = getval("daylimit", "")
+    pages/ajax/load_actions.php:34  argument 11 -> string $recent_search_daylimit = $recent_search_daylimit
+    pages/ajax/load_actions.php:34  argument 15 -> bool $editable_only = $editable_only

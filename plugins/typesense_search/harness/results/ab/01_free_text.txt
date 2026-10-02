@@ -1,0 +1,223 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ A/B: FREE TEXT ################
+
+A1 single keyword:  "sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+A2 two keywords:  "red car"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,2]
+    => same set, different order
+
+A3 stop word:  "the sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => DIFFERENT
+
+A4 stop word, other position:  "sunset of harbour"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+A5 resource type name:  "video"
+    core:   total=3 refs=[4,5,26]  (order [4,26,5])
+    plugin: SERVED by Typesense  total=1 refs=[5]
+    => DIFFERENT
+
+A6 resource type name + keyword:  "video production"
+    core:   total=1 refs=[5]
+    plugin: SERVED by Typesense  total=1 refs=[5]
+    => SAME
+
+A7 number among keywords (ref 8 = "Sunset"):  "sunset 8"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[8]
+    => DIFFERENT
+
+A8 hyphenated single token:  "foo-bar"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=3 refs=[3,4,18]  (order [18,3,4])
+    => DIFFERENT
+
+A9 hyphenated token + word:  "foo-bar industries"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+A10 filename:  "IMG_1234.jpg"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+A11 apostrophe:  "o'brien"
+    core:   total=1 refs=[25]
+    plugin: SERVED by Typesense  total=1 refs=[25]
+    => SAME
+
+A12 email:  "john.smith@example.com"
+    core:   total=1 refs=[25]
+    plugin: SERVED by Typesense  total=1 refs=[25]
+    => SAME
+
+A13 quoted phrase:  "\"red car\""
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+A14 quoted phrase, reversed words:  "\"car red\""
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+A15 quoted phrase with stop word inside:  "\"foo and bar\""
+    core:   total=1 refs=[4]
+    plugin: SERVED by Typesense  total=1 refs=[4]
+    => SAME
+
+A16 negative:  "launch -ship"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+A17 negative only:  "-sunset"
+    core:   total=24 refs=[2,3,4,5,6,7,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35]  (order [2,4,3,14,5,6,7,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15])
+    plugin: SERVED by Typesense  total=24 refs=[2,3,4,5,6,7,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35]  (order [35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,7,6,5,4,3,2])
+    => same set, different order
+
+A18 negative of a word only in a hidden field:  "ordinary -classified"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[19]
+    => DIFFERENT
+
+A19 negative phrase:  "red -\"sports car\""
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+A20 OR:  "ship;book"
+    core:   non-array result "<i>ship</i>"
+    plugin: not consulted (core returned before the hook)
+    => —
+
+A21 trailing wildcard:  "harb*"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+A22 leading wildcard:  "*bour"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+A23 middle wildcard:  "har*ur"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+A24 wildcard on a non-indexed field value:  "zeb*"
+    core:   total=1 refs=[29]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+A25 wildcard + word:  "laun* party"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+A26 related keyword:  "automobile"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+A27 word beyond the first 500 characters:  "zeppelin"
+    core:   total=1 refs=[32]
+    plugin: SERVED by Typesense  total=2 refs=[6,32]  (order [32,6])
+    => DIFFERENT
+
+A28 word within the first 500 characters:  "albatross"
+    core:   total=1 refs=[6]
+    plugin: SERVED by Typesense  total=1 refs=[6]
+    => SAME
+
+A29 html: word after a tag:  "hello"
+    core:   total=2 refs=[4,35]
+    plugin: SERVED by Typesense  total=1 refs=[35]
+    => DIFFERENT
+
+A30 html: tag name:  "strong"
+    core:   total=1 refs=[34]
+    plugin: SERVED by Typesense  total=2 refs=[4,34]  (order [34,4])
+    => DIFFERENT
+
+A31 html: word inside nested tag:  "world"
+    core:   total=2 refs=[4,35]
+    plugin: SERVED by Typesense  total=1 refs=[35]
+    => DIFFERENT
+
+A32 html: href content:  "gallery"
+    core:   total=1 refs=[4]
+    plugin: SERVED by Typesense  total=1 refs=[4]
+    => SAME
+
+A33 translated option, default language:  "germany"
+    core:   total=2 refs=[7,35]
+    plugin: SERVED by Typesense  total=2 refs=[7,35]  (order [35,7])
+    => same set, different order
+
+A34 translated option, other language:  "allemagne"
+    core:   total=1 refs=[7]
+    plugin: SERVED by Typesense  total=1 refs=[7]
+    => SAME
+
+A35 word in hidden field:  "classified"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+A36 word in inactive field:  "legacy"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+A37 date component:  "2024"
+    core:   total=4 refs=[1,2,4,14]  (order [2,1,4,14])
+    plugin: fell back to core (unsupported (unsupported sort order: (r.ref='2024') desc,score DESC, user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC))
+    => —
+
+A38 partial-index fragment:  "sculpt"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=3 refs=[1,3,4]  (order [3,4,1])
+    => DIFFERENT
+
+A39 partial-index whole word:  "sculpture"
+    core:   total=3 refs=[1,3,4]  (order [1,4,3])
+    plugin: SERVED by Typesense  total=3 refs=[1,3,4]  (order [4,3,1])
+    => same set, different order
+
+A40 uppercase:  "SUNSET"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+A41 empty search:  ""
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,1,4,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => same set, different order
+
+A42 fixed-list option word:  "kingdom"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=1 refs=[2]
+    => SAME
+
+A43 number with decimals in text:  "12.5"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+A44 keyword that exists only as related:  "car"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,33]  (order [2,1,33])
+    => DIFFERENT

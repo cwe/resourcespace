@@ -1,0 +1,114 @@
+Typesense index built by the plugin's reindex functions: {"resources":36,"failed":0,"errors":[],"memberships":10,"attributes":36,"grants":4}
+
+################ O: second pass, battery 2 ################
+
+---- field-specific searches on fields not flagged for indexing
+
+O1 date value, non-indexed date field:  "shotdate:2024"
+    core:   total=1 refs=[45]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+O2 date range, non-indexed date field:  "shotdate:rangestart2024-01-01end2024-12-31"
+    core:   total=1 refs=[45]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+O3 numrange, non-indexed numeric field:  "weight:numrange1|10"
+    core:   total=1 refs=[45]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+O4 text value, non-indexed text field:  "altnotes:zebra"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+---- !hasdata
+
+O5 !hasdata on an inactive field:  "!hasdata94"
+    core:   total=1 refs=[22]
+    plugin: SERVED by Typesense  total=1 refs=[22]
+    => SAME
+
+O6 !hasdata on a field the user cannot view:  "!hasdata93"
+    core:   total=1 refs=[19]
+    plugin: SERVED by Typesense  total=1 refs=[19]
+    => SAME
+
+O7 !hasdata on a non-indexed field:  "!hasdata96"
+    core:   total=1 refs=[29]
+    plugin: SERVED by Typesense  total=1 refs=[29]
+    => SAME
+
+O8 !hasdata on a fixed-list field:  "!hasdata3"
+    core:   total=5 refs=[1,2,3,4,7]  (order [2,1,4,3,7])
+    plugin: SERVED by Typesense  total=5 refs=[1,2,3,4,7]  (order [7,4,3,2,1])
+    => same set, different order
+
+O9 !hasdata on the non-indexed date field:  "!hasdata97"
+    core:   total=2 refs=[45,46]  (order [46,45])
+    plugin: SERVED by Typesense  total=2 refs=[45,46]  (order [46,45])
+    => SAME
+
+---- numbers in free text
+
+O10 two-digit number that is also a day of a stored date:  "17"
+    core:   total=2 refs=[1,45]
+    plugin: fell back to core (unsupported (unsupported sort order: (r.ref='17') desc,score DESC, user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC))
+    => —
+
+O11 number plus word:  "route 17"
+    core:   total=1 refs=[45]
+    plugin: SERVED by Typesense  total=1 refs=[45]
+    => SAME
+
+O12 two-digit number that is also a month of stored dates:  "05"
+    core:   total=2 refs=[1,46]
+    plugin: SERVED by Typesense  total=2 refs=[1,46]
+    => SAME
+
+O13 decimal number:  "12.5"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+O14 year as free text:  "2024"
+    core:   total=4 refs=[1,2,4,14]  (order [2,1,4,14])
+    plugin: fell back to core (unsupported (unsupported sort order: (r.ref='2024') desc,score DESC, user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC))
+    => —
+
+O15 full date as free text:  "2024-05-17"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+---- odd single tokens
+
+O16 negative punctuated single token:  "-foo-bar"
+    core:   total=3 refs=[3,4,18]  (order [4,3,18])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+O17 date field given a bare month:  "date:05"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => DIFFERENT
+
+---- Typesense-only mode
+
+O18 vetoed special in Typesense-only mode:  "!related1"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+    (core SQL did not run on SQLite: Unable to prepare statement: 5th ORDER BY term does not match any column in the result set <<<  SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rati)
+
+O19 vetoed sort in Typesense-only mode:  "sunset"  [order_by="popularity"]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+O20 editable-only in Typesense-only mode:  "sunset"
+    core:   total=0 refs=[]
+    plugin: fell back to core
+    => —

@@ -1,0 +1,66 @@
+Typesense index built by the plugin's reindex functions: {"resources":96,"failed":0,"errors":[],"memberships":10,"attributes":96,"grants":4}
+
+################ Q: wildcard completeness and split/join ################
+
+Q1 wildcard with 40 different completions:  "zeb*"  [order_by="resourceid"]
+    core:   total=41 refs=[29,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230,229,228,227,226,225,224,223,222,221,220,219,218,217,216,215,214,213,212,211,210,209,208,207,206,205,204,203,202,201,200,29])
+    plugin: SERVED by Typesense  total=10 refs=[230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230])
+    => DIFFERENT
+
+Q2 wildcard in a field:  "title:zeb*"  [order_by="resourceid"]
+    core:   total=40 refs=[200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230,229,228,227,226,225,224,223,222,221,220,219,218,217,216,215,214,213,212,211,210,209,208,207,206,205,204,203,202,201,200])
+    plugin: SERVED by Typesense  total=4 refs=[236,237,238,239]  (order [239,238,237,236])
+    => DIFFERENT
+
+Q3 wildcard, one common and several rare completions:  "harbour*"  [order_by="resourceid"]
+    core:   total=18 refs=[1,300,301,302,303,304,305,306,307,308,309,310,311,320,321,322,323,324]  (order [324,323,322,321,320,311,310,309,308,307,306,305,304,303,302,301,300,1])
+    plugin: SERVED by Typesense  total=18 refs=[1,300,301,302,303,304,305,306,307,308,309,310,311,320,321,322,323,324]  (order [324,323,322,321,320,311,310,309,308,307,306,305,304,303,302,301,300,1])
+    => SAME
+
+Q4 plain word that is a prefix of many (default prefix):  "harbour"  [order_by="resourceid"]
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=18 refs=[1,300,301,302,303,304,305,306,307,308,309,310,311,320,321,322,323,324]  (order [324,323,322,321,320,311,310,309,308,307,306,305,304,303,302,301,300,1])
+    => DIFFERENT
+
+Q5 wildcard plus another word:  "specimen zeb*"  [order_by="resourceid"]
+    core:   total=40 refs=[200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230,229,228,227,226,225,224,223,222,221,220,219,218,217,216,215,214,213,212,211,210,209,208,207,206,205,204,203,202,201,200])
+    plugin: SERVED by Typesense  total=10 refs=[230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230])
+    => DIFFERENT
+
+Q6 $wildcard_always_applied:  "zeb"  [order_by="resourceid"]
+    core:   total=41 refs=[29,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230,229,228,227,226,225,224,223,222,221,220,219,218,217,216,215,214,213,212,211,210,209,208,207,206,205,204,203,202,201,200,29])
+    plugin: SERVED by Typesense  total=10 refs=[230,231,232,233,234,235,236,237,238,239]  (order [239,238,237,236,235,234,233,232,231,230])
+    => DIFFERENT
+
+---- split / join of words when nothing matches
+
+Q7 two words that only exist joined:  "sun set"  [order_by="resourceid"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => DIFFERENT
+
+Q8 one word that only exists split (visible) :  "foobar"  [order_by="resourceid"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=3 refs=[3,4,18]  (order [18,4,3])
+    => DIFFERENT
+
+Q9 basketball vs basket ball:  "basketball"  [order_by="resourceid"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[333]
+    => DIFFERENT
+
+---- the same asked of Typesense directly: which request parameters lift the limits
+q=zeb prefix=true (the plugin's wildcard form)                         found=10 refs=[230,231,232,233,234,235,236,237,238,239]
+q=zeb prefix=true max_candidates=4                                     found=4 refs=[236,237,238,239]
+q=zeb prefix=true max_candidates=100                                   found=40
+q=zeb prefix=true max_candidates=10000                                 found=40
+q=zeb prefix=true exhaustive_search=true                               found=40
+q=specimen zeb prefix=true                                             found=10 refs=[230,231,232,233,234,235,236,237,238,239]
+q=specimen zeb prefix=true exhaustive_search=true                      found=40
+filter field_8_s:zeb*                                                  found=4 refs=[236,237,238,239]
+filter field_8_s:zeb* max_filter_by_candidates=100                     found=40
+filter field_8_s:zeb* max_filter_by_candidates=10000                   found=40
+q=sun set (default split_join_tokens)                                  found=7 refs=[1,8,11,12,13,36,37]
+q=sun set split_join_tokens=off                                        found=0 refs=[]
+q=basketball (default split_join_tokens)                               found=1 refs=[333]
+q=basketball split_join_tokens=off                                     found=0 refs=[]

@@ -1,0 +1,19 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+K1 two known words that never co-occur (core suggests dropping one):  "zeppelin harbour"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+K2 one known word, no visible matches:  "classified"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+K3 collection rows: extra columns:  "!collection5"  [order_by="collection", sort="ASC", fetchrows=[0,1]]
+    core:   total=3 refs=[3]
+    plugin: SERVED by Typesense  total=3 refs=[3]
+    => SAME
+columns only in core rows:   date_added, comment, commentset
+columns only in plugin rows: 
+score: core=1 plugin=1

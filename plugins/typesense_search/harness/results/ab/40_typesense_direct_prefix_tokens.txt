@@ -1,0 +1,28 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+token_separators: ["\/","_",".",";","-","(",")","'","\"","\\","?",",",":"]  symbols_to_index: []
+doc 7: {"field_3_ss":["~en:Germany~fr:Allemagne"],"nodes":[0,204,1026,1027],"title":"Brandenburg gate"}
+doc 4: {"field_12_q":["2024"],"field_12_range_start":1704067200,"field_92_text":"<p>Hello <strong>world</strong> of <a href='https://example.com/gallery'>art galleries</a></p>","title":"Ship launch"}
+
+-- default prefix behaviour (the plugin omits the prefix parameter unless a wildcard is used)
+q=car (prefix omitted)                                                 found=3 refs=[1,2,33]
+q=car prefix=false                                                     found=2 refs=[1,2]
+q=sun (prefix omitted)                                                 found=10 refs=[1,8,9,10,11,12,13,30,36,37]
+q=sun prefix=false                                                     found=0 refs=[]
+q=red spo (prefix omitted)                                             found=1 refs=[2]
+q=spo red (prefix omitted)                                             found=0 refs=[]
+q=sculpt (prefix omitted)                                              found=3 refs=[1,3,4]
+q=sculpt prefix=false                                                  found=1 refs=[3]
+
+-- tokenisation of translated options (~en:Germany~fr:Allemagne) and HTML
+q=germany prefix=false                                                 found=1 refs=[35]
+q=germanyfr prefix=false                                               found=1 refs=[7]
+q=allemagne prefix=false                                               found=1 refs=[7]
+q=en prefix=false                                                      found=1 refs=[7]
+q=hello prefix=false                                                   found=1 refs=[35]
+q=phello prefix=false                                                  found=1 refs=[4]
+q=world prefix=false                                                   found=1 refs=[35]
+q=strongworld prefix=false                                             found=1 refs=[4]
+q=strong prefix=false                                                  found=2 refs=[4,34]
+q=href prefix=false                                                    found=1 refs=[4]
+q=galleries prefix=false                                               found=1 refs=[4]
+q=p prefix=false                                                       found=1 refs=[4]

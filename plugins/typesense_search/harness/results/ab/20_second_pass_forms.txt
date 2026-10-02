@@ -1,0 +1,252 @@
+Typesense index built by the plugin's reindex functions: {"resources":39,"failed":0,"errors":[],"memberships":10,"attributes":39,"grants":4}
+
+################ N: second pass ################
+
+---- caller shapes
+
+N1 CSV export call (smartsearch = null):  "sunset"  [order_by="", fetchrows=[0,100000]]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: PHP ERROR TypeError: HookTypesense_searchAllExternal_search(): Argument #18 ($smartsearch) must be of type bool, null given  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => —
+
+N1b same call with smartsearch = false:  "sunset"  [order_by="", fetchrows=[0,100000]]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+N1c daylimit passed as null:  "sunset"  [daylimit=null]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: PHP ERROR TypeError: HookTypesense_searchAllExternal_search(): Argument #13 ($recent_search_daylimit) must be of type string, null given  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => —
+
+N1d restypes starting with Global:  "sunset"  [restypes="Global,2"]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+---- date field values
+
+N2a legacy n placeholders: any year, May:  "date:nnnn|05"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N2b legacy: 2024, any month, day 17:  "date:2024|nn|17"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N2c legacy with dashes:  "date:nnnn-02-10"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N3a year prefix:  "date:202"
+    core:   total=9 refs=[1,2,3,4,5,6,7,14,42]  (order [2,1,4,3,14,42,5,6,7])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N3b month prefix:  "date:2024-0"
+    core:   total=3 refs=[1,2,14]  (order [2,1,14])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N4a EDTF year range (start padded -00, end -99):  "date:rangestart2024-00-00end2024-12-99"
+    core:   total=3 refs=[1,2,14]  (order [2,1,14])
+    plugin: SERVED by Typesense  total=4 refs=[1,2,4,14]  (order [14,4,2,1])
+    => DIFFERENT
+
+N4b EDTF month range:  "date:rangestart2024-02-00end2024-02-99"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=4 refs=[1,2,4,14]  (order [14,4,2,1])
+    => DIFFERENT
+
+N4c EDTF start only:  "date:rangestart2024-00-00"
+    core:   total=3 refs=[1,2,14]  (order [2,1,14])
+    plugin: SERVED by Typesense  total=4 refs=[1,2,4,14]  (order [14,4,2,1])
+    => DIFFERENT
+
+N23a date with time, by day:  "date:2023-07-04"
+    core:   total=1 refs=[42]
+    plugin: SERVED by Typesense  total=1 refs=[42]
+    => SAME
+
+N23b date with time, by month:  "date:2023-07"
+    core:   total=1 refs=[42]
+    plugin: SERVED by Typesense  total=1 refs=[42]
+    => SAME
+
+N23c date with time, by year:  "date:2023"
+    core:   total=2 refs=[3,42]
+    plugin: SERVED by Typesense  total=2 refs=[3,42]  (order [42,3])
+    => same set, different order
+
+N24 date with time, one-day range:  "date:rangestart2023-07-04end2023-07-04"
+    core:   total=1 refs=[42]
+    plugin: SERVED by Typesense  total=1 refs=[42]
+    => SAME
+
+---- stop words
+
+N5a stop word as a field value:  "title:the"
+    core:   total=34 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37,40,41,42,43,44]  (order [8,2,1,4,3,14,42,5,6,7,44,43,41,40,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=2 refs=[1,2]  (order [2,1])
+    => DIFFERENT
+
+N5b stop word plus a word in a field:  "title:the, title:red"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=1 refs=[2]
+    => SAME
+
+N29 search of only a stop word:  "the"
+    core:   total=34 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37,40,41,42,43,44]  (order [8,2,1,4,3,14,42,5,6,7,44,43,41,40,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,25]
+    => DIFFERENT
+
+N6a phrase with a stop word inside:  "\"foo and bar\""
+    core:   total=2 refs=[4,40]
+    plugin: SERVED by Typesense  total=1 refs=[4]
+    => DIFFERENT
+
+N6b phrase with a different stop word:  "\"foo the bar\""
+    core:   total=2 refs=[4,40]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N6c phrase black and white:  "\"black and white\""
+    core:   total=2 refs=[43,44]  (order [44,43])
+    plugin: SERVED by Typesense  total=1 refs=[43]
+    => DIFFERENT
+
+N6d phrase black or white:  "\"black or white\""
+    core:   total=1 refs=[44]
+    plugin: SERVED by Typesense  total=1 refs=[44]
+    => SAME
+
+---- punctuation
+
+N7a punctuated token next to a field term:  "title:launch foo-bar"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=2 refs=[3,4]
+    => DIFFERENT
+
+N7b punctuated token next to a quoted phrase:  "\"separate here\" foo-bar"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[4]
+    => DIFFERENT
+
+N7c punctuated token, plain two-word search:  "separate foo-bar"
+    core:   total=1 refs=[4]
+    plugin: SERVED by Typesense  total=1 refs=[4]
+    => SAME
+
+N8a straight apostrophe:  "o'brien"
+    core:   total=1 refs=[25]
+    plugin: SERVED by Typesense  total=1 refs=[25]
+    => SAME
+
+N8b curly apostrophe:  "o’brien"
+    core:   total=1 refs=[25]
+    plugin: SERVED by Typesense  total=1 refs=[25]
+    => SAME
+
+N27 colon that is not a field:  "foo:bar"
+    core:   total=4 refs=[3,4,18,40]  (order [4,3,40,18])
+    plugin: SERVED by Typesense  total=4 refs=[3,4,18,40]  (order [18,3,40,4])
+    => same set, different order
+
+---- accents (core side on SQLite is NOT representative: MySQL collations fold accents)
+
+N9a unaccented search for accented text:  "cafe"
+    core:   non-array result ""
+    plugin: not consulted (core returned before the hook)
+    => —
+
+N9b accented search:  "café"
+    core:   total=1 refs=[41]
+    plugin: SERVED by Typesense  total=1 refs=[41]
+    => SAME
+
+N9c unaccented umlaut:  "zurich"
+    core:   non-array result ""
+    plugin: not consulted (core returned before the hook)
+    => —
+
+N9d field search, accented:  "title:café"
+    core:   total=1 refs=[41]
+    plugin: SERVED by Typesense  total=1 refs=[41]
+    => SAME
+
+---- negatives and wildcards
+
+N10a negative wildcard:  "warehouse -car*"
+    core:   total=1 refs=[33]
+    plugin: SERVED by Typesense  total=1 refs=[33]
+    => SAME
+
+N10b negative exact:  "warehouse -car"
+    core:   total=1 refs=[33]
+    plugin: SERVED by Typesense  total=1 refs=[33]
+    => SAME
+
+N37 negative fixed-list option word:  "sunset -france"
+    core:   total=4 refs=[8,12,36,37]  (order [8,37,36,12])
+    plugin: SERVED by Typesense  total=4 refs=[8,12,36,37]  (order [8,37,36,12])
+    => SAME
+
+N38a free text matching an option:  "france"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+N38b free text matching a two-word option:  "modern art"
+    core:   total=2 refs=[2,4]
+    plugin: SERVED by Typesense  total=2 refs=[2,4]  (order [4,2])
+    => same set, different order
+
+N38c free text matching a tree child:  "birds"
+    core:   total=1 refs=[24]
+    plugin: SERVED by Typesense  total=1 refs=[24]
+    => SAME
+
+---- numeric
+
+N11a numrange spanning zero (field also holds text):  "price:numrangeneg5|5"
+    core:   total=1 refs=[16]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+N11b numrange on a non-text field type:  "caption:numrange1|5"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+---- field name / value case
+
+N18a upper-case value:  "title:SUNSET"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => same set, different order
+
+N18b upper-case field name:  "TITLE:sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => same set, different order
+
+---- asked of Typesense directly (prefix off)
+accents (resource 41 title: Café Zürich)
+q=cafe                                                                 found=1 refs=[41]
+q=café                                                                found=1 refs=[41]
+q=CAFÉ                                                                found=1 refs=[41]
+q=zurich                                                               found=1 refs=[41]
+q=zürich                                                              found=1 refs=[41]
+q=zuerich                                                              found=0 refs=[]
+filter title:cafe                                                      found=1 refs=[41]
+filter title:café                                                     found=1 refs=[41]
+does an excluded last word get prefix-matched?
+q=warehouse -car prefix=true                                           found=1 refs=[33]
+q=warehouse -carpet prefix=true                                        found=0 refs=[]
+date representations (resource 1 date 2024-05-17)
+doc 1 date keys: {"date_field_sort":"2:2024-05-17","field_12_q":["2024","05","17","2024-05","2024-05-17"],"field_12_range_end":1715990400,"field_12_range_start":1715904000,"field_12_ts":1715904000}
+filter field_12_q:=05                                                  found=1 refs=[1]
+filter field_12_q:=17                                                  found=1 refs=[1]

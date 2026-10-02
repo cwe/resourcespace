@@ -1,0 +1,21 @@
+Typesense index built by the plugin's reindex functions: {"resources":654,"failed":0,"errors":[],"memberships":10,"attributes":654,"grants":4}
+
+order_by=relevance  $typesense_search_max_rows=25000
+    search page grid, first 8:        [1619,1618,1617,1616,1615,1614,1613,1612]  [Typesense]
+    view page next/previous, first 8: [1619,1618,1617,1616,1615,1614,1613,1612]  [Typesense]
+    => consistent
+
+order_by=relevance  $typesense_search_max_rows=500
+    search page grid, first 8:        [1619,1618,1617,1616,1615,1614,1613,1612]  [Typesense]
+    view page next/previous, first 8: [1474,1280,1086,1571,1377,1183,1463,1269]  [MySQL (fallback)]
+    => INCONSISTENT: the resource after 1619 is 1618 in the grid and 1425 by next/previous
+
+order_by=date  $typesense_search_max_rows=25000
+    search page grid, first 8:        [1419,1359,1299,1239,1599,1179,1539,1119]  [Typesense]
+    view page next/previous, first 8: [1419,1359,1299,1239,1599,1179,1539,1119]  [Typesense]
+    => consistent
+
+order_by=date  $typesense_search_max_rows=500
+    search page grid, first 8:        [1419,1359,1299,1239,1599,1179,1539,1119]  [Typesense]
+    view page next/previous, first 8: [1419,1359,1299,1239,1599,1179,1539,1119]  [MySQL (fallback)]
+    => consistent

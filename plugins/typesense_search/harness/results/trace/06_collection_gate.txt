@@ -1,0 +1,107 @@
+
+---- collection gate
+
+=== F30 "R" user, another user's private collection:  "!collection6"   [order_by="collection"]
+    hook   search="!collection6" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=6) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT u.username,u.fullname,r.*, (SELECT count(*) FROM collection_resource cr WHERE cr.collection=r.collection) c, u2.username assigned_to_username FROM request r LEFT OUTER JOIN user u ON r.user=u.ref LEFT OUTER JOIN u)
+    (unstubbed SQL: SELECT ref FROM collection WHERE user = -2)
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F31 "h" user, another user's private collection:  "!collection6"   [order_by="collection"]
+    hook   search="!collection6" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=6) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F32 standard user, another user's collection + access_override:  "!collection6"   [order_by="collection", access_override=true]
+    hook   search="!collection6" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: r.ref>0
+           result: []
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=6) && ref:>0
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F33 admin, another user's private collection:  "!collection6"   [order_by="collection"]
+    hook   search="!collection6" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: r.ref>0
+           order:  c.sortorder DESC,c.date_added ASC,r.ref DESC 
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=6) && ref:>0
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+
+=== F34 admin, selection collection:  "!collection7"   [order_by="collection"]
+    hook   search="!collection7" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: r.ref>0
+           order:  c.sortorder DESC,c.date_added ASC,r.ref DESC 
+    PLUGIN CORE (veto) - typesense_search: unsupported (collection 7 is not indexed (selection/upload collection))
+
+=== F35 $ignore_collection_access, another user's collection:  "!collection6"   [order_by="collection"]
+    hook   search="!collection6" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  c.sortorder DESC,c.date_added ASC,r.ref DESC 
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=6) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+---- external share
+
+=== F40 share key, $collection_allow_not_approved_share:  "!collection5"   [order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND r.ref>0 AND [access3 rule]
+           order:  c.sortorder DESC,c.date_added ASC,r.ref DESC 
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F41 share key, default:  "!collection5"   [order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  c.sortorder DESC,c.date_added ASC,r.ref DESC 
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+---- derestrict filter / restricted-by-default group (no g permission)
+
+=== F50 user without g:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}

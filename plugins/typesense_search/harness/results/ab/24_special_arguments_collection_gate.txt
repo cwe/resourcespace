@@ -1,0 +1,80 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ R: special-search arguments and the collection gate ################
+
+R1 contributions followed directly by a term with digits:  "!contributions1,date:2024, sunset"  [archive="0"]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+R2 contributions followed directly by a term without digits:  "!contributions1,title:sunset, harbour"  [archive="0"]
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+R3 contributions plus keyword (space separated):  "!contributions1 sunset"  [archive="0"]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+R4 hasdata followed by a term with digits:  "!hasdata12,date:2024"
+    core:   total=9 refs=[1,2,3,4,5,6,7,8,14]  (order [8,2,1,4,3,14,5,6,7])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+R5 list followed by keyword:  "!list1:2:3:8 sunset"
+    core:   total=2 refs=[1,8]  (order [8,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,8]  (order [8,1])
+    => SAME
+
+R6 collection followed by keyword:  "!collection5 sunset"  [order_by="collection", sort="ASC"]
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+R7 last followed by field term:  "!last20,title:sunset"
+    core:   total=20 refs=[14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14])
+    plugin: SERVED by Typesense  total=20 refs=[14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14])
+    => SAME
+
+R8 last followed by field term after a space:  "!last20 title:sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => SAME
+
+---- collection gate
+
+R9 another user's private collection (baseline):  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 6 not readable))
+    => —
+
+R11 another user's private collection with $ignore_collection_access:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[4,5]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => SAME
+
+R12 collection that does not exist:  "!collection999"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 999 not readable))
+    => —
+
+R13 collection 0:  "!collection0"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 0 is not indexed (selection/upload collection)))
+    => —
+
+R14 collection with no number:  "!collection"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 0 is not indexed (selection/upload collection)))
+    => —
+
+R15 admin (a) viewing another user's private collection:  "!collection6"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[4,5]
+    plugin: SERVED by Typesense  total=2 refs=[4,5]
+    => SAME
+
+R16 admin (a) viewing a collection that does not exist:  "!collection999"  [order_by="collection", sort="ASC"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME

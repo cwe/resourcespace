@@ -1,0 +1,18 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ V: $typesense_search_global_filter ################
+
+V1 served search with a global filter (type 2 only):  "launch"
+    core:   total=2 refs=[3,4]  (order [4,3])
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => DIFFERENT
+
+V2 same search, sort the plugin does not serve:  "launch"  [order_by="popularity"]
+    core:   total=2 refs=[3,4]  (order [4,3])
+    plugin: fell back to core (unsupported (unsupported sort order: user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC))
+    => —
+
+V3 same search, special the plugin does not serve:  "!nopreview launch"
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (special search !nopreview not handled by Typesense))
+    => —

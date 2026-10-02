@@ -1,0 +1,11 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+W1 CSV export call with the plugin toggle off ($typesense_search_enabled = false):  "sunset"  [order_by="", fetchrows=[0,100000]]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: PHP ERROR TypeError: HookTypesense_searchAllExternal_search(): Argument #18 ($smartsearch) must be of type bool, null given  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => —
+
+W2 ordinary search with the toggle off:  "sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: fell back to core
+    => —

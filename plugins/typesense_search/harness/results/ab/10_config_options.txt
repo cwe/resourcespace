@@ -1,0 +1,79 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+---- $index_contributed_by = true (search by contributor username)
+
+I1 username as keyword:  "other"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+---- $wildcard_always_applied = true
+
+I2 two words, both prefixes:  "laun part"
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+I3 field value prefix:  "title:laun"
+    core:   total=2 refs=[3,4]  (order [4,3])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+---- $special_search_honors_restypes = true
+
+I4 !last + restypes:  "!last5"  [restypes="2"]
+    core:   total=5 refs=[3,5,14,25,35]  (order [35,25,14,5,3])
+    plugin: SERVED by Typesense  total=5 refs=[3,5,14,25,35]  (order [35,25,14,5,3])
+    => SAME
+
+I5 !list + restypes:  "!list1:2:3"  [restypes="2"]
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+---- misc
+
+I6 search text containing "integrityfail":  "integrityfail sunset"  [archive="0"]
+    core:   non-array result "<i>interview</i> sunset"
+    plugin: not consulted (core returned before the hook)
+    => —
+
+I7 field search + !empty later:  "title:sunset !empty18"
+    core:   total=4 refs=[8,12,36,37]  (order [8,37,36,12])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+I8 trailing wildcard on field value, plain word first:  "sunset title:book*"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+I9 OR in field where values are words:  "title:ship;book"
+    core:   total=1 refs=[4]
+    plugin: fell back to core (unsupported (OR-group (";") in a field-scoped search not handled by Typesense))
+    => —
+
+I10 date field, partial value prefix:  "date:2024-0"
+    core:   total=3 refs=[1,2,14]  (order [2,1,14])
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+I11 expired-grant confidential resource by ref:  "!resource13"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+I12 quoted phrase across punctuation:  "\"up at em\""
+    core:   total=1 refs=[25]
+    plugin: SERVED by Typesense  total=1 refs=[25]
+    => SAME
+
+I13 two-word option typed unquoted:  "country:united kingdom"
+    core:   total=1 refs=[2]
+    plugin: SERVED by Typesense  total=1 refs=[2]
+    => SAME
+
+I14 keyword with trailing comma list:  "sunset, harbour, wall"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME

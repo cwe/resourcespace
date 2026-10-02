@@ -1,0 +1,14 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+I1 contributor username as keyword:  "admin"
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,1,4,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=1 refs=[8]
+    => DIFFERENT
+
+I1b same search, config off:  "admin"
+    core:   total=1 refs=[8]
+    plugin: SERVED by Typesense  total=1 refs=[8]
+    => SAME
+Array
+(
+)

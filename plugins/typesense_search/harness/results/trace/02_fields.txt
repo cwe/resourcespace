@@ -1,0 +1,635 @@
+
+################ B. FIELD-SPECIFIC ################
+
+---- text fields
+
+=== B1 text field:value:  "title:launch"
+    hook   search="title:launch" keywords=["title:launch"]
+    CORE   2 keyword union(s); keywords looked up=["launch"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_8_s:launch && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B2 quoted field phrase:  "\"title:launch party\""
+    hook   search="\"title:launch party\"" keywords=["\"title:launch party\""]
+    CORE   2 keyword union(s); keywords looked up=["launch","party"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="\"title:launch party\""
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B3 quoted field single word:  "\"title:launch\""
+    hook   search="\"title:launch\"" keywords=["\"title:launch\""]
+    CORE   2 keyword union(s); keywords looked up=["launch"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="\"title:launch\""
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B4 field value + omit:  "title:launch, -ship"
+    hook   search="title:launch, -ship" keywords=["title:launch","-ship"]
+    CORE   2 keyword union(s); keywords looked up=["launch","ship"]; OMIT(keyword in any field), field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND `r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node` WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="-ship"
+           filter_by: field_8_s:launch && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B5 field OR values:  "title:book;ship"
+    hook   search="title:book;ship" keywords=["title:book;ship"]
+    CORE   2 keyword union(s); keywords looked up=["book;ship","book","ship"]; OR/related keywords, field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (OR-group (";") in a field-scoped search not handled by Typesense)
+
+=== B6 field value with dot:  "title:pumpkin.patch"
+    hook   search="title:pumpkin.patch" keywords=["title:pumpkin.patch"]
+    CORE   2 keyword union(s); keywords looked up=["pumpkin","patch"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_8_s:`pumpkin.patch` && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B7 field value with hyphens:  "title:up-at-em"
+    hook   search="title:up-at-em" keywords=["title:up-at-em"]
+    CORE   2 keyword union(s); keywords looked up=["up","em"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_8_s:`up-at-em` && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B8 field wildcard:  "title:book*"
+    hook   search="title:book*" keywords=["title:book*"]
+    CORE   2 keyword union(s); keywords looked up=["book"]; FULLTEXT, field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*" prefix=true
+           filter_by: field_8_s:book* && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B9 multi-line text field:  "caption:harbour"
+    hook   search="caption:harbour" keywords=["caption:harbour"]
+    CORE   2 keyword union(s); keywords looked up=["harbour"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_18_text:harbour && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B10 html text field:  "notes:harbour"
+    hook   search="notes:harbour" keywords=["notes:harbour"]
+    CORE   2 keyword union(s); keywords looked up=["harbour"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_92_text:harbour && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B11 partial-index field:  "originalfilename:sculpture"
+    hook   search="originalfilename:sculpture" keywords=["originalfilename:sculpture"]
+    CORE   2 keyword union(s); keywords looked up=["sculpture"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_51_p:sculpture && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B12 partial-index field, filename:  "originalfilename:dog_photo-1.jpg"
+    hook   search="originalfilename:dog_photo-1.jpg" keywords=["originalfilename:dog_photo-1.jpg"]
+    CORE   2 keyword union(s); keywords looked up=["dog","photo",1,"jpg"]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_51_p:`dog_photo-1.jpg` && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B13 negative field:  "-title:launch"
+    hook   search="-title:launch" keywords=["-title:launch","-title","launch"]
+    CORE   2 keyword union(s); keywords looked up=["title","launch"]; OMIT(keyword in any field)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND `r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node` WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (negative field-scoped search not handled by Typesense)
+
+=== B14 two words in one field (adv. search form):  "title:red, title:car"
+    hook   search="title:red, title:car" keywords=["title:red","title:car"]
+    CORE   3 keyword union(s); keywords looked up=["red","car"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_8_s:red && field_8_s:car && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B15 field + free text:  "title:launch harbour"
+    hook   search="title:launch harbour" keywords=["title:launch","harbour"]
+    CORE   3 keyword union(s); keywords looked up=["launch","harbour"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="harbour"
+           filter_by: field_8_s:launch && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- hidden / inactive / unknown fields
+
+=== B16 field without view access:  "secret:plans"
+    CORE RETURNED BEFORE THE HOOK: false
+
+=== B17 inactive field:  "oldfield:plans"
+    hook   search="oldfield:plans" keywords=["oldfield:plans"]
+    CORE   2 keyword union(s); keywords looked up=["plans"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_94_s:plans && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B18 unknown field name:  "nosuchfield:plans"
+    hook   search="nosuchfield:plans" keywords=["nosuchfield:plans","nosuchfield","plans"]
+    CORE   3 keyword union(s); keywords looked up=["nosuchfield","plans"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="nosuchfield plans nosuchfield plans"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- fixed-list fields
+
+=== B20 dropdown value resolves to a node:  "country:france"
+    hook   search="country:france" keywords=["country:france"] node_bucket=[[201]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B21 dropdown value, case differs:  "country:FRANCE"
+    hook   search="country:FRANCE" keywords=["country:FRANCE"] node_bucket=[[201]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B22 dropdown OR values:  "country:france;spain"
+    hook   search="country:france;spain" keywords=["country:france;spain"] node_bucket=[[201,203]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201,203] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B23 dropdown value with space, quoted:  "\"country:united kingdom\""
+    hook   search="\"country:united kingdom\"" keywords=["\"country:united kingdom\""] node_bucket=[[202]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="\"country:united kingdom\""
+           filter_by: nodes:=[202] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B24 dropdown value NOT a node name (partial word):  "country:united"
+    hook   search="country:united" keywords=["country:united"]
+    CORE   2 keyword union(s); keywords looked up=["united"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B25 dropdown value NOT a node name + keyword:  "country:united sunset"
+    hook   search="country:united sunset" keywords=["country:united","sunset"]
+    CORE   3 keyword union(s); keywords looked up=["united","sunset"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B26 dropdown wildcard:  "country:fran*"
+    hook   search="country:fran*" keywords=["country:fran*"]
+    CORE   2 keyword union(s); keywords looked up=["fran"]; FULLTEXT, field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*" prefix=true
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B27 dropdown OR, none resolve:  "country:atlantis;narnia"
+    hook   search="country:atlantis;narnia" keywords=["country:atlantis;narnia"]
+    CORE   2 keyword union(s); keywords looked up=["atlantis;narnia","atlantis","narnia"]; OR/related keywords, field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B28 dropdown OR, one resolves:  "country:france;narnia"
+    hook   search="country:france;narnia" keywords=["country:france;narnia"] node_bucket=[[201]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[201] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B29 dynamic keyword field, typed text:  "keywords:modern"
+    hook   search="keywords:modern" keywords=["keywords:modern"]
+    CORE   2 keyword union(s); keywords looked up=["modern"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B30 dynamic keyword field, exact node:  "keywords:sculpture"
+    hook   search="keywords:sculpture" keywords=["keywords:sculpture"] node_bucket=[[301]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[301] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B31 category tree value:  "subject:birds"
+    hook   search="subject:birds" keywords=["subject:birds"] node_bucket=[[402]]
+    CORE   no keyword union; keywords looked up=[]; node-bucket joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: nodes:=[402] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B32 negative dropdown:  "-country:france"
+    hook   search="-country:france" keywords=["-country:france","-country","france"]
+    CORE   2 keyword union(s); keywords looked up=["country","france"]; OMIT(keyword in any field)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND `r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node` WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (negative field-scoped search not handled by Typesense)
+
+---- numeric fields
+
+=== B40 numeric field plain value:  "price:100"
+    hook   search="price:100" keywords=["price:100"]
+    CORE   2 keyword union(s); keywords looked up=[100]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_90_s:100 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B41 numrange both:  "price:numrange10|100"
+    hook   search="price:numrange10|100" keywords=["price:numrange10|100"]
+    CORE   no keyword union; keywords looked up=[]; numrange
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rnn1.name >= ? AND rnn1.name <= ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_90_f:[10..100] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B42 numrange min only:  "price:numrange10|"
+    hook   search="price:numrange10|" keywords=["price:numrange10|"]
+    CORE   no keyword union; keywords looked up=[]; numrange
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rnn1.name = ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_90_f:=10 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B43 numrange max only:  "price:numrange|100"
+    hook   search="price:numrange|100" keywords=["price:numrange|100"]
+    CORE   no keyword union; keywords looked up=[]; numrange
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rnn1.name = ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_90_f:=100 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B44 numrange negative:  "price:numrangeneg5|10"
+    hook   search="price:numrangeneg5|10" keywords=["price:numrangeneg5|10"]
+    CORE   no keyword union; keywords looked up=[]; numrange
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rnn1.name >= ? AND rnn1.name <= ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_90_f:[-5..10] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B45 numrange empty:  "price:numrange|"
+    hook   search="price:numrange|" keywords=["price:numrange|"]
+    CORE   no keyword union; keywords looked up=[]; numrange
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (field-scoped search on field "price" not supported)
+
+=== B46 numrange on a non-numeric text field:  "title:numrange1|5"
+    hook   search="title:numrange1|5" keywords=["title:numrange1|5"]
+    CORE   no keyword union; keywords looked up=[]; numrange
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rnn1.name >= ? AND rnn1.name <= ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_8_f:[1..5] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B47 numrange on multi-line field:  "caption:numrange1|5"
+    hook   search="caption:numrange1|5" keywords=["caption:numrange1|5"]
+    CORE   2 keyword union(s); keywords looked up=["numrange1|5"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_18_f:[1..5] && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+---- date fields
+
+=== B50 date year:  "date:2024"
+    hook   search="date:2024" keywords=["date:2024"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND dn1.name like ?
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_q:=2024 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B51 date year-month:  "date:2024-05"
+    hook   search="date:2024-05" keywords=["date:2024-05"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND dn1.name like ?
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_q:=`2024-05` && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B52 date full:  "date:2024-05-17"
+    hook   search="date:2024-05-17" keywords=["date:2024-05-17"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND dn1.name like ?
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_q:=`2024-05-17` && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B53 date legacy pipe format:  "date:2024|05"
+    hook   search="date:2024|05" keywords=["date:2024|05"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND dn1.name like ?
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_q:=`2024|05` && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B54 date range both ends:  "date:rangestart2024-01-01end2024-12-31"
+    hook   search="date:rangestart2024-01-01end2024-12-31" keywords=["date:rangestart2024-01-01end2024-12-31"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_end:>1704067200 && field_12_range_start:<1735689600 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B55 date range start only:  "date:rangestart2024-01-01"
+    hook   search="date:rangestart2024-01-01" keywords=["date:rangestart2024-01-01"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_end:>1704067200 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B56 date range end only:  "date:rangeend2024-12-31"
+    hook   search="date:rangeend2024-12-31" keywords=["date:rangeend2024-12-31"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_start:<1735689600 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B57 date range, end month Feb with no day (form adds -31):  "date:rangestart2024-01end2024-02-31"
+    hook   search="date:rangestart2024-01end2024-02-31" keywords=["date:rangestart2024-01end2024-02-31"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_end:>1704067200 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B58 date range, end 30-day month, no day:  "date:rangestart2024-01-01end2024-04-31"
+    hook   search="date:rangestart2024-01-01end2024-04-31" keywords=["date:rangestart2024-01-01end2024-04-31"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_end:>1704067200 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B59 date range year only:  "date:rangestart2023end2024-12-31"
+    hook   search="date:rangestart2023end2024-12-31" keywords=["date:rangestart2023end2024-12-31"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_end:>1672531200 && field_12_range_start:<1735689600 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B60 date range EDTF style end (day 99):  "date:rangestart2020-00-00end2020-12-99"
+    hook   search="date:rangestart2020-00-00end2020-12-99" keywords=["date:rangestart2020-00-00end2020-12-99"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_12_range_end:>1577836800 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B61 date-range FIELD exact value:  "eventdates:2024"
+    hook   search="eventdates:2024" keywords=["eventdates:2024"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_91_q:=2024 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B62 date-range FIELD range:  "eventdates:rangestart2024-01-01end2024-12-31"
+    hook   search="eventdates:rangestart2024-01-01end2024-12-31" keywords=["eventdates:rangestart2024-01-01end2024-12-31"]
+    CORE   no keyword union; keywords looked up=[]; date-range joins
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule]
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_91_range_end:>1704067200 && field_91_range_start:<1735689600 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B63 expiry date field:  "expiry:2025"
+    hook   search="expiry:2025" keywords=["expiry:2025"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND dn1.name like ?
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="*"
+           filter_by: field_95_q:=2025 && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: ref:desc   {"offset":0,"limit":48}
+
+=== B64 quoted date field:  "\"date:2024\""
+    hook   search="\"date:2024\"" keywords=["\"date:2024\""]
+    CORE   2 keyword union(s); keywords looked up=[2024]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="\"date:2024\""
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- simple search date dropdowns (basicyear / basicmonth / basicday)
+
+=== B70 basicyear:  "basicyear:2024"
+    hook   search="basicyear:2024" keywords=["basicyear:2024"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rdn1.name like ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="basicyear 2024"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B71 basicyear + basicmonth:  "basicyear:2024, basicmonth:05"
+    hook   search="basicyear:2024, basicmonth:05" keywords=["basicyear:2024","basicmonth:05"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rdn1.name like ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="basicyear 2024 basicmonth 05"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B72 basicyear + month + day:  "basicyear:2024, basicmonth:05, basicday:17"
+    hook   search="basicyear:2024, basicmonth:05, basicday:17" keywords=["basicyear:2024","basicmonth:05","basicday:17"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rdn1.name like ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="basicyear 2024 basicmonth 05 basicday 17"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B73 basicmonth only:  "basicmonth:05"
+    hook   search="basicmonth:05" keywords=["basicmonth:05"]
+    CORE   no keyword union; keywords looked up=[]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rdn1.name like ? 
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="basicmonth 05"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B74 keyword + basicyear:  "sculpture, basicyear:2024"
+    hook   search="sculpture, basicyear:2024" keywords=["sculpture","basicyear:2024"]
+    CORE   2 keyword union(s); keywords looked up=["sculpture"]; date LIKE
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND rdn2.name like ? AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sculpture basicyear 2024"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B75 legacy startdate/enddate terms:  "startdate:2024-01-01, enddate:2024-12-31"
+    hook   search="startdate:2024-01-01, enddate:2024-12-31" keywords=["startdate:2024-01-01","enddate:2024-12-31","startdate","2024-01-01","enddate","2024-12-31"]
+    CORE   5 keyword union(s); keywords looked up=["startdate",2024,"01","enddate",12,31]; PHRASE(adjacent positions, same node)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found` AND `h`.`keyword_3_found` AND `h`.`keyword_4_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="startdate 2024-01-01 enddate 2024-12-31 startdate 2024-01-01 enddate 2024-12-31"
+           filter_by: ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- !empty and full text
+
+=== B80 !empty by ref:  "!empty18"
+    hook   search="!empty18" keywords=["!empty18"]
+    CORE   2 keyword union(s); keywords looked up=["!empty18"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !empty not handled by Typesense)
+
+=== B81 !empty by name:  "!emptycaption"
+    hook   search="!emptycaption" keywords=["!emptycaption"]
+    CORE   2 keyword union(s); keywords looked up=["!emptycaption"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (special search !emptycaption not handled by Typesense)
+
+=== B82 field search + !empty later:  "title:cat !empty18"
+    hook   search="title:cat !empty18" keywords=["title:cat","!empty18"]
+    CORE   3 keyword union(s); keywords looked up=["cat","!empty18"]; field-restricted
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found` AND `h`.`keyword_2_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="!empty18"
+           filter_by: field_8_s:cat && ref:>0 && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== B83 full text:  "\"@FULL_TEXT:harbour wall\""
+    hook   search="\"@FULL_TEXT:harbour wall\"" keywords=["\"@FULL_TEXT:harbour wall\""]
+    CORE   2 keyword union(s); keywords looked up=[]; FULLTEXT
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (full-text boolean search not handled by Typesense)
+
+=== B84 full text + keyword:  "\"@FULL_TEXT:harbour\" -boat"
+    hook   search="\"@FULL_TEXT:harbour\" -boat" keywords=["\"@FULL_TEXT:harbour\"","-boat"]
+    CORE   2 keyword union(s); keywords looked up=["boat"]; FULLTEXT, OMIT(keyword in any field)
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND `r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node` WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN CORE (veto) - typesense_search: unsupported (full-text boolean search not handled by Typesense)

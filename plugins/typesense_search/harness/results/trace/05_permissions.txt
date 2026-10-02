@@ -1,0 +1,252 @@
+
+################ F. PERMISSIONS AND FILTERS ################
+
+=== F1 "v" user:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: archive IN (?) AND r.ref>0 AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F2 "v" user, access=2:  "sunset"   [access=2]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: archive IN (?) AND r.ref>0 AND r.access = ? AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && access:=2
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F3 "v" user, pending states:  "sunset"   [archive="-2,-1"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: archive IN (?,?) AND r.ref>0 AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[-2,-1]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F4 T permissions:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: resource_type NOT IN (?,?) AND [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && resource_type:!=[3,4] && archive:=[0] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F5 T permissions + access_override:  "sunset"   [access_override=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: r.ref>0 AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F6 z permissions ($uploader_view_override on):  "sunset"   [archive="0,2"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?,?) AND [pending rule] AND (archive NOT IN (?,?) OR created_by = ?) AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0,2] && (archive:!=[2,3] || created_by:=5) && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F7 z permissions ($uploader_view_override off):  "sunset"   [archive="0,2"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?,?) AND [pending rule] AND archive NOT IN (?,?) AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0,2] && archive:!=[2,3] && [pending] && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F8 ert permissions:  "sunset"   [archive="-1,0"]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?,?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) OR (resource_type = ?) OR (resource_type = ?)) AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[-1,0] && (archive:!=[-2,-1] || created_by:=5 || resource_type:=[2,3]) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+---- J permission (featured collections only)
+
+=== F10 J with j* (all featured collections):  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+           join:   JOIN collection_resource AS jcr ON jcr.resource = r.ref JOIN collection AS jc ON jcr.collection = jc.ref [rca joins] JOIN ( SELECT resource,sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref
+           SQL:    SELECT … FROM resource r JOIN collection_resource AS jcr ON jcr.resource = r.ref JOIN collection AS jc ON jcr.collection = jc.ref [rca joins] JOIN ( SELECT resource,sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && $ts_resource_collection_memberships(collection_type:>=0) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F11 J with j*, inside a private collection:  "!collection5"   [order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F12 J with j30 only:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && $ts_resource_collection_memberships(collection_ref:=[30]) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F13 J with j30, inside collection 30:  "!collection30"   [order_by="collection"]
+    hook   search="!collection30" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=30) && ref:>0 && [pending] && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F14 J with j30, inside collection 31:  "!collection31"   [order_by="collection"]
+    hook   search="!collection31" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN CORE (veto) - typesense_search: unsupported by restriction (J inside collection 31, which is not a permitted collection)
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+=== F15 J with j30, own upload collection:  "!collection-5"   [order_by="collection"]
+    hook   search="!collection-5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN CORE (veto) - typesense_search: unsupported (collection -5 is not indexed (selection/upload collection))
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+
+=== F16 J with j30 + access_override:  "sunset"   [access_override=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: r.ref>0 AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && $ts_resource_collection_memberships(collection_ref:=[30])
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F17 J with no j permissions at all:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+           join:   JOIN collection_resource AS jcr ON jcr.resource = r.ref JOIN collection AS jc ON jcr.collection = jc.ref AND 1 = 0 [rca joins] JOIN ( SELECT resource,sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref
+           SQL:    SELECT … FROM resource r JOIN collection_resource AS jcr ON jcr.resource = r.ref JOIN collection AS jc ON jcr.collection = jc.ref AND 1 = 0 [rca joins] JOIN ( SELECT resource,sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN PHP ERROR: TypeError: array_map(): Argument #2 ($array) must be of type array, false given
+
+=== F18 J with no j permissions, inside a collection:  "!collection5"   [order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule]
+           result: []
+    PLUGIN PHP ERROR: TypeError: array_map(): Argument #2 ($array) must be of type array, false given
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+
+---- group search filter
+
+=== F20 search filter, ALL:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) ) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+           join:   [rca joins] JOIN ( SELECT resource,sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref
+           SQL:    SELECT … FROM resource r [rca joins] JOIN ( SELECT resource,sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) ) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && (nodes:=[201,203] && nodes:!=[301]) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F21 search filter, NONE:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) ) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && (nodes:!=[201,203] && nodes:=[301]) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F22 search filter, ANY:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) OR r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) ) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && (nodes:=[201,203] || nodes:!=[301]) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F23 search filter + $custom_access_overrides_search_filter:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (((r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) )) OR ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2))) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && ((nodes:=[201,203] && nodes:!=[301]) || $ts_resource_access_grants(user:=5 || usergroup:=3)) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F24 search filter + custom access + $open_access_for_contributor:  "sunset"
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: [access2 rule] AND archive IN (?) AND [pending rule] AND r.ref>0 AND [access3 rule] AND (((r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) )) OR ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)) OR ((r.created_by = ?))) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0 && archive:=[0] && [pending] && ((nodes:=[201,203] && nodes:!=[301]) || $ts_resource_access_grants(user:=5 || usergroup:=3) || created_by:=5) && [grants]
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F25 search filter + access_override:  "sunset"   [access_override=true]
+    hook   search="sunset" keywords=["sunset"]
+    CORE   2 keyword union(s); keywords looked up=["sunset"]
+           filter: r.ref>0 AND (r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) ) AND (`h`.`keyword_1_found`)
+           order:  score DESC, user_rating DESC, total_hit_count DESC , field12 DESC, r.ref DESC
+    PLUGIN SERVED
+           q="sunset" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: ref:>0
+           sort_by: _text_match:desc   {"offset":0,"limit":48}
+
+=== F26 search filter inside a collection:  "!collection5"   [order_by="collection"]
+    hook   search="!collection5" keywords=[]
+    CORE   no keyword union; keywords looked up=[]
+           filter: [access2 rule] AND [pending rule] AND r.ref>0 AND [access3 rule] AND (r.ref IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?,?)) AND r.ref NOT IN (SELECT rn.resource FROM resource_node rn WHERE rn.node IN (?)) )
+           result: []
+    PLUGIN SERVED
+           q="*" query_by=title,ref_s,field_18_text,field_12_q,field_3_ss,field_1_ss,field_73_ss,field_51_s,field_51_p,field_90_q,field_91_q,field_92_text,field_93_s,field_95_q
+           filter_by: $ts_resource_collection_memberships(collection_ref:=5) && ref:>0 && [pending] && (nodes:=[201,203] && nodes:!=[301]) && [grants]
+           sort_by: $ts_resource_collection_memberships(sortorder:desc,date_added:asc),ref:desc   {"offset":0,"limit":48}
+    (unstubbed SQL: SELECT * FROM ( SELECT DISTINCT c.*, u.username, u.fullname, IF(c.`type` = 3 AND COUNT(DISTINCT cc.ref)>0, true, false) AS is_featured_collection_category FROM collection AS c LEFT OUTER JOIN collection AS cc ON c.ref = )
+    (unstubbed SQL: SELECT DISTINCT c.ref, c.`name`, c.`type`, c.parent, c.thumbnail_selection_method, c.bg_img_resource_ref, c.created, count(DISTINCT cr.resource) > 0 AS has_resources, count(DISTINCT cc.ref) > 0 AS has_children FROM colle)
+invalid filter

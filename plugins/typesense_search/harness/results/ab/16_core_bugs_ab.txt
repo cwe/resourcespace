@@ -1,0 +1,50 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+-- bug 1
+
+node only:  "@@201"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+!last + node:  "!last10, @@201"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => DIFFERENT
+
+!last + fixed-list field:value:  "!last10, country:france"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => DIFFERENT
+
+!last + nodes that match nothing:  "!last10, @@203 @@301"
+    core:   total=1 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+!last + keyword (no node):  "!last10, sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => SAME
+
+-- bug 2
+
+day inside the stored range:  "eventdates:2024-03-05"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+the stored start date:  "eventdates:2024-03-01"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[14]
+    => DIFFERENT
+
+year of the stored range:  "eventdates:2024"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[14]
+    => DIFFERENT
+
+day outside the stored range:  "eventdates:2024-03-20"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME

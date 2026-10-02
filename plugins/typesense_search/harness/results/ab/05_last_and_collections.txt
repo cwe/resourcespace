@@ -1,0 +1,56 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+D8 public collection:  "!collection40"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[2,8]
+    plugin: SERVED by Typesense  total=2 refs=[2,8]
+    => SAME
+
+D5 another user's private collection:  "!collection6"  [order_by="collection"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 6 not readable))
+    => —
+
+D11 !last:  "!last5"
+    core:   total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => SAME
+
+D12 !last + keyword (space) -> 1000:  "!last2 sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => SAME
+
+D13 !last + keyword (comma):  "!last2, sunset"
+    core:   total=2 refs=[36,37]  (order [37,36])
+    plugin: SERVED by Typesense  total=2 refs=[36,37]  (order [37,36])
+    => SAME
+
+D14 !last, lower-case sort:  "!last5"  [sort="desc"]
+    core:   total=5 refs=[33,34,35,36,37]
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]
+    => SAME
+
+D15 !last, date order:  "!last5"  [order_by="date"]
+    core:   total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => SAME
+
+D16 !last + restypes (documents only):  "!last5"  [restypes="2"]
+    core:   total=5 refs=[3,5,14,25,35]  (order [35,25,14,5,3])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => DIFFERENT
+
+D16b !last + node OR bucket:  "!last3, @@201@@301"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => DIFFERENT
+
+D16c !last, modified order:  "!last5"  [order_by="modified"]
+    core:   total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => SAME
+
+D16d !last, resourceid ASC:  "!last5"  [order_by="resourceid", sort="ASC"]
+    core:   total=5 refs=[33,34,35,36,37]
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]
+    => SAME

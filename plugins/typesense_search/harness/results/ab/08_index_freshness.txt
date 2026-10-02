@@ -1,0 +1,45 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ INDEX FRESHNESS ################
+
+G0 before the edit:  "harbour"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+plugin save hook called for resource 1; debug log says:
+    typesense_search: reindexing after save_resource_data(): 1
+    typesense_search_request(): GET /collections/harness_resources returned HTTP 200
+    typesense_search_request(): GET /collections/harness_resource_collection_memberships returned HTTP 200
+    typesense_search_request(): GET /collections/harness_resource_access_grants returned HTTP 200
+    typesense_search_request(): POST /collections//documents?action=upsert returned HTTP 404
+    typesense_search_request(): Response body: { "message": "Not Found"}
+Typesense document 1 title after the hook: "Sunset over the harbour"
+
+G1 new title word after edit + save hook:  "marina"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+G2 old title word after edit + save hook:  "harbour"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+G3 after soft-delete of 8, 12 made confidential, 37 hard-deleted, 50 created:  "sunset"
+    core:   total=4 refs=[1,12,36,50]  (order [1,50,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36]  (order [8,1,36,12])
+    => DIFFERENT
+
+G4 same, count only:  "sunset"  [fetchrows=[0,0]]
+    core:   total=4 refs=[]
+    plugin: SERVED by Typesense  total=5 refs=[]
+    => DIFFERENT
+
+G5 collection after removing resource 3 from it:  "!collection5"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[1,2]
+    plugin: SERVED by Typesense  total=3 refs=[1,2,3]  (order [3,1,2])
+    => DIFFERENT
+
+################ RELATED KEYWORDS SYNC ################
+    typesense_search_request(): GET /collections//synonyms returned HTTP 404
+    typesense_search_request(): Response body: {"message":"Collection not found"}

@@ -1,0 +1,23 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+code under test: this checkout
+
+B17 inactive field:  "oldfield:legacy"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[22]
+    => DIFFERENT
+
+A36 word in inactive field, free text:  "legacy"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+B1 text field:value:  "title:launch"
+    core:   total=2 refs=[3,4]  (order [4,3])
+    plugin: SERVED by Typesense  total=2 refs=[3,4]  (order [4,3])
+    => SAME
+
+negative on a word only in an inactive field:  "interview -legacy"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=1 refs=[22]
+    => DIFFERENT
+document 22 fields: access, archive, created_by, creation_date, date_field_sort, field_8_s, field_94_s, id, modified_date, nodes, populated_field_ids, ref, ref_s, resource_type, title

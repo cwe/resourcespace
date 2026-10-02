@@ -1,0 +1,167 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ A/B: PARAMETERS ################
+
+E1 restypes list:  "launch"  [restypes="2"]
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+E2 restypes Global:  "launch"  [restypes="Global"]
+    core:   total=2 refs=[3,4]  (order [4,3])
+    plugin: SERVED by Typesense  total=2 refs=[3,4]
+    => same set, different order
+
+E3 restypes + FeaturedCollections:  "launch"  [restypes="2,FeaturedCollections"]
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+E4 restypes FeaturedCollections ONLY:  "launch"  [restypes="FeaturedCollections"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=2 refs=[3,4]
+    => DIFFERENT
+
+E10 archive 0,2:  "sunset"  [archive="0,2"]
+    core:   total=6 refs=[1,8,9,12,36,37]  (order [8,1,37,36,12,9])
+    plugin: SERVED by Typesense  total=6 refs=[1,8,9,12,36,37]  (order [8,1,37,36,12,9])
+    => SAME
+
+E11 archive empty:  "sunset"  [archive=""]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+E12 archive deleted (3):  "sunset"  [archive="3"]
+    core:   total=1 refs=[30]
+    plugin: SERVED by Typesense  total=1 refs=[30]
+    => SAME
+
+E13 archive pending (-1), not own:  "sunset"  [archive="-1"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+E14 $search_all_workflow_states:  "sunset"
+    core:   total=7 refs=[1,8,9,12,30,36,37]  (order [8,1,37,36,30,12,9])
+    plugin: SERVED by Typesense  total=7 refs=[1,8,9,12,30,36,37]  (order [8,1,37,36,30,12,9])
+    => SAME
+
+---- sort orders (first page order shown when it differs)
+
+E20 order_by=relevance:  ""  [order_by="relevance"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,1,4,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => same set, different order
+
+E20 order_by=date:  ""  [order_by="date"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [1,14,2,4,3,5,6,7,8,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [1,14,2,4,3,5,6,7,8,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    => SAME
+
+E20 order_by=resourceid:  ""  [order_by="resourceid"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => SAME
+
+E20 order_by=modified:  ""  [order_by="modified"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => SAME
+
+E20 order_by=popularity:  ""  [order_by="popularity"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,1,4,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: fell back to core (unsupported (unsupported sort order: user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC))
+    => —
+
+E20 order_by=title:  ""  [order_by="title"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [32,26,16,2,1,8,34,29,4,18,5,15,19,25,23,6,3,22,37,35,36,21,14,31,12,33,7,28,24])
+    plugin: fell back to core (unsupported (unsupported sort order: field8 DESC, r.ref DESC))
+    => —
+
+E20 order_by=status:  ""  [order_by="status"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    plugin: fell back to core (unsupported (unsupported sort order: archive DESC, r.ref DESC))
+    => —
+
+E20 order_by=resourcetype:  ""  [order_by="resourcetype"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [22,26,4,35,25,14,5,3,37,36,34,33,32,31,29,28,24,23,21,19,18,16,15,12,8,7,6,2,1])
+    plugin: fell back to core (unsupported (unsupported sort order: order_by DESC, resource_type DESC, r.ref DESC))
+    => —
+
+E20 order_by=field12:  ""  [order_by="field12"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [1,14,2,4,3,5,6,7,8,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [1,14,2,4,3,5,6,7,8,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    => SAME
+
+E21 date ASC:  ""  [order_by="date", sort="ASC"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [12,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37,8,7,6,5,3,4,2,14,1])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [12,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37,8,7,6,5,3,4,2,14,1])
+    => SAME
+
+E22 relevance, keyword:  "sunset"  [order_by="relevance"]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+E23 resourceid ASC:  "sunset"  [order_by="resourceid", sort="ASC"]
+    core:   total=5 refs=[1,8,12,36,37]
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]
+    => SAME
+
+---- other arguments
+
+E30 recent day limit 30:  ""  [daylimit="30"]
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+E31 access_override:  "sunset"  [access_override=true]
+    core:   total=10 refs=[1,8,9,10,11,12,13,30,36,37]  (order [8,1,37,36,30,13,12,11,10,9])
+    plugin: SERVED by Typesense  total=10 refs=[1,8,9,10,11,12,13,30,36,37]  (order [8,1,37,36,30,13,12,11,10,9])
+    => SAME
+
+E32 ignore_filters:  "sunset"  [ignore_filters=true]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=8 refs=[1,8,9,10,12,30,36,37]  (order [8,1,37,36,30,12,10,9])
+    => DIFFERENT
+
+E33 ignore_filters + access_override, all states (openai_gpt job):  "!hasdata8"  [archive="-2,-1,0,1,2,3", fetchrows=-1, access_override=true, ignore_filters=true]
+    core:   total=34 refs=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,19,21,22,23,24,25,26,28,29,30,31,32,33,34,35,36,37]
+    plugin: SERVED by Typesense  total=34 refs=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,19,21,22,23,24,25,26,28,29,30,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,30,29,28,26,25,24,23,22,21,19,18,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1])
+    => same set, different order
+
+E34 editable_only:  "sunset"
+    core:   total=0 refs=[]
+    plugin: fell back to core
+    => —
+
+E35 fetchrows int 2 (padded):  "sunset"  [fetchrows=2]
+    core:   total=5 refs=[1,8]  (order [8,1])
+    plugin: SERVED by Typesense  total=5 refs=[1,8]  (order [8,1])
+    => SAME
+
+E36 fetchrows -1:  "sunset"  [fetchrows=-1]
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+E37 fetchrows [1,1]:  "sunset"  [order_by="resourceid", fetchrows=[1,1]]
+    core:   total=5 refs=[36]
+    plugin: SERVED by Typesense  total=5 refs=[36]
+    => SAME
+
+E38 refs only, int fetchrows:  "sunset"  [fetchrows=2]
+    core:   total=2 refs=[1,8]  (order [8,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,8]  (order [8,1])
+    => SAME
+
+E39 count only:  "sunset"  [fetchrows=[0,0]]
+    core:   total=5 refs=[]
+    plugin: SERVED by Typesense  total=5 refs=[]
+    => SAME
+
+E40 offset beyond the end:  "sunset"  [fetchrows=[100,48]]
+    core:   total=5 refs=[]
+    plugin: SERVED by Typesense  total=5 refs=[]
+    => SAME

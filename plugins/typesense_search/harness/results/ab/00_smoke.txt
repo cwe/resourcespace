@@ -1,0 +1,40 @@
+node 204   field 3   "~en:Germany~fr:Allemagne"                 => germany@0 allemagne@0
+node 302   field 1   "modern art"                               => modern@0 art@1
+node 1000  field 96  "placeholder"                              => 
+node 1003  field 12  "2024-05-17"                               => 2024@0 05@1 17@2
+node 1004  field 51  "IMG_1234.jpg"                             => img@0 1234@1 123@1 234@1 jpg@2
+node 1005  field 90  "100"                                      => 100@0
+node 1008  field 12  "2024-02-10"                               => 2024@0 02@1 10@2
+node 1009  field 51  "dog_photo-1.jpg"                          => jpg@3 dog@0 photo@1 pho@1 hot@1 oto@1 phot@1 hoto@1 1@2
+node 1010  field 90  "50"                                       => 50@0
+node 1013  field 12  "2023-11-30"                               => 2023@0 11@1 30@2
+node 1014  field 51  "yorkshireSculpturePark.pdf"               => sculpture@0 yorkshiresculpturepark@0 yor@0 ork@0 rks@0 ksh@0 shi@0 hir@0 ire@0 res@0 esc@0 scu@0 cul@0 ulp@0 lpt@0 ptu@0 tur@0 ure@0 rep@0 epa@0 par@0 ark@0 york@0 orks@0 rksh@0 kshi@0 shir@0 hire@0 ires@0 resc@0 escu@0 scul@0 culp@0 ulpt@0 lptu@0 ptur@0 ture@0 urep@0 repa@0 epar@0 park@0 yorks@0 orksh@0 rkshi@0 kshir@0 shire@0 hires@0 iresc@0 rescu@0 escul@0 sculp@0 culpt@0 ulptu@0 lptur@0 pture@0 turep@0 urepa@0 repar@0 epark@0 yorksh@0 orkshi@0 rkshir@0 kshire@0 shires@0 hiresc@0 irescu@0 rescul@0 esculp@0 sculpt@0 culptu@0 ulptur@0 lpture@0 pturep@0 turepa@0 urepar@0 repark@0 yorkshi@0 orkshir@0 rkshire@0 kshires@0 shiresc@0 hirescu@0 irescul@0 resculp@0 esculpt@0 sculptu@0 culptur@0 ulpture@0 lpturep@0 pturepa@0 turepar@0 urepark@0 yorkshir@0 orkshire@0 rkshires@0 kshiresc@0 shirescu@0 hirescul@0 iresculp@0 resculpt@0 esculptu@0 sculptur@0 culpture@0 ulpturep@0 lpturepa@0 pturepar@0 turepark@0 yorkshire@0 orkshires@0 rkshiresc@0 kshirescu@0 shirescul@0 hiresculp@0 iresculpt@0 resculptu@0 esculptur@0 culpturep@0 ulpturepa@0 lpturepar@0 pturepark@0 yorkshires@0 orkshiresc@0 rkshirescu@0 kshirescul@0 shiresculp@0 hiresculpt@0 iresculptu@0 resculptur@0 esculpture@0 sculpturep@0 culpturepa@0 ulpturepar@0 lpturepark@0 yorkshiresc@0 orkshirescu@0 rkshirescul@0 kshiresculp@0 shiresculpt@0 hiresculptu@0 iresculptur@0 resculpture@0 esculpturep@0 sculpturepa@0 culpturepar@0 ulpturepark@0 yorkshirescu@0 orkshirescul@0 rkshiresculp@0 kshiresculpt@0 shiresculptu@0 hiresculptur@0 iresculpture@0 resculpturep@0 esculpturepa@0 sculpturepar@0 culpturepark@0 yorkshirescul@0 orkshiresculp@0 rkshiresculpt@0 kshiresculptu@0 shiresculptur@0 hiresculpture@0 iresculpturep@0 resculpturepa@0 esculpturepar@0 sculpturepark@0 yorkshiresculp@0 orkshiresculpt@0 rkshiresculptu@0 kshiresculptur@0 shiresculpture@0 hiresculpturep@0 iresculpturepa@0 resculpturepar@0 esculpturepark@0 yorkshiresculpt@0 orkshiresculptu@0 rkshiresculptur@0 kshiresculpture@0 shiresculpturep@0 hiresculpturepa@0 iresculpturepar@0 resculpturepark@0 yorkshiresculptu@0 orkshiresculptur@0 rkshiresculpture@0 kshiresculpturep@0 shiresculpturepa@0 hiresculpturepar@0 iresculpturepark@0 yorkshiresculptur@0 orkshiresculpture@0 rkshiresculpturep@0 kshiresculpturepa@0 shiresculpturepar@0 hiresculpturepark@0 yorkshiresculpture@0 orkshiresculpturep@0 rkshiresculpturepa@0 kshiresculpturepar@0 shiresculpturepark@0 yorkshiresculpturep@0 orkshiresculpturepa@0 rkshiresculpturepar@0 kshiresculpturepark@0 yorkshiresculpturepa@0 orkshiresculpturepar@0 rkshiresculpturepark@0 yorkshiresculpturepar@0 orkshiresculpturepark@0 pdf@1
+node 1015  field 90  "12.5"                                     => 12@0 5@1
+node 1018  field 12  "2024"                                     => 2024@0
+node 1019  field 92  "<p>Hello <strong>world<\/strong> of <a hr" => art@7 hello@0 world@1 https@3 example@4 com@5 gallery@6 galleries@8
+node 1022  field 12  "2022-06-01"                               => 2022@0 06@1 01@2
+node 1025  field 12  "2021-01-01"                               => 01@1 01@2 2021@0
+node 1027  field 12  "2020-03-03"                               => 2020@0 03@1 03@2
+node 1029  field 12  "2019-09-09"                               => 2019@0 09@1 09@2
+node 1036  field 12  "2024-03-01"                               => 2024@0 01@2 03@1
+node 1040  field 90  "250"                                      => 250@0
+node 1042  field 90  "abc"                                      => abc@0
+node 1050  field 94  "legacy landscape notes"                   => landscape@1 notes@2 legacy@0
+node 1058  field 96  "zebra crossing"                           => 
+keywords in table: 350, node_keyword rows: 480
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+S1:  "sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+S2:  "harbour"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+S3:  ""
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,1,4,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => same set, different order

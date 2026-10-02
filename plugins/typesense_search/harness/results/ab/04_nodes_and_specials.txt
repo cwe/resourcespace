@@ -1,0 +1,247 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ A/B: NODES ################
+
+C1 single node:  "@@201"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+C2 OR within a field:  "@@201@@203"
+    core:   total=3 refs=[1,3,4]  (order [1,4,3])
+    plugin: SERVED by Typesense  total=3 refs=[1,3,4]  (order [4,3,1])
+    => same set, different order
+
+C3 AND across words:  "@@201 @@301"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+C4 NOT node:  "@@!201"
+    core:   total=27 refs=[2,3,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=27 refs=[2,3,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,3,2])
+    => same set, different order
+
+C5 node + NOT node:  "@@301 @@!302"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+C6 node + keyword:  "@@201 sunset"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+C7 category tree parent:  "@@401"
+    core:   total=1 refs=[24]
+    plugin: SERVED by Typesense  total=1 refs=[24]
+    => SAME
+
+C8 category tree child:  "@@402"
+    core:   total=1 refs=[24]
+    plugin: SERVED by Typesense  total=1 refs=[24]
+    => SAME
+
+C9 OR word with $category_tree_search_use_and_logic:  "@@201@@301"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+C10 node-only search, relevance order:  "@@301"
+    core:   total=2 refs=[1,4]
+    plugin: SERVED by Typesense  total=2 refs=[1,4]  (order [4,1])
+    => same set, different order
+
+################ A/B: SPECIAL SEARCHES ################
+
+D1 own collection, collection order:  "!collection5"  [order_by="collection", sort="ASC"]
+    core:   total=3 refs=[1,2,3]  (order [3,1,2])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,3]  (order [3,1,2])
+    => SAME
+
+D2 own collection, collection order DESC:  "!collection5"  [order_by="collection", sort="DESC"]
+    core:   total=3 refs=[1,2,3]  (order [2,1,3])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,3]  (order [2,1,3])
+    => SAME
+
+D3 own collection, relevance:  "!collection5"
+    core:   total=3 refs=[1,2,3]  (order [2,1,3])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,3]  (order [3,2,1])
+    => same set, different order
+
+D4 collection + keyword:  "!collection5 launch"  [order_by="collection", sort="ASC"]
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=1 refs=[3]
+    => SAME
+
+D5 another user's private collection:  "!collection6"  [order_by="collection"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 6 not readable))
+    => —
+
+D6 selection collection:  "!collection7"  [order_by="collection"]
+    core:   total=1 refs=[2]
+    plugin: fell back to core (unsupported (collection 7 is not indexed (selection/upload collection)))
+    => —
+
+D7 featured collection:  "!collection30"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[1,7]
+    plugin: SERVED by Typesense  total=2 refs=[1,7]
+    => SAME
+
+D8 public collection:  "!collection40"  [order_by="collection", sort="ASC"]
+    core:   total=2 refs=[2,8]
+    plugin: SERVED by Typesense  total=2 refs=[2,8]
+    => SAME
+
+D9 collection that does not exist:  "!collection424242"  [order_by="collection"]
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (collection 424242 not readable))
+    => —
+
+D10 collection count only:  "!collection5"  [fetchrows=[0,0]]
+    core:   total=3 refs=[]
+    plugin: SERVED by Typesense  total=3 refs=[]
+    => SAME
+
+D11 !last:  "!last5"
+    core:   total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => SAME
+
+D12 !last + keyword (space) -> 1000:  "!last2 sunset"
+    core:   total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [37,36,12,8,1])
+    => SAME
+
+D13 !last + keyword (comma):  "!last2, sunset"
+    core:   total=2 refs=[36,37]  (order [37,36])
+    plugin: SERVED by Typesense  total=2 refs=[36,37]  (order [37,36])
+    => SAME
+
+D14 !last, lower-case sort:  "!last5"  [sort="desc"]
+    core:   total=5 refs=[33,34,35,36,37]
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]
+    => SAME
+
+D15 !last, date order:  "!last5"  [order_by="date"]
+    core:   total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => SAME
+
+D16 !last + restypes (documents only):  "!last5"  [restypes="2"]
+    core:   total=5 refs=[3,5,14,25,35]  (order [35,25,14,5,3])
+    plugin: SERVED by Typesense  total=5 refs=[33,34,35,36,37]  (order [37,36,35,34,33])
+    => DIFFERENT
+
+D17 !list:  "!list1:2:9:11:99"
+    core:   total=3 refs=[1,2,9]  (order [2,1,9])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,9]  (order [9,2,1])
+    => same set, different order
+
+D18 !listall:  "!listall1:2:9"
+    core:   total=3 refs=[1,2,9]  (order [2,1,9])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,9]  (order [9,2,1])
+    => same set, different order
+
+D19 !list + node:  "!list1:2,@@201"
+    core:   total=1 refs=[1]
+    plugin: SERVED by Typesense  total=1 refs=[1]
+    => SAME
+
+D20 !resource:  "!resource8"
+    core:   total=1 refs=[8]
+    plugin: SERVED by Typesense  total=1 refs=[8]
+    => SAME
+
+D21 !resource, archived:  "!resource9"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+D22 !contributions (other user), all states:  "!contributions9"  [archive="-2,-1,0"]
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+D23 !contributions (user 1):  "!contributions1"  [archive="0"]
+    core:   total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [8,2,1,4,3,14,5,6,7,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => same set, different order
+
+D24 !hasdata:  "!hasdata18"
+    core:   total=10 refs=[1,2,3,4,5,6,18,21,25,35]  (order [2,1,4,3,5,6,35,25,21,18])
+    plugin: SERVED by Typesense  total=10 refs=[1,2,3,4,5,6,18,21,25,35]  (order [35,25,21,18,6,5,4,3,2,1])
+    => same set, different order
+
+D25 !hasdata on a non-indexed field:  "!hasdata96"
+    core:   total=1 refs=[29]
+    plugin: SERVED by Typesense  total=1 refs=[29]
+    => SAME
+
+D26 !hasdata + keyword:  "!hasdata18 car"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,2]  (order [2,1])
+    => SAME
+
+D27 !archivepending:  "!archivepending"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+D28 !userpending:  "!userpending"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+D29 !related (no plugin mode):  "!related1"
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (special search !related not handled by Typesense))
+    => —
+    (core SQL did not run on SQLite: Unable to prepare statement: 5th ORDER BY term does not match any column in the result set <<<  SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rati)
+
+D30 !duplicates (no plugin mode):  "!duplicates"
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (special search !duplicates not handled by Typesense))
+    => —
+    (core SQL did not run on SQLite: Unable to prepare statement: ambiguous column name: ref <<< SELECT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extensi)
+
+D31 !unused (no plugin mode):  "!unused"
+    core:   total=22 refs=[6,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [14,6,37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,12])
+    plugin: fell back to core (unsupported (special search !unused not handled by Typesense))
+    => —
+
+D32 !properties (no plugin mode):  "!propertiescu:9"
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (special search !propertiescu not handled by Typesense))
+    => —
+
+D33 !nopreview (no plugin mode):  "!nopreview"
+    core:   total=0 refs=[]
+    plugin: fell back to core (unsupported (special search !nopreview not handled by Typesense))
+    => —
+
+D34 !list + restypes:  "!list1:2:3"  [restypes="2"]
+    core:   total=1 refs=[3]
+    plugin: SERVED by Typesense  total=3 refs=[1,2,3]  (order [3,2,1])
+    => DIFFERENT
+
+D35 !contributions + restypes:  "!contributions1"  [restypes="2"]
+    core:   total=5 refs=[3,5,14,25,35]  (order [3,14,5,35,25])
+    plugin: SERVED by Typesense  total=29 refs=[1,2,3,4,5,6,7,8,12,14,15,16,18,19,21,22,23,24,25,26,28,29,31,32,33,34,35,36,37]  (order [37,36,35,34,33,32,31,29,28,26,25,24,23,22,21,19,18,16,15,14,12,8,7,6,5,4,3,2,1])
+    => DIFFERENT
+
+D40 bare number, $config_search_for_number:  "8"
+    core:   total=1 refs=[8]
+    plugin: SERVED by Typesense  total=1 refs=[8]
+    => SAME
+
+D41 bare number that is archived:  "9"
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+D42 bare number, default config:  "8"
+    core:   total=2 refs=[8,21]
+    plugin: fell back to core (unsupported (unsupported sort order: (r.ref='8') desc,score DESC, user_rating DESC, total_hit_count DESC , field12 DESC,  r.ref DESC))
+    => —

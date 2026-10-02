@@ -1,0 +1,68 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ A/B: FREE TEXT, second pass ################
+
+A40 uppercase:  "SUNSET"
+    core:   total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    plugin: SERVED by Typesense  total=5 refs=[1,8,12,36,37]  (order [8,1,37,36,12])
+    => SAME
+
+A45 last word is a prefix of other words:  "car"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=3 refs=[1,2,33]  (order [2,1,33])
+    => DIFFERENT
+
+A46 two words, last one a prefix:  "red car"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,2]
+    => same set, different order
+
+A47 two words, first one a prefix:  "car red"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,2]
+    => same set, different order
+
+A48 word beyond the first 500 characters (keyword exists elsewhere):  "zeppelin"
+    core:   total=1 refs=[32]
+    plugin: SERVED by Typesense  total=2 refs=[6,32]  (order [32,6])
+    => DIFFERENT
+
+A49 html tag name (keyword exists elsewhere):  "strong"
+    core:   total=1 refs=[34]
+    plugin: SERVED by Typesense  total=2 refs=[4,34]  (order [34,4])
+    => DIFFERENT
+
+A50 html: word after a tag (keyword exists elsewhere):  "hello"
+    core:   total=2 refs=[4,35]
+    plugin: SERVED by Typesense  total=1 refs=[35]
+    => DIFFERENT
+
+A51 translated option + another word:  "germany gate"
+    core:   total=1 refs=[7]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => DIFFERENT
+
+A52 translated option, last word:  "gate germany"
+    core:   total=1 refs=[7]
+    plugin: SERVED by Typesense  total=1 refs=[7]
+    => SAME
+
+A53 translated option, second language + word:  "allemagne gate"
+    core:   total=1 refs=[7]
+    plugin: SERVED by Typesense  total=1 refs=[7]
+    => SAME
+
+A54 quoted phrase, last word prefix?:  "\"red spo\""
+    core:   total=0 refs=[]
+    plugin: SERVED by Typesense  total=0 refs=[]
+    => SAME
+
+A55 negative prefix?:  "launch -shi"
+    core:   total=1 refs=[4]
+    plugin: SERVED by Typesense  total=1 refs=[4]
+    => SAME
+
+A56 keyword then negative:  "red -spo"
+    core:   total=2 refs=[1,2]  (order [2,1])
+    plugin: SERVED by Typesense  total=2 refs=[1,2]  (order [2,1])
+    => SAME

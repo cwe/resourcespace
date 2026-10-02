@@ -1,0 +1,9 @@
+Typesense index built by the plugin's reindex functions: {"resources":34,"failed":0,"errors":[],"memberships":10,"attributes":34,"grants":4}
+
+################ get_resource_access() FOR A USER WITH A SEARCH FILTER ################
+(filter 7 = resource must have country France)
+resource 1 (France)                                                           core: open   |   plugin: open
+resource 2 (United Kingdom)                                                   core: CONFIDENTIAL (denied)   |   plugin: CONFIDENTIAL (denied)
+resource 1 after France is removed from it (no reindex)                       core: CONFIDENTIAL (denied)   |   plugin: open
+resource 2 after France is added to it (no reindex)                           core: open   |   plugin: CONFIDENTIAL (denied)
+resource 60, uploaded after the last reindex, France                          core: open   |   plugin: CONFIDENTIAL (denied)
