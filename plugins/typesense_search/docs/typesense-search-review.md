@@ -439,3 +439,60 @@ rows for the returned refs from MySQL with core's own column list.
 It always leaves these to core: `returnsql`, disk-usage totals, `editable_only` and smart-collection searches
 ([`all.php:88`](../hooks/all.php:88)). Keyword usage statistics are still logged for searches the plugin serves
 ([`do_search.php:374`](../../../include/do_search.php:374), read from the code).
+
+---
+
+## Appendix C: findings from the search catalogue (6 October 2026)
+
+The search catalogue ([core-search-catalogue.md](core-search-catalogue.md)) sent every form of search core
+accepts through the API on the test system, as both test users, 275 rows in all. These are the items it added
+to the findings above. Numbers are test-system totals, core / plugin; the letters and numbers in brackets are
+catalogue rows.
+
+### Core
+
+| Ref | Search | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| Core 5 | `!empty` by field name: `!emptynumberfield` | Binds the name as an integer, which MySQL reads as 0, so it matches the first field whose name is not a number: field 1, keywords. `!emptynosuchfield` does the same instead of the intended "invalid !empty search" exit | Declines | 100,004 / 0 for both; `!empty170` is 100,850 (F45, F46, F49) | [`do_search_keywords.php:316`](../../../include/do_search_keywords.php:316) |
+| Core 6 | `!empty` of a field that belongs to one resource type: `!empty95` | Meant to limit candidates to that type; the type condition sits inside the NOT IN subquery, so every resource of the other types comes back | Declines | 100,457 / 0, where at most 5,400 are of type 5 (F47) | [`do_search_keywords.php:566`](../../../include/do_search_keywords.php:566) |
+| Core 7 | `!last` followed by a space and a term: `!last100 sculpture` | Reads "100 sculpture" as the number; not an integer, so 1000. With a comma, `!last100, sculpture`, it is 100 | Same as core | 1,000 / 1,000, and 100 / 100 with the comma (F4, F69, F68) | [`search_functions.php:1127`](../../../include/search_functions.php:1127) |
+| Core 8 | A sort by a metadata field that is not a resource-table join column: `order_by=field170` | Swaps the order for resourceid, then the field branch overwrites that entry with "resourceid DESC" as a column name: an SQL error, so no results | Declines the sort | 0 / 0 for `sculpture`, which has 49,468 (G26, G43) | [`search_functions.php:3006`](../../../include/search_functions.php:3006), [`search_functions.php:3245`](../../../include/search_functions.php:3245) |
+| Core 9 | OR without a field: `sculpture;landscape` | Looks the whole string up as one keyword: unknown, so a suggestion. A field search with the same string (`title:sculpture;landscape`) creates that keyword as a side effect, after which the OR works | Declines | 0 / 0 before, 83,840 / 0 after (A16, B5, H32) | [`do_search_keywords.php:387`](../../../include/do_search_keywords.php:387), [`do_search_keywords.php:429`](../../../include/do_search_keywords.php:429) |
+| Core 10 | A search with no whitespace: `sculpture,landscape` | Kept as one keyword; the comma then counts as punctuation, so it becomes the phrase "sculpture landscape" | Two words | 22 / 34,409; with a space after the comma 34,408 / 34,409 (I2, A3) | [`do_search.php:137`](../../../include/do_search.php:137), [`do_search_keywords.php:286`](../../../include/do_search_keywords.php:286) |
+
+- **Core 7** also explains `!last100 !collection3808`: the second special search is skipped by the keyword
+  stage, and the space turns the first into `!last1000` (F68).
+- `!related121409 sculpture` ran past the API's 120-second limit on the test system; `!related121409` alone
+  took under a second (F22, F23). A performance point rather than a bug.
+- Two paths in the advanced search form are unreachable rather than wrong: `startdate:` and `enddate:` terms
+  are still assembled ([`search_functions.php:188`](../../../include/search_functions.php:188)) but no page posts
+  those inputs and nothing in `do_search()` handles them (D16); and the branch that strips the first and last
+  characters of a multi-word dropdown value ([`search_functions.php:290`](../../../include/search_functions.php:290))
+  is never used, because dropdowns post node refs (I12).
+- On the test system some option names are stored with a leading byte-order mark, so `materials:bronze` never
+  matches the option by name in core and falls back to a keyword search within the field. The plugin drops the term, which is B3: `materials:bronze,
+  materials:wood` is 0 / 128 (C7).
+
+### Plugin
+
+| Ref | What the user does | Core | Plugin | Measured | Where |
+|---|---|---|---|---|---|
+| B18 | Excludes a phrase: `-"sculpture park"` | Removes the resources with the phrase | Sends the term as it is and Typesense ignores it, so nothing is excluded | 93,979 / 100,862 (A10) | [`query.php:622`](../include/typesense_search_query.php:622) |
+| B19 | Searches a year as a word: `2024` | Dates are indexed as keywords (year, year-month, date), so every date field matches, plus any text | Date values are held only as filter representations, which free text does not search | 10,289 / 0 (A26); `2024, sculpture` 5,477 / 5,476 (H36) | [`query.php:534`](../include/typesense_search_query.php:534), [`functions.php:1300`](../include/typesense_search_functions.php:1300) |
+| B20 | Types a comma with no space: `sculpture,landscape` | One keyword, read as a phrase (Core 10) | Two words | 22 / 34,409; `title:sculpture,landscape` 0 / 25 (I2, I3) | [`query.php:622`](../include/typesense_search_query.php:622) |
+| B21 | Quotes after the colon: `title:"henry moore"` | The tokens are `title:"henry` and `moore"`; the quotes are stripped, so henry in the title and moore anywhere | Takes the quoted value as a phrase in the field | 251 / 1 (B4) | [`query.php:594`](../include/typesense_search_query.php:594) |
+| B22 | An unbalanced quote: `"sculpture` | Drops the quote | Sends it, and Typesense finds nothing | 49,468 / 0 (I8) | [`query.php:558`](../include/typesense_search_query.php:558) |
+| E11 | Date values that are not dates: a five-digit year, a year of 0000, a day of 00 | Compares the text, so they fall inside any range that starts early enough | Not parsed, so not in the index | `date:rangeend2005-12-31` 722 / 652 (D7) | [`functions.php:1753`](../include/typesense_search_functions.php:1753) |
+| E12 | A plain number on a numeric field: `numberfield:42` | A keyword search within the field | Filters the field's string attribute, which a numeric field does not have | 2 / 0 (E6) | [`query.php:780`](../include/typesense_search_query.php:780), [`functions.php:1271`](../include/typesense_search_functions.php:1271) |
+| E13 | A number range on a text field: `title:numrange1\|10` | Accepted for any single-line text field; compares the values as numbers | Filters a numeric attribute the field does not have | 2,937 / 0 (E7) | [`query.php:754`](../include/typesense_search_query.php:754) |
+| E14 | A number alone: `416` | Matches the fragments that the partial index stores for original filenames, plus resource 416 | Fragments are held for field searches only, not for free text | 100 / 0 (A25) | [`functions.php:1330`](../include/typesense_search_functions.php:1330) |
+| H6 | `!lastabc` | 1000 | Reads the command as "lastabc" and declines | 1,000 / 0 (F3) | [`query.php:436`](../include/typesense_search_query.php:436) |
+| H7 | `!LAST100` | Not `!last`, since the prefix test is case-sensitive: an unknown special search, so everything | Lower-cases the name, then re-reads the number case-sensitively: 1000 | 100,862 / 1,000 (I9) | [`last.php:16`](../include/modes/last.php:16), [`search_functions.php:1110`](../../../include/search_functions.php:1110) |
+| H8 | A second special search: `!last100 !collection3808` | Skips the second word | Searches it as text | 1,000 / 0 (F68) | [`query.php:622`](../include/typesense_search_query.php:622), [`do_search_keywords.php:88`](../../../include/do_search_keywords.php:88) |
+
+- **B19** and **E14** are the same gap seen from two sides: words that core's index holds because of how it
+  indexes dates and partial fields are not words to Typesense.
+- **H6**, **H7** and **H8** only arise from hand-typed or API searches.
+
+**To decide:** B18 and B19 affect ordinary searches and belong with theme B's decision; the rest can be accepted
+or declined with the others in H.

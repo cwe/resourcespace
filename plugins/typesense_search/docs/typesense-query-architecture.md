@@ -599,7 +599,7 @@ fallbacks are needed for syntax reasons:
     114,489 / 114,513 / 114,562, equal to a direct POST of the same filter; 48 clauses served, 49
     and 60 vetoed with no request where a direct POST is refused; the `!last` cutoff with a
     1,000-id bucket takes 2 requests.
-    **RS-API A/B (2026-09-29, `standard_user_ts` Typesense-only vs `standard_user_no_ts`, resourceid
+    **RS-API A/B (2026-09-29, a Typesense-only user vs a user without the plugin, resourceid
     ASC, `[0,48]`, archive 0; host on e388faa9, i.e. the hydrate fix but not yet this transport
     change):** node cases match exactly — `@@389` (58,028), `@@389 @@6123` (27,039), `@@388 @@389`
     (0), `@@388@@389` (94,936), `@@!389` alone (42,834), `@@389 @@!388`, `keywords:sculpture`,

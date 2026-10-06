@@ -99,6 +99,10 @@ the server. The cases are in `live/cases.php` and name fields and options of the
 | `live/run.php [label prefix]` | The A/B run. `RS_PAUSE` sets the pause in seconds (default 2); `RS_INSECURE=1` accepts a private TLS certificate. |
 | `live/api.php <ts\|core> <function> [name=value …]` | One API call, for looking up field names, options and collections before writing cases. |
 | `live/db_survey.php` | Read-only survey of the database (`RS_DB_HOST`, `RS_DB_PORT`, `RS_DB_USER`, `RS_DB_PASS`, `RS_DB_NAME`): which fields are indexed, how many values are long, HTML or translated, how the plugin is configured. Only `SELECT`s; one of them scans the node table. |
+| `live/catalogue_values.php` | Read-only survey (same `RS_DB_*` variables, plus `RS_USER_TS` / `RS_USER_CORE` for the test users) of the values the search catalogue examples use: resource types, fields, common keywords, fixed-list options with counts, dates, numbers, collections, users, and the counts behind the special searches. |
+| `live/catalogue.php` | The search catalogue: every form of search core accepts, one case each, with examples from the test database. Data only; read by the two scripts below. |
+| `live/catalogue_run.php [--slow] [--core-only] [--dry] [ids or group letters]` | Sends the catalogue through the API as the core user and, when `RS_USER_TS` is set, the plugin user, and keeps the totals in `results/live/catalogue.json` (merged, so partial runs are fine). Date-field searches are skipped unless `--slow` is given; they take 6 to 8 seconds each in core on that database. `RS_SUB_USERREF_CORE`, `RS_SUB_USERREF_TS`, `RS_SUB_OWNCOLLECTION_CORE` and `RS_SUB_OWNCOLLECTION_TS` fill the `{userref}` and `{owncollection}` placeholders. |
+| `catalogue_table.php` | Writes `../docs/core-search-catalogue.md` from the catalogue and the recorded totals. |
 
 If the plugin's group is in Typesense-only mode, a search the plugin declines comes back empty on that side
 instead of falling back; compare with the local run of the same search to tell the two apart.

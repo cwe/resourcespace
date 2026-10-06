@@ -1,0 +1,1100 @@
+A1  "sculpture"
+    core   total=49468  (557 ms)
+    plugin total=49468  (159 ms)
+    => SAME
+A2  "sculpture landscape"
+    core   total=34408  (1113 ms)
+    plugin total=34409  (127 ms)
+    => DIFFERENT
+A3  "sculpture, landscape"
+    core   total=34408  (636 ms)
+    plugin total=34409  (215 ms)
+    => DIFFERENT
+A4  "SCULPTURE Park"
+    core   total=19680  (693 ms)
+    plugin total=19688  (100 ms)
+    => DIFFERENT
+A5  "sculptures"
+    core   total=49468  (570 ms)
+    plugin total=49468  (86 ms)
+    => SAME
+A6  "\"sculpture\""
+    core   total=49069  (1363 ms)
+    plugin total=0  (59 ms)
+    => DIFFERENT
+A7  "\"sculpture park\""
+    core   total=6883  (805 ms)
+    plugin total=0  (139 ms)
+    => DIFFERENT
+A8  "\"black and white\""
+    core   total=3179  (218 ms)
+    plugin total=3179  (70 ms)
+    => SAME
+A9  "-landscape"
+    core   total=32045  (4781 ms)
+    plugin total=32078  (63 ms)
+    => DIFFERENT
+A10  "-\"sculpture park\""
+    core   total=93979  (10248 ms)
+    plugin total=100862  (98 ms)
+    => DIFFERENT
+A11  "sculpt*"
+    core   total=51007  (2075 ms)
+    plugin total=49610  (169 ms)
+    => DIFFERENT
+A12  "*scape"
+    core   total=68601  (2117 ms)
+    plugin total=381  (65 ms)
+    => DIFFERENT
+A13  "sc*pture"
+    core   total=69679  (3038 ms)
+    plugin total=0  (106 ms)
+    => DIFFERENT
+A14  "so*"
+    core   total=15618  (1127 ms)
+    plugin total=6676  (76 ms)
+    => DIFFERENT
+A15  "land*;sun*"
+    core   total=71530  (2185 ms)
+    plugin total=0  (86 ms)
+    => DIFFERENT
+A16  "sculpture;landscape"
+    core   total=0  (44 ms)
+    plugin total=0  (43 ms)
+    => SAME
+A17  "the"
+    core   total=100862  (777 ms)
+    plugin total=32537  (103 ms)
+    => DIFFERENT
+A18  "the sculpture"
+    core   total=49468  (584 ms)
+    plugin total=17228  (116 ms)
+    => DIFFERENT
+A19  "black-and-white"
+    core   total=3179  (78 ms)
+    plugin total=3194  (67 ms)
+    => DIFFERENT
+A20  "atkinson's"
+    core   total=2  (47 ms)
+    plugin total=3  (64 ms)
+    => DIFFERENT
+A21  "antony"
+    core   total=1491  (77 ms)
+    plugin total=205  (66 ms)
+    => DIFFERENT
+A22  "anthony"
+    core   total=1491  (78 ms)
+    plugin total=1300  (91 ms)
+    => DIFFERENT
+A23  "document"
+    core   total=490  (65 ms)
+    plugin total=375  (126 ms)
+    => DIFFERENT
+A24  "admin"
+    core   total=13  (52 ms)
+    plugin total=16  (135 ms)
+    => DIFFERENT
+A25  "416"
+    core   total=100  (65 ms)
+    plugin total=0  (114 ms)
+    => DIFFERENT
+A26  "2024"
+    core   total=10289  (469 ms)
+    plugin total=0  (55 ms)
+    => DIFFERENT
+A27  "\"@FULL_TEXT:distant island\""
+    core   total=956  (162 ms)
+    plugin total=0  (40 ms)
+    => DIFFERENT
+A28  "\"@FULL_TEXT:+distant +island\""
+    core   total=9  (157 ms)
+    plugin total=0  (155 ms)
+    => DIFFERENT
+A29  "\"@FULL_TEXT:[QUOTES]distant island[QUOTES]\""
+    core   total=8  (50 ms)
+    plugin total=0  (52 ms)
+    => DIFFERENT
+A30  "sculptre"
+    core   total=1  (92 ms)
+    plugin total=1  (191 ms)
+    => SAME
+A31  "sculpture zzzzqqq"
+    core   total=0  (49 ms)
+    plugin total=0  (51 ms)
+    => SAME
+A32  "*"
+    core   total=100862  (782 ms)
+    plugin total=100862  (85 ms)
+    => SAME
+A33  ""  [order_by=resourceid]
+    core   total=100862  (812 ms)
+    plugin total=100862  (66 ms)
+    => SAME
+B1  "title:sculpture"
+    core   total=4226  (252 ms)
+    plugin total=4226  (113 ms)
+    => SAME
+B2  "title:henry moore"
+    core   total=251  (147 ms)
+    plugin total=251  (72 ms)
+    => SAME
+B3  "\"title:henry moore\""
+    core   total=251  (114 ms)
+    plugin total=0  (62 ms)
+    => DIFFERENT
+B4  "title:\"henry moore\""
+    core   total=251  (97 ms)
+    plugin total=1  (94 ms)
+    => DIFFERENT
+B5  "title:sculpture;landscape"
+    core   total=5120  (190 ms)
+    plugin total=0  (163 ms)
+    => DIFFERENT
+B6  "title:sculpt*"
+    core   total=4522  (2008 ms)
+    plugin total=4522  (56 ms)
+    => SAME
+B7  "title:*scape"
+    core   total=921  (1506 ms)
+    plugin total=0  (44 ms)
+    => DIFFERENT
+B8  "credit:wilde"
+    core   total=18879  (528 ms)
+    plugin total=18879  (77 ms)
+    => SAME
+B9  "photographer/videographer:wilde"
+    core   total=33517  (983 ms)
+    plugin total=100862  (72 ms)
+    => DIFFERENT
+B10  "exhibitiontitle:fabric-ation"
+    core   total=1453  (143 ms)
+    plugin total=1453  (55 ms)
+    => SAME
+B11  "dimensions:16.5x16.5cm"
+    core   total=20  (108 ms)
+    plugin total=20  (53 ms)
+    => SAME
+B12  "camera:nikon"
+    core   total=0  (142 ms)
+    plugin total=0  (48 ms)
+    => SAME
+B13  "accessibilityalttext:island"
+    core   total=0  (138 ms)
+    plugin total=0  (48 ms)
+    => SAME
+B14  "originalfilename:ksho"
+    core   total=665  (773 ms)
+    plugin total=665  (135 ms)
+    => SAME
+B15  "foo:sculpture"
+    core   total=25  (219 ms)
+    plugin total=25  (75 ms)
+    => SAME
+B16  "-title:sculpture"
+    core   total=49241  (6480 ms)
+    plugin total=0  (62 ms)
+    => DIFFERENT
+B17  "title:-sculpture"
+    core   total=100862  (1676 ms)
+    plugin total=4226  (129 ms)
+    => DIFFERENT
+B18  "title:the"
+    core   total=100862  (722 ms)
+    plugin total=10564  (64 ms)
+    => DIFFERENT
+B19  "yearai:2025"
+    core   total=0  (56 ms)
+    plugin total=0  (47 ms)
+    => SAME
+B20  "title:sculpture, title:park"
+    core   total=580  (136 ms)
+    plugin total=580  (76 ms)
+    => SAME
+B21  "title:sculpture, credit:wilde"
+    core   total=316  (151 ms)
+    plugin total=316  (65 ms)
+    => SAME
+C1  "orientation:landscape"
+    core   total=58028  (2012 ms)
+    plugin total=58028  (67 ms)
+    => SAME
+C2  "\"usagerights:Social media\""
+    core   total=148  (97 ms)
+    plugin total=0  (55 ms)
+    => DIFFERENT
+C3  "usagerights:social media"
+    core   total=148  (153 ms)
+    plugin total=4763  (71 ms)
+    => DIFFERENT
+C4  "usagerights:social"
+    core   total=148  (85 ms)
+    plugin total=100862  (72 ms)
+    => DIFFERENT
+C5  "usagerights:soc*"
+    core   total=148  (159 ms)
+    plugin total=100862  (129 ms)
+    => DIFFERENT
+C6  "materials:bronze;wood"
+    core   total=128  (54 ms)
+    plugin total=128  (123 ms)
+    => SAME
+C7  "materials:bronze, materials:wood"
+    core   total=0  (57 ms)
+    plugin total=128  (110 ms)
+    => DIFFERENT
+C8  "\"source:Digital Camera\""
+    core   total=2224  (84 ms)
+    plugin total=0  (154 ms)
+    => DIFFERENT
+C9  "source:digital"
+    core   total=0  (83 ms)
+    plugin total=100862  (156 ms)
+    => DIFFERENT
+C10  "yspactivity:learning"
+    core   total=11671  (1104 ms)
+    plugin total=11671  (71 ms)
+    => SAME
+C11  "\"artistname:Henry Moore\""
+    core   total=2713  (99 ms)
+    plugin total=0  (76 ms)
+    => DIFFERENT
+C12  "artistname:moore"
+    core   total=2713  (105 ms)
+    plugin total=100862  (100 ms)
+    => DIFFERENT
+C13  "@@389"
+    core   total=58028  (968 ms)
+    plugin total=58028  (59 ms)
+    => SAME
+C14  "@@389@@388"
+    core   total=94936  (3628 ms)
+    plugin total=94936  (66 ms)
+    => SAME
+C15  "@@425, @@389"
+    core   total=49  (48 ms)
+    plugin total=49  (59 ms)
+    => SAME
+C16  "@@389 @@425"
+    core   total=49  (46 ms)
+    plugin total=49  (59 ms)
+    => SAME
+C17  "@@!432"
+    core   total=100461  (2047 ms)
+    plugin total=100461  (155 ms)
+    => SAME
+C18  "@@!389@@388"
+    core   total=94936  (1735 ms)
+    plugin total=94936  (74 ms)
+    => SAME
+C19  "@@999999999"
+    core   total=0  (41 ms)
+    plugin total=0  (105 ms)
+    => SAME
+C20  "@@17913"
+    core   total=264  (45 ms)
+    plugin total=264  (139 ms)
+    => SAME
+C21  "@@2997"
+    core   total=33333  (1558 ms)
+    plugin total=33333  (66 ms)
+    => SAME
+C22  "@@460"
+    core   total=37603  (1607 ms)
+    plugin total=37603  (58 ms)
+    => SAME
+C23  "orientation:landscape, @@388"
+    core   total=0  (885 ms)
+    plugin total=0  (49 ms)
+    => SAME
+C24  "materials:bronze;wood"
+    core   total=128  (45 ms)
+    plugin total=128  (132 ms)
+    => SAME
+D1  "date:2024"
+    core   total=8838  (6886 ms)
+    plugin total=8838  (113 ms)
+    => SAME
+D2  "date:2024-05"
+    core   total=572  (132 ms)
+    plugin total=572  (64 ms)
+    => SAME
+D3  "date:2024-05-31"
+    core   total=317  (120 ms)
+    plugin total=317  (57 ms)
+    => SAME
+D4  "date:2017-05-10"
+    core   total=626  (109 ms)
+    plugin total=626  (56 ms)
+    => SAME
+D5  "date:rangestart2024-01-01end2024-02-29"
+    core   total=822  (7712 ms)
+    plugin total=854  (59 ms)
+    => DIFFERENT
+D6  "date:rangestart2026-01-01"
+    core   total=2006  (6628 ms)
+    plugin total=2006  (84 ms)
+    => SAME
+D7  "date:rangeend2005-12-31"
+    core   total=722  (6433 ms)
+    plugin total=652  (57 ms)
+    => DIFFERENT
+D8  "date:rangestart2024-00-00end2024-12-99"
+    core   total=8838  (7961 ms)
+    plugin total=21151  (125 ms)
+    => DIFFERENT
+D9  "date:rangestart2024-01-01end2024-02-31"
+    core   total=822  (7805 ms)
+    plugin total=21151  (63 ms)
+    => DIFFERENT
+D10  "basicyear:2024"
+    core   total=8838  (6689 ms)
+    plugin total=0  (81 ms)
+    => DIFFERENT
+D11  "basicmonth:05"
+    core   total=9511  (6702 ms)
+    plugin total=0  (126 ms)
+    => DIFFERENT
+D12  "basicday:05"
+    core   total=3227  (6703 ms)
+    plugin total=0  (81 ms)
+    => DIFFERENT
+D13  "basicyear:2025, basicmonth:06"
+    core   total=1542  (6531 ms)
+    plugin total=0  (124 ms)
+    => DIFFERENT
+D14  "basicyear:2025, basicmonth:06, basicday:05"
+    core   total=256  (55 ms)
+    plugin total=0  (62 ms)
+    => DIFFERENT
+D15  "date:nnnn|05"
+    core   total=9511  (6574 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+D16  "startdate:2024-01-01, enddate:2024-12-31"
+    core   total=0  (54 ms)
+    plugin total=0  (59 ms)
+    => SAME
+D17  "expirydate:2029-05-31"
+    core   total=224  (57 ms)
+    plugin total=224  (157 ms)
+    => SAME
+D18  "expirydate:2029"
+    core   total=3171  (87 ms)
+    plugin total=3171  (90 ms)
+    => SAME
+D19  "expirydate:rangestart2029-01-01end2029-12-31"
+    core   total=3171  (787 ms)
+    plugin total=3171  (59 ms)
+    => SAME
+D20  "dateofartwork:2025"
+    core   total=2593  (81 ms)
+    plugin total=2593  (61 ms)
+    => SAME
+D21  "eventdate:2022-04"
+    core   total=509  (57 ms)
+    plugin total=509  (58 ms)
+    => SAME
+D22  "datephototaken:2024"
+    core   total=3676  (6537 ms)
+    plugin total=0  (44 ms)
+    => DIFFERENT
+D23  "datephototaken:2012-01-26"
+    core   total=4549  (137 ms)
+    plugin total=0  (128 ms)
+    => DIFFERENT
+D24  "daterangetest:2020"
+    core   total=0  (45 ms)
+    plugin total=2  (58 ms)
+    => DIFFERENT
+D25  "daterangetest:rangestart2020-01-01end2021-12-31"
+    core   total=1  (79 ms)
+    plugin total=2  (55 ms)
+    => DIFFERENT
+D26  "date:2024, date:2025"
+    core   total=0  (7157 ms)
+    plugin total=0  (49 ms)
+    => SAME
+D27  "date:2024;2025"
+    core   total=0  (133 ms)
+    plugin total=0  (43 ms)
+    => SAME
+D28  "copyrightexpirationd:2030"
+    core   total=47  (49 ms)
+    plugin total=47  (59 ms)
+    => SAME
+E1  "numberfield:numrange0|100"
+    core   total=9  (46 ms)
+    plugin total=9  (59 ms)
+    => SAME
+E2  "numberfield:numrange42|"
+    core   total=2  (48 ms)
+    plugin total=2  (62 ms)
+    => SAME
+E3  "numberfield:numrange|100"
+    core   total=1  (42 ms)
+    plugin total=1  (110 ms)
+    => SAME
+E4  "numberfield:numrangeneg50|neg1"
+    core   total=2  (71 ms)
+    plugin total=2  (92 ms)
+    => SAME
+E5  "numberfield:numrange3|3.14"
+    core   total=1  (77 ms)
+    plugin total=1  (82 ms)
+    => SAME
+E6  "numberfield:42"
+    core   total=2  (55 ms)
+    plugin total=0  (119 ms)
+    => DIFFERENT
+E7  "title:numrange1|10"
+    core   total=2937  (115 ms)
+    plugin total=0  (65 ms)
+    => DIFFERENT
+F1  "!last100"
+    core   total=100  (46 ms)
+    plugin total=100  (156 ms)
+    => SAME
+F2  "!last5"  [fetchrows=0,5]
+    core   total=5 first=[127607,127608,127609,127610,127611]  (49 ms)
+    plugin total=5 first=[127607,127608,127609,127610,127611]  (143 ms)
+    => SAME
+F3  "!lastabc"
+    core   total=1000  (118 ms)
+    plugin total=0  (43 ms)
+    => DIFFERENT
+F4  "!last100 sculpture"
+    core   total=1000  (684 ms)
+    plugin total=1000  (146 ms)
+    => SAME
+F5  "!last1000 @@389"
+    core   total=1  (940 ms)
+    plugin total=1000  (101 ms)
+    => DIFFERENT
+F6  "!nodownloads"
+    core   total=94493  (392 ms)
+    plugin total=0  (42 ms)
+    => DIFFERENT
+F7  "!duplicates"
+    core   total=59  (396 ms)
+    plugin total=0  (40 ms)
+    => DIFFERENT
+F8  "!duplicates117274"
+    core   total=0  (41 ms)
+    plugin total=0  (134 ms)
+    => SAME
+F9  "!collection3808"
+    core   total=55  (48 ms)
+    plugin total=55  (152 ms)
+    => SAME
+F10  "!collection3618"
+    core   total=949  (60 ms)
+    plugin total=949  (144 ms)
+    => SAME
+F11  "!collection3706"
+    core   total=262  (57 ms)
+    plugin total=262  (131 ms)
+    => SAME
+F12  "!collection3125"
+    core   total=257  (124 ms)
+    plugin total=257  (65 ms)
+    => SAME
+F13  "!collection158"
+    core   total=0  (42 ms)
+    plugin total=0  (126 ms)
+    => SAME
+F14  "!collection{owncollection}"
+    core   total=0  (147 ms)
+    plugin total=0  (117 ms)
+    => SAME
+F15  "!collection-{userref}"
+    core   total=0  (83 ms)
+    plugin total=0  (37 ms)
+    => SAME
+F16  "!collection3808 sculpture"
+    core   total=55  (688 ms)
+    plugin total=55  (62 ms)
+    => SAME
+F17  "!collection3808, sculpture"
+    core   total=55  (637 ms)
+    plugin total=55  (59 ms)
+    => SAME
+F18  "!collection3808 @@389"
+    core   total=1  (112 ms)
+    plugin total=1  (60 ms)
+    => SAME
+F19  "!collection3808"  [order_by=collection, fetchrows=0,5, sort=asc]
+    core   total=55 first=[59367,59354,59348,59320,59315]  (48 ms)
+    plugin total=55 first=[59367,59354,59348,59320,59315]  (58 ms)
+    => SAME
+F20  "!collection3808"  [restypes=5]
+    core   total=55  (48 ms)
+    plugin total=55  (65 ms)
+    => SAME
+F21  "!collection3808"  [archive=2]
+    core   total=55  (50 ms)
+    plugin total=55  (136 ms)
+    => SAME
+F22  "!related121409"
+    core   total=488  (71 ms)
+    plugin total=0  (98 ms)
+    => DIFFERENT
+F23  "!related121409 sculpture"
+    core   HTTP 0 connection failed: Operation timed out after 120002 milliseconds with 0 bytes received  (120016 ms)
+    plugin total=0  (163 ms)
+    => DIFFERENT
+F24  "!relatedpushed121409"
+    core   total=0  (322 ms)
+    plugin total=0  (190 ms)
+    => SAME
+F25  "!geo53p5bm1p7t53p7bm1p4"
+    core   total=4893  (1411 ms)
+    plugin total=0  (181 ms)
+    => DIFFERENT
+F26  "!colourkeyEPNB"
+    core   total=1979  (3625 ms)
+    plugin total=0  (151 ms)
+    => DIFFERENT
+F27  "!colourE"
+    core   total=70574  (1720 ms)
+    plugin total=0  (75 ms)
+    => DIFFERENT
+F28  "!rgb:610,391,405"
+    core   total=500  (2382 ms)
+    plugin total=0  (79 ms)
+    => DIFFERENT
+F29  "!nopreview"
+    core   total=105  (177 ms)
+    plugin total=0  (68 ms)
+    => DIFFERENT
+F30  "!resource416"
+    core   total=1  (116 ms)
+    plugin total=1  (56 ms)
+    => SAME
+F31  "!resource416, date:2024"
+    core   total=0  (133 ms)
+    plugin total=1  (55 ms)
+    => DIFFERENT
+F32  "!archivepending"
+    core   total=0  (132 ms)
+    plugin total=0  (52 ms)
+    => SAME
+F33  "!userpending"
+    core   total=0  (41 ms)
+    plugin total=0  (54 ms)
+    => SAME
+F34  "!contributions9"
+    core   total=41283  (793 ms)
+    plugin total=41283  (60 ms)
+    => SAME
+F35  "!contributions{userref}"
+    core   total=0  (130 ms)
+    plugin total=0  (39 ms)
+    => SAME
+F36  "!images"
+    core   total=100757  (880 ms)
+    plugin total=0  (39 ms)
+    => DIFFERENT
+F37  "!unused"
+    core   total=6967  (450 ms)
+    plugin total=0  (41 ms)
+    => DIFFERENT
+F38  "!list416:4460:8692"
+    core   total=1  (121 ms)
+    plugin total=1  (48 ms)
+    => SAME
+F39  "!listall416:4460:8692"
+    core   total=1  (343 ms)
+    plugin total=1  (88 ms)
+    => SAME
+F40  "!list416:4460:8692 sculpture"
+    core   total=1  (510 ms)
+    plugin total=1  (387 ms)
+    => SAME
+F41  "!list416,4460"
+    core   total=1  (81 ms)
+    plugin total=1  (116 ms)
+    => SAME
+F42  "!hasdata170"
+    core   total=12  (80 ms)
+    plugin total=12  (55 ms)
+    => SAME
+F43  "!hasdata93"
+    core   total=63316  (6417 ms)
+    plugin total=63316  (278 ms)
+    => SAME
+F44  "!hasdata170 sculpture"
+    core   total=0  (2989 ms)
+    plugin total=0  (60 ms)
+    => SAME
+F45  "!empty170"
+    core   total=100850  (2020 ms)
+    plugin total=0  (192 ms)
+    => DIFFERENT
+F46  "!emptynumberfield"
+    core   total=100004  (2004 ms)
+    plugin total=0  (65 ms)
+    => DIFFERENT
+F47  "!empty95"
+    core   total=100457  (2835 ms)
+    plugin total=0  (140 ms)
+    => DIFFERENT
+F48  "!empty170"  [restypes=1]
+    core   total=93054  (2318 ms)
+    plugin total=0  (112 ms)
+    => DIFFERENT
+F49  "!emptynosuchfield"
+    core   total=100004  (1040 ms)
+    plugin total=0  (47 ms)
+    => DIFFERENT
+F50  "!propertiesfext:jpg"
+    core   total=66810  (789 ms)
+    plugin total=0  (35 ms)
+    => DIFFERENT
+F51  "!propertiesfext:-jpg"
+    core   total=34052  (510 ms)
+    plugin total=0  (38 ms)
+    => DIFFERENT
+F52  "!propertiesfext:jp*"
+    core   total=71886  (837 ms)
+    plugin total=0  (40 ms)
+    => DIFFERENT
+F53  "!propertieshmin:3000"
+    core   total=69894  (1018 ms)
+    plugin total=0  (42 ms)
+    => DIFFERENT
+F54  "!propertieswmin:4000;hmin:3000"
+    core   total=55705  (854 ms)
+    plugin total=0  (41 ms)
+    => DIFFERENT
+F55  "!propertiesfmin:5"
+    core   total=53138  (689 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+F56  "!propertiesfmax:1"
+    core   total=11993  (311 ms)
+    plugin total=0  (78 ms)
+    => DIFFERENT
+F57  "!propertiespi:1"
+    core   total=100072  (979 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+F58  "!propertiescu:9"
+    core   total=41283  (531 ms)
+    plugin total=0  (41 ms)
+    => DIFFERENT
+F59  "!propertiesorientation:portrait"
+    core   total=36092  (924 ms)
+    plugin total=0  (313 ms)
+    => DIFFERENT
+F60  "!propertiesfext:jpg sculpture"
+    core   total=32459  (805 ms)
+    plugin total=0  (50 ms)
+    => DIFFERENT
+F61  "!propertiesfext:jpg @@389"
+    core   total=41004  (859 ms)
+    plugin total=0  (43 ms)
+    => DIFFERENT
+F62  "!propertiesbogus:1"
+    core   total=100862  (752 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+F63  "!integrityfail"
+    core   total=0  (475 ms)
+    plugin total=0  (79 ms)
+    => SAME
+F64  "!locked"
+    core   total=1  (259 ms)
+    plugin total=0  (38 ms)
+    => DIFFERENT
+F65  "!noningested"
+    core   total=100862  (1547 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+F66  "!report3p365"
+    core   total=0  (136 ms)
+    plugin total=0  (163 ms)
+    => SAME
+F67  "!nosuchsearch"
+    core   total=100862  (758 ms)
+    plugin total=0  (77 ms)
+    => DIFFERENT
+F68  "!last100 !collection3808"
+    core   total=1000  (331 ms)
+    plugin total=0  (117 ms)
+    => DIFFERENT
+G1  "sculpture"  [restypes=1]
+    core   total=45727  (1350 ms)
+    plugin total=45727  (85 ms)
+    => SAME
+G2  "sculpture"  [restypes=1,5]
+    core   total=48620  (1180 ms)
+    plugin total=48620  (89 ms)
+    => SAME
+G3  "sculpture"  [restypes=Global]
+    core   total=49468  (1160 ms)
+    plugin total=49468  (87 ms)
+    => SAME
+G4  "sculpture"  [restypes=Global,5]
+    core   total=49468  (601 ms)
+    plugin total=49468  (88 ms)
+    => SAME
+G5  "sculpture"
+    core   total=49468  (594 ms)
+    plugin total=49468  (86 ms)
+    => SAME
+G6  "sculpture"  [archive=0,8]
+    core   total=52848  (1250 ms)
+    plugin total=52848  (139 ms)
+    => SAME
+G7  "sculpture"  [archive=8]
+    core   total=3380  (476 ms)
+    plugin total=3380  (61 ms)
+    => SAME
+G8  "sculpture"  [archive=2]
+    core   total=0  (129 ms)
+    plugin total=0  (58 ms)
+    => SAME
+G9  "sculpture"  [archive=-1]
+    core   total=0  (43 ms)
+    plugin total=0  (57 ms)
+    => SAME
+G10  "sculpture"  [archive=]
+    core   total=49468  (1171 ms)
+    plugin total=49468  (87 ms)
+    => SAME
+G11  "sculpture"  [fetchrows=0,5]
+    core   total=49468 first=[44274,17206,3962,37462,82074]  (563 ms)
+    plugin total=49468 first=[11083,11081,11079,11077,11073]  (86 ms)
+    => same total, different first rows
+G12  "sculpture"  [order_by=popularity, fetchrows=0,5]
+    core   total=49468 first=[44274,17206,3962,37462,82074]  (526 ms)
+    plugin total=0  (47 ms)
+    => DIFFERENT
+G13  "sculpture"  [order_by=rating, fetchrows=0,5]
+    core   total=49468 first=[127577,127561,127494,127493,127491]  (511 ms)
+    plugin total=0  (49 ms)
+    => DIFFERENT
+G14  "sculpture"  [order_by=date, fetchrows=0,5]
+    core   total=49468 first=[120365,120367,120373,120363,120372]  (576 ms)
+    plugin total=49468 first=[120365,120367,120373,120363,120372]  (103 ms)
+    => SAME
+G15  "sculpture"  [order_by=colour, fetchrows=0,5]
+    core   total=49468 first=[103695,100497,104695,90697,70145]  (617 ms)
+    plugin total=0  (48 ms)
+    => DIFFERENT
+G16  "sculpture"  [order_by=title, fetchrows=0,5]
+    core   total=49468 first=[113856,113855,113854,113853,113851]  (535 ms)
+    plugin total=0  (49 ms)
+    => DIFFERENT
+G17  "sculpture"  [order_by=file_path, fetchrows=0,5]
+    core   total=49468 first=[127577,127561,127494,127493,127491]  (539 ms)
+    plugin total=0  (44 ms)
+    => DIFFERENT
+G18  "sculpture"  [order_by=resourceid, fetchrows=0,5]
+    core   total=49468 first=[127577,127561,127494,127493,127491]  (518 ms)
+    plugin total=49468 first=[127577,127561,127494,127493,127491]  (180 ms)
+    => SAME
+G19  "sculpture"  [order_by=resourcetype, fetchrows=0,5]
+    core   total=49468 first=[126154,126153,122676,121712,120929]  (507 ms)
+    plugin total=0  (131 ms)
+    => DIFFERENT
+G20  "sculpture"  [order_by=extension, fetchrows=0,5]
+    core   total=49468 first=[70811,125814,115883,72838,16383]  (516 ms)
+    plugin total=0  (43 ms)
+    => DIFFERENT
+G21  "sculpture"  [order_by=status, fetchrows=0,5]
+    core   total=49468 first=[127577,127561,127494,127493,127491]  (628 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+G22  "sculpture"  [order_by=modified, fetchrows=0,5]
+    core   total=49468 first=[108258,108125,108107,106979,106974]  (666 ms)
+    plugin total=49468 first=[108258,108125,108107,106979,106974]  (91 ms)
+    => SAME
+G23  "sculpture"  [order_by=random, fetchrows=0,5]
+    core   total=49468 first=[73411,22273,7893,64079,60516]  (676 ms)
+    plugin total=0  (49 ms)
+    => DIFFERENT
+G24  "sculpture"  [order_by=country, fetchrows=0,5]
+    core   total=49468 first=[2181,2135,2130,2127,2082]  (612 ms)
+    plugin total=0  (47 ms)
+    => DIFFERENT
+G25  "sculpture"  [order_by=field12, fetchrows=0,5]
+    core   total=49468 first=[120365,120367,120373,120363,120372]  (537 ms)
+    plugin total=49468 first=[120365,120367,120373,120363,120372]  (103 ms)
+    => SAME
+G26  "numberfield:numrangeneg100|2000"  [order_by=field170, fetchrows=0,12, sort=asc]
+    core   total=0  (42 ms)
+    plugin total=0  (39 ms)
+    => SAME
+G27  "sculpture"  [order_by=field8, fetchrows=0,5]
+    core   total=49468 first=[113856,113855,113854,113853,113851]  (569 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+G28  "sculpture"  [order_by=bogus, fetchrows=0,5]
+    core   total=49468 first=[44274,17206,3962,37462,82074]  (584 ms)
+    plugin total=49468 first=[11083,11081,11079,11077,11073]  (134 ms)
+    => same total, different first rows
+G29  "sculpture"  [order_by=resourceid, fetchrows=0,5, sort=asc]
+    core   total=49468 first=[416,518,1274,1275,1276]  (502 ms)
+    plugin total=49468 first=[416,518,1274,1275,1276]  (126 ms)
+    => SAME
+G30  "sculpture"  [order_by=resourceid, fetchrows=0,5, sort=sideways]
+    core   total=49468 first=[416,518,1274,1275,1276]  (507 ms)
+    plugin total=49468 first=[416,518,1274,1275,1276]  (88 ms)
+    => SAME
+G31  "sculpture"  [order_by=resourceid, fetchrows=0,5, sort=asc]
+    core   total=49468 first=[416,518,1274,1275,1276]  (593 ms)
+    plugin total=49468 first=[416,518,1274,1275,1276]  (91 ms)
+    => SAME
+G32  "sculpture"  [order_by=resourceid, fetchrows=5, sort=asc]
+    core   rows=5 first=[416,518,1274,1275,1276]  (620 ms)
+    plugin rows=5 first=[416,518,1274,1275,1276]  (96 ms)
+    => SAME
+G33  "sculpture"  [order_by=resourceid, fetchrows=5, sort=asc, offset=10]
+    core   rows=5 first=[1282,1283,1284,1285,1286]  (619 ms)
+    plugin rows=5 first=[1282,1283,1284,1285,1286]  (97 ms)
+    => SAME
+G34  "sculpture"  [recent_search_daylimit=365]
+    core   total=10365  (607 ms)
+    plugin total=10365  (66 ms)
+    => SAME
+G35  ""  [recent_search_daylimit=90]
+    core   total=3089  (126 ms)
+    plugin total=3089  (60 ms)
+    => SAME
+G36  ""  [recent_search_daylimit=30]
+    core   total=0  (114 ms)
+    plugin total=0  (54 ms)
+    => SAME
+H1  "sculpture, @@389"
+    core   total=26893  (1185 ms)
+    plugin total=26893  (82 ms)
+    => SAME
+H2  "sculpture, orientation:landscape"
+    core   total=26893  (1249 ms)
+    plugin total=26893  (142 ms)
+    => SAME
+H3  "title:sculpture, @@389"
+    core   total=2439  (154 ms)
+    plugin total=2439  (100 ms)
+    => SAME
+H4  "sculpture, @@425, @@389"
+    core   total=41  (412 ms)
+    plugin total=41  (65 ms)
+    => SAME
+H5  "title:sculpt*, @@389"
+    core   total=2507  (644 ms)
+    plugin total=2507  (58 ms)
+    => SAME
+H6  "@@425, @@!389"
+    core   total=99  (131 ms)
+    plugin total=99  (60 ms)
+    => SAME
+H7  "sculpture, date:2024"
+    core   total=4517  (4372 ms)
+    plugin total=4517  (123 ms)
+    => SAME
+H8  "sculpture, @@389, date:2024"  [order_by=date, fetchrows=0,5]
+    core   total=2034 first=[75485,75463,75482,75462,75484]  (3133 ms)
+    plugin total=2034 first=[75485,75463,75482,75462,75484]  (117 ms)
+    => SAME
+H9  "sculpture"  [restypes=5, order_by=resourceid, fetchrows=0,5, sort=asc]
+    core   total=2893 first=[2181,3879,4093,4094,4096]  (454 ms)
+    plugin total=2893 first=[2181,3879,4093,4094,4096]  (65 ms)
+    => SAME
+H10  "sculpture, @@389"  [restypes=5, archive=0,2]
+    core   total=1408  (501 ms)
+    plugin total=1408  (69 ms)
+    => SAME
+H11  "!collection3808 sculpture"  [order_by=collection, fetchrows=0,5, sort=asc]
+    core   total=55 first=[59367,59354,59348,59320,59315]  (811 ms)
+    plugin total=55 first=[59367,59354,59348,59320,59315]  (61 ms)
+    => SAME
+H12  "!last100 sculpture"  [fetchrows=0,5]
+    core   total=1000 first=[124864,124872,124874,124888,124889]  (677 ms)
+    plugin total=1000 first=[124864,124872,124874,124888,124889]  (180 ms)
+    => SAME
+H13  "@@425, -sculpture"
+    core   total=48  (56 ms)
+    plugin total=48  (126 ms)
+    => SAME
+H14  "\"sculpture park\", @@389"
+    core   total=3412  (341 ms)
+    plugin total=0  (62 ms)
+    => DIFFERENT
+H15  "sculpture, -landscape"
+    core   total=15049  (2602 ms)
+    plugin total=15059  (76 ms)
+    => DIFFERENT
+H16  "sculpture, numberfield:numrange0|100"
+    core   total=0  (3068 ms)
+    plugin total=0  (62 ms)
+    => SAME
+H17  "@@389, date:2024"
+    core   total=4169  (4983 ms)
+    plugin total=4169  (61 ms)
+    => SAME
+H18  "materials:bronze;wood, @@389"
+    core   total=18  (49 ms)
+    plugin total=18  (121 ms)
+    => SAME
+H19  "basicyear:2024, sculpture"
+    core   total=4517  (3883 ms)
+    plugin total=0  (66 ms)
+    => DIFFERENT
+H20  "basicyear:2024, @@389"
+    core   total=4169  (4648 ms)
+    plugin total=0  (121 ms)
+    => DIFFERENT
+H21  "date:2024, expirydate:2029"
+    core   total=2972  (313 ms)
+    plugin total=2972  (59 ms)
+    => SAME
+H22  "sculpt*, land*"
+    core   total=36026  (2108 ms)
+    plugin total=0  (42 ms)
+    => DIFFERENT
+H23  "\"sculpture park\", -\"black and white\""
+    core   total=6758  (951 ms)
+    plugin total=0  (58 ms)
+    => DIFFERENT
+H24  "sculpture landscape nature outdoor"
+    core   total=19608  (1707 ms)
+    plugin total=19608  (116 ms)
+    => SAME
+H25  "title:sculpture, credit:wilde, @@389, date:2024"
+    core   total=65  (233 ms)
+    plugin total=65  (139 ms)
+    => SAME
+H26  "!collection3618 date:2025"
+    core   total=0  (121 ms)
+    plugin total=0  (53 ms)
+    => SAME
+H27  "!contributions9 sculpture, @@389"
+    core   total=9240  (540 ms)
+    plugin total=9240  (123 ms)
+    => SAME
+H28  "!list416:4460:8692 @@389"
+    core   total=1  (43 ms)
+    plugin total=1  (146 ms)
+    => SAME
+H29  "!hasdata170 @@389"
+    core   total=5  (45 ms)
+    plugin total=5  (143 ms)
+    => SAME
+H30  "!propertiesfext:jpg date:2024"
+    core   total=6224  (4734 ms)
+    plugin total=0  (39 ms)
+    => DIFFERENT
+H31  "sculpture, \"sculpture park\", @@389, orientation:landscape, date:2024, -landscape"  [restypes=1, order_by=date, fetchrows=0,5]
+    core   total=0  (598 ms)
+    plugin total=0  (68 ms)
+    => SAME
+H32  "sculpture;landscape, @@389"
+    core   total=58028  (2626 ms)
+    plugin total=0  (44 ms)
+    => DIFFERENT
+H33  "sculpt*;land*, @@389"
+    core   total=58028  (3703 ms)
+    plugin total=0  (42 ms)
+    => DIFFERENT
+H34  "title:sculpture;park, @@389"
+    core   total=2653  (160 ms)
+    plugin total=0  (45 ms)
+    => DIFFERENT
+H35  "date:rangestart2024-01-01end2024-12-31, @@389, sculpture"
+    core   total=2030  (3246 ms)
+    plugin total=2034  (74 ms)
+    => DIFFERENT
+H36  "2024, sculpture"
+    core   total=5477  (349 ms)
+    plugin total=5476  (78 ms)
+    => DIFFERENT
+H37  "document sculpture"
+    core   total=111  (292 ms)
+    plugin total=101  (91 ms)
+    => DIFFERENT
+H38  "!collection3618 sculpture"  [restypes=5, archive=8]
+    core   total=409  (648 ms)
+    plugin total=409  (65 ms)
+    => SAME
+I1  "!collection3808,sculpture"
+    core   total=55  (47 ms)
+    plugin total=55  (119 ms)
+    => SAME
+I2  "sculpture,landscape"
+    core   total=22  (269 ms)
+    plugin total=34409  (91 ms)
+    => DIFFERENT
+I3  "title:sculpture,landscape"
+    core   total=0  (60 ms)
+    plugin total=25  (60 ms)
+    => DIFFERENT
+I4  "sculpture sculpture"
+    core   total=49468  (539 ms)
+    plugin total=49468  (97 ms)
+    => SAME
+I5  "   sculpture   "
+    core   total=49468  (538 ms)
+    plugin total=49468  (170 ms)
+    => SAME
+I6  "sculpture:"
+    core   total=49468  (538 ms)
+    plugin total=49468  (194 ms)
+    => SAME
+I7  ":sculpture"
+    core   total=49468  (538 ms)
+    plugin total=49468  (177 ms)
+    => SAME
+I8  "\"sculpture"
+    core   total=49468  (582 ms)
+    plugin total=0  (87 ms)
+    => DIFFERENT
+I9  "!LAST100"
+    core   total=100862  (771 ms)
+    plugin total=1000  (84 ms)
+    => DIFFERENT
+I10  "@@389,@@425"
+    core   total=49  (52 ms)
+    plugin total=49  (61 ms)
+    => SAME
+I11  "Title:Sculpture"
+    core   total=4226  (154 ms)
+    plugin total=4226  (63 ms)
+    => SAME
+I12  "\"source:igital Camer\""
+    core   total=0  (47 ms)
+    plugin total=0  (61 ms)
+    => SAME
+
+267 cases sent
+A16  "sculpture;landscape"
+    core   total=83840  (1877 ms)
+    plugin total=0  (44 ms)
+    => DIFFERENT
+F8  "!duplicates123007"
+    core   total=2  (118 ms)
+    plugin total=0  (39 ms)
+    => DIFFERENT
+F69  "!last100, sculpture"
+    core   total=100  (706 ms)
+    plugin total=100  (101 ms)
+    => SAME
+G26  "numberfield:numrangeneg100|2000"  [order_by=field170, fetchrows=0,12, sort=asc]
+    core   total=0  (75 ms)
+    plugin total=0  (42 ms)
+    => SAME
+G43  "sculpture"  [order_by=field170, fetchrows=0,5]
+    core   total=0  (132 ms)
+    plugin total=0  (43 ms)
+    => SAME
+H26  "!collection3808 date:2025"
+    core   total=55  (125 ms)
+    plugin total=55  (55 ms)
+    => SAME
+H31  "sculpture, \"sculpture park\", @@389, orientation:landscape, date:2024, -\"black and white\""  [restypes=1, order_by=date, fetchrows=0,5]
+    core   total=307 first=[47432,47431,47430,47429,47428]  (936 ms)
+    plugin total=0  (63 ms)
+    => DIFFERENT
+
+7 cases sent
