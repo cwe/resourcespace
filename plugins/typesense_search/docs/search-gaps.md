@@ -31,6 +31,9 @@ the test system.
 - A space after `!last100` turns it into `!last1000`; a comma keeps 100 (F4, F69, Core 7). `!list416,4460`
   keeps only 416, because lists want colons (F41). `!resource416, date:2024` looks up resource 4162024 (F31,
   Core 3). `!empty` by field name binds the name as an integer and so always means field 1 (F46, F49, Core 5).
+- The advanced search form puts its `!properties` prefix in front of the `!list` prefix it builds from the
+  resource IDs box, so the IDs become a second special search, which core skips: with any property filled in,
+  the resource IDs box is ignored (J1 returns 1, J2 returns 8 with the same IDs).
 - Workflow states: `!collection`, `!list` and the two pending searches ignore the state parameter; `!related`,
   `!hasdata` and `!integrityfail` search every state; the rest honour it (F21, F22, F42). `!listall` is identical to
   `!list` (F38, F39). `!archivepending` exists to find state 1 yet returns nothing for a user with the z1
