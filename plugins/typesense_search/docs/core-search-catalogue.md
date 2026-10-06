@@ -35,6 +35,7 @@ and user refs. `live/catalogue_values.php` lists the candidates on any database,
 - [H. Combinations](#h-combinations)
 - [I. Syntax edge cases](#i-syntax-edge-cases)
 - [J. Strings as the advanced search page assembles them](#j-strings-as-the-advanced-search-page-assembles-them)
+- [K. What the indexing flags control](#k-what-the-indexing-flags-control)
 
 ## A. Keywords
 
@@ -384,4 +385,22 @@ search_form_to_search_query() builds one string in a fixed order: the date dropd
 | J11 | Property filter with terms | `!propertiesfext:jpg ,sculpture, title:park` | The form's separator is a space then a comma; the comma is dropped and the terms apply. | [search_functions.php:406](../../../include/search_functions.php:406) | 547 | 0 | [ ] |
 | J12 | Full-text box with a word | `sculpture, "@FULL_TEXT:distant island"` | The full-text term is appended with a space and then normalised into the comma list. | [search_functions.php:242](../../../include/search_functions.php:242) | 461 | 0 | [ ] |
 | J13 | Date value and range on one field | `date:2024-05, date:rangestart2024-05-01end2024-05-31` | The date boxes and the range boxes are separate inputs, so both terms are sent: two joins, ANDed. | [search_functions.php:3289](../../../include/search_functions.php:3289) | 524 | 572 | [ ] |
+## K. What the indexing flags control
+
+Only the values of fields flagged for indexing become keywords, so the flag governs every form that goes through the keyword table: plain words, field words, phrases, OR, NOT and the short-wildcard LIKE branch. It does not govern full-text and other wildcards, which read node names, nor date and number terms, fixed-list options by name, @@ tokens, !hasdata and !empty, which all read nodes. Partial indexing adds every fragment of three or more letters as a keyword at the word's position. Complete indexing stores the whole value as one keyword, never split, so a value with spaces cannot be typed as a word. An inactive field, or one hidden from the user, is dropped from every union, wildcards included. Only the first 500 characters of a value become keywords ($node_keyword_index_chars). The advanced search form lists indexed fields only; the simple bar needs indexed or fixed-list. See also B12, B13, B19, C8, C9, D22, D23, F43 and B14.
+
+| # | Search | String and parameters | What core does | Where | Core | Plugin | OK |
+|---|---|---|---|---|---|---|---|
+| K1 | Word that exists only in a non-indexed field | `nikon` | Not a keyword: nothing (the value is in the camera field, not flagged for indexing). | [do_search_keywords.php:387](../../../include/do_search_keywords.php:387), [resource_functions.php:7840](../../../include/resource_functions.php:7840) | 0 | 0 | [ ] |
+| K2 | The same word with a wildcard | `nikon*` | The full-text branch reads node names of every visible field, indexed or not: the camera values match. | [do_search_keywords.php:617](../../../include/do_search_keywords.php:617) | 23,412 | 0 | [ ] |
+| K3 | Wildcard inside the non-indexed field | `camera:nik*` | Full-text restricted to the field: matches, although camera:nikon (B12) does not. | [do_search_keywords.php:617](../../../include/do_search_keywords.php:617) | 23,412 | 0 | [ ] |
+| K4 | Full-text box on a non-indexed field | `"@FULL_TEXT:nikon"` | MATCH over node names: matches. | [do_search_keywords.php:30](../../../include/do_search_keywords.php:30) | 23,412 | 0 | [ ] |
+| K5 | Bare fragment of a partially indexed field | `ksho` | Fragments are ordinary keywords, so the fragment matches outside the field term too (compare B14). | [search_functions.php:2270](../../../include/search_functions.php:2270) | 665 | 665 | [ ] |
+| K6 | Word in an inactive field | `description:sculpture` | The field is found by name but inactive fields count as hidden and are excluded from the union: nothing (E7 in the review). | [resource_functions.php:7871](../../../include/resource_functions.php:7871), [do_search_keywords.php:511](../../../include/do_search_keywords.php:511) | 0 | 57 | [ ] |
+| K7 | Phrase held only in non-indexed fields | `"library book"` | The phrase goes through keywords: nothing. | [do_search_keywords.php:758](../../../include/do_search_keywords.php:758) | 0 | 0 | [ ] |
+| K8 | The same phrase through full text | `"@FULL_TEXT:[QUOTES]library book[QUOTES]"` | Node names are read: the active non-indexed field matches, the inactive one is excluded as hidden. | [do_search_keywords.php:30](../../../include/do_search_keywords.php:30), [do_search_keywords.php:40](../../../include/do_search_keywords.php:40) | 1 | 0 | [ ] |
+| K9 | Complete indexing | `field:two words` | The whole value is one keyword; a typed search splits on spaces, so only a single-token value is reachable by word, and wildcards or full text otherwise. No complete-indexed field on the test system. | [node_functions.php:1082](../../../include/node_functions.php:1082) | n/a | n/a | [ ] |
+| K10 | Word beyond the 500th character | `field:word` | Only the first $node_keyword_index_chars characters become keywords; a wildcard still reads the whole value (E10 in the review). The one indexed value over 500 characters on the test system is unused markup, so not measured. | [node_functions.php:1077](../../../include/node_functions.php:1077) | n/a | n/a | [ ] |
+| K11 | Number range on a non-indexed numeric field | `field:numrange1\|10` | Node join, so it works regardless of the flag, as dates do (D22). No such field on the test system. | [do_search_keywords.php:206](../../../include/do_search_keywords.php:206) | n/a | n/a | [ ] |
+| K12 | Field hidden from the user by permission | `field:word` | A field term on it returns false before the plugin is asked; its values are excluded from every union. Both test users can see every field, so not measured. | [do_search_keywords.php:122](../../../include/do_search_keywords.php:122), [resource_functions.php:7871](../../../include/resource_functions.php:7871) | n/a | n/a | [ ] |
 

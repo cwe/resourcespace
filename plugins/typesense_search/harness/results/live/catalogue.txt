@@ -1152,3 +1152,37 @@ J13  "date:2024-05, date:rangestart2024-05-01end2024-05-31"
     => DIFFERENT
 
 13 cases sent
+K1  "nikon"
+    core   total=0  (59 ms)
+    plugin total=0  (82 ms)
+    => SAME
+K2  "nikon*"
+    core   total=23412  (639 ms)
+    plugin total=0  (65 ms)
+    => DIFFERENT
+K3  "camera:nik*"
+    core   total=23412  (523 ms)
+    plugin total=0  (132 ms)
+    => DIFFERENT
+K4  "\"@FULL_TEXT:nikon\""
+    core   total=23412  (539 ms)
+    plugin total=0  (41 ms)
+    => DIFFERENT
+K5  "ksho"
+    core   total=665  (120 ms)
+    plugin total=665  (66 ms)
+    => SAME
+K6  "description:sculpture"
+    core   total=0  (112 ms)
+    plugin total=57  (63 ms)
+    => DIFFERENT
+K7  "\"library book\""
+    core   total=0  (110 ms)
+    plugin total=0  (54 ms)
+    => SAME
+K8  "\"@FULL_TEXT:[QUOTES]library book[QUOTES]\""
+    core   total=1  (132 ms)
+    plugin total=0  (38 ms)
+    => DIFFERENT
+
+8 cases sent

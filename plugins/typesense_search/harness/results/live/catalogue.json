@@ -9194,5 +9194,251 @@
             "search": "date:2024-05, date:rangestart2024-05-01end2024-05-31"
         },
         "same": false
+    },
+    "K1": {
+        "search": "nikon",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:31:06+00:00",
+        "core": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 59,
+            "error": null,
+            "search": "nikon"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 82,
+            "error": null,
+            "search": "nikon"
+        },
+        "same": true
+    },
+    "K2": {
+        "search": "nikon*",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:31:21+00:00",
+        "core": {
+            "total": 23412,
+            "rows": 1,
+            "refs": [
+                44274
+            ],
+            "ms": 639,
+            "error": null,
+            "search": "nikon*"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 65,
+            "error": null,
+            "search": "nikon*"
+        },
+        "same": false
+    },
+    "K3": {
+        "search": "camera:nik*",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:31:37+00:00",
+        "core": {
+            "total": 23412,
+            "rows": 1,
+            "refs": [
+                44274
+            ],
+            "ms": 523,
+            "error": null,
+            "search": "camera:nik*"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 132,
+            "error": null,
+            "search": "camera:nik*"
+        },
+        "same": false
+    },
+    "K4": {
+        "search": "\"@FULL_TEXT:nikon\"",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:31:52+00:00",
+        "core": {
+            "total": 23412,
+            "rows": 1,
+            "refs": [
+                44274
+            ],
+            "ms": 539,
+            "error": null,
+            "search": "\"@FULL_TEXT:nikon\""
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 41,
+            "error": null,
+            "search": "\"@FULL_TEXT:nikon\""
+        },
+        "same": false
+    },
+    "K5": {
+        "search": "ksho",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:32:08+00:00",
+        "core": {
+            "total": 665,
+            "rows": 1,
+            "refs": [
+                92808
+            ],
+            "ms": 120,
+            "error": null,
+            "search": "ksho"
+        },
+        "plugin": {
+            "total": 665,
+            "rows": 1,
+            "refs": [
+                127491
+            ],
+            "ms": 66,
+            "error": null,
+            "search": "ksho"
+        },
+        "same": true
+    },
+    "K6": {
+        "search": "description:sculpture",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:32:23+00:00",
+        "core": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 112,
+            "error": null,
+            "search": "description:sculpture"
+        },
+        "plugin": {
+            "total": 57,
+            "rows": 1,
+            "refs": [
+                120203
+            ],
+            "ms": 63,
+            "error": null,
+            "search": "description:sculpture"
+        },
+        "same": false
+    },
+    "K7": {
+        "search": "\"library book\"",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:32:38+00:00",
+        "core": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 110,
+            "error": null,
+            "search": "\"library book\""
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 54,
+            "error": null,
+            "search": "\"library book\""
+        },
+        "same": true
+    },
+    "K8": {
+        "search": "\"@FULL_TEXT:[QUOTES]library book[QUOTES]\"",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:32:54+00:00",
+        "core": {
+            "total": 1,
+            "rows": 1,
+            "refs": [
+                8493
+            ],
+            "ms": 132,
+            "error": null,
+            "search": "\"@FULL_TEXT:[QUOTES]library book[QUOTES]\""
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 38,
+            "error": null,
+            "search": "\"@FULL_TEXT:[QUOTES]library book[QUOTES]\""
+        },
+        "same": false
     }
 }
