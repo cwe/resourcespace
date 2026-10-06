@@ -119,7 +119,7 @@ foreach ($catalogue as $entry) {
             $params[] = $p . '=' . $entry[$p];
         }
     }
-    if (isset($entry['rows']) && (int)$entry['rows'] > 1) {
+    if (isset($entry['rows']) && (int)$entry['rows'] !== 1) {
         $params[] = 'fetchrows=0,' . (int)$entry['rows'];
     }
     if (count($params) > 0) {

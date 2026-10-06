@@ -34,6 +34,7 @@ and user refs. `live/catalogue_values.php` lists the candidates on any database,
 - [G. Parameters](#g-parameters)
 - [H. Combinations](#h-combinations)
 - [I. Syntax edge cases](#i-syntax-edge-cases)
+- [J. Strings as the advanced search page assembles them](#j-strings-as-the-advanced-search-page-assembles-them)
 
 ## A. Keywords
 
@@ -364,4 +365,23 @@ Strings a user might type that core accepts but reads differently from what was 
 | I10 | Nodes without a space | `@@389,@@425` | Both tokens found; the comma is left behind and ignored. | [do_search.php:529](../../../include/do_search.php:529) | 49 | 49 | [ ] |
 | I11 | Upper-case field name and value | `Title:Sculpture` | Field names compare case-insensitively in MySQL; the value is normalised. | [do_search_keywords.php:105](../../../include/do_search_keywords.php:105) | 4,226 | 4,226 | [ ] |
 | I12 | Dropdown value from the advanced form | `"source:igital Camer"` | search_form_to_search_query has a branch that strips the first and last characters of a dropdown value with spaces; dropdowns post node refs instead, so the branch is unreachable and this is only what it would send for "Digital Camera". | [search_functions.php:290](../../../include/search_functions.php:290) | 0 | 0 | [ ] |
+## J. Strings as the advanced search page assembles them
+
+search_form_to_search_query() builds one string in a fixed order: the date dropdowns, the words of the all-fields box, a !list prefix for the resource IDs box, the full-text box, one term per word per field box (a quoted phrase stays quoted around the whole term), the ticked options and dropdown choices as @@ tokens, and last a !properties prefix joined with " ,". A posted special search such as !contributions is prefixed with a comma and no space. Not sent as text: a checkbox list with every option ticked (omitted), the Featured Collections type (a collections search) and the access selector (a PHP argument only). Fields with a verbatim-keyword regex keep their value unsplit; none is configured on the test system.
+
+| # | Search | String and parameters | What core does | Where | Core | Plugin | OK |
+|---|---|---|---|---|---|---|---|
+| J1 | Resource IDs, words, a field, nodes, type and state | `!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388` restypes=5, archive=0 | The !list prefix, then after a space the terms the form added: the listed refs that also match everything else. | [search_functions.php:239](../../../include/search_functions.php:239), [do_search.php:126](../../../include/do_search.php:126) | 1 | 1 | [ ] |
+| J2 | The same with a property filled in | `!propertiesfext:jpg ,!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388` restypes=5, archive=0 | The !properties prefix is now the special search and !list a second one, which the keyword stage skips: the resource IDs box is ignored whenever a property is set. | [search_functions.php:406](../../../include/search_functions.php:406), [do_search_keywords.php:88](../../../include/do_search_keywords.php:88) | 8 | 0 | [ ] |
+| J3 | Posted special search prefix | `!contributions9,sculpture` | The form joins them with a comma and no space, so the term is dropped (I1): the contributions alone. | [search_functions.php:410](../../../include/search_functions.php:410), [do_search.php:126](../../../include/do_search.php:126) | 41,283 | 41,283 | [ ] |
+| J4 | Posted special search prefix, more terms | `!contributions9,title:park, sculpture` | Only what follows the first space is kept: sculpture applies, title:park is lost. | [do_search.php:126](../../../include/do_search.php:126) | 19,396 | 19,396 | [ ] |
+| J5 | Range with a start year only | `date:rangestart2024` | The form sends the year unpadded: name >= "2024", so everything from 2024 on. | [search_functions.php:3348](../../../include/search_functions.php:3348), [do_search_keywords.php:193](../../../include/do_search_keywords.php:193) | 21,151 | 21,151 | [ ] |
+| J6 | Range with months only | `date:rangestart2024-05end2024-06-31` | Start month unpadded, end month padded with 31: May and June 2024. | [search_functions.php:3348](../../../include/search_functions.php:3348) | 1,947 | 19,079 | [ ] |
+| J7 | Live result count | `sculpture` fetchrows=0,0 | The count the page shows while the form is filled in: fetchrows 0,0 gives the total and no rows. | [search_advanced.php:82](../../../pages/search_advanced.php:82), [api_bindings.php:20](../../../include/api_bindings.php:20) | 49,468 | 49,468 | [ ] |
+| J8 | Checkbox list, two options ticked | `sculpture, @@6125@@6130` | Ticked options are sent as one OR token per field. | [search_functions.php:364](../../../include/search_functions.php:364) | 284 | 284 | [ ] |
+| J9 | Checkbox list with $checkbox_and | `sculpture, @@6125, @@6130` | Each ticked option becomes its own token: AND. Both options resolve here, unlike the name form in C7. | [search_functions.php:384](../../../include/search_functions.php:384) | 0 | 0 | [ ] |
+| J10 | Dropdown choice | `sculpture, @@247` | A dropdown field sends one node token. | [search_functions.php:374](../../../include/search_functions.php:374) | 1,429 | 1,429 | [ ] |
+| J11 | Property filter with terms | `!propertiesfext:jpg ,sculpture, title:park` | The form's separator is a space then a comma; the comma is dropped and the terms apply. | [search_functions.php:406](../../../include/search_functions.php:406) | 547 | 0 | [ ] |
+| J12 | Full-text box with a word | `sculpture, "@FULL_TEXT:distant island"` | The full-text term is appended with a space and then normalised into the comma list. | [search_functions.php:242](../../../include/search_functions.php:242) | 461 | 0 | [ ] |
+| J13 | Date value and range on one field | `date:2024-05, date:rangestart2024-05-01end2024-05-31` | The date boxes and the range boxes are separate inputs, so both terms are sent: two joins, ANDed. | [search_functions.php:3289](../../../include/search_functions.php:3289) | 524 | 572 | [ ] |
 

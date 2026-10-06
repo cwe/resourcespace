@@ -1098,3 +1098,57 @@ H31  "sculpture, \"sculpture park\", @@389, orientation:landscape, date:2024, -\
     => DIFFERENT
 
 7 cases sent
+J1  "!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388"  [restypes=5]
+    core   total=1  (554 ms)
+    plugin total=1  (80 ms)
+    => SAME
+J2  "!propertiesfext:jpg ,!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388"  [restypes=5]
+    core   total=8  (683 ms)
+    plugin total=0  (57 ms)
+    => DIFFERENT
+J3  "!contributions9,sculpture"
+    core   total=41283  (579 ms)
+    plugin total=41283  (62 ms)
+    => SAME
+J4  "!contributions9,title:park, sculpture"
+    core   total=19396  (555 ms)
+    plugin total=19396  (137 ms)
+    => SAME
+J5  "date:rangestart2024"
+    core   total=21151  (7029 ms)
+    plugin total=21151  (62 ms)
+    => SAME
+J6  "date:rangestart2024-05end2024-06-31"
+    core   total=1947  (7760 ms)
+    plugin total=19079  (63 ms)
+    => DIFFERENT
+J7  "sculpture"  [fetchrows=0,0]
+    core   total=49468  (700 ms)
+    plugin total=49468  (98 ms)
+    => SAME
+J8  "sculpture, @@6125@@6130"
+    core   total=284  (1331 ms)
+    plugin total=284  (62 ms)
+    => SAME
+J9  "sculpture, @@6125, @@6130"
+    core   total=0  (417 ms)
+    plugin total=0  (111 ms)
+    => SAME
+J10  "sculpture, @@247"
+    core   total=1429  (516 ms)
+    plugin total=1429  (150 ms)
+    => SAME
+J11  "!propertiesfext:jpg ,sculpture, title:park"
+    core   total=547  (294 ms)
+    plugin total=0  (54 ms)
+    => DIFFERENT
+J12  "sculpture, \"@FULL_TEXT:distant island\""
+    core   total=461  (283 ms)
+    plugin total=0  (46 ms)
+    => DIFFERENT
+J13  "date:2024-05, date:rangestart2024-05-01end2024-05-31"
+    core   total=524  (138 ms)
+    plugin total=572  (60 ms)
+    => DIFFERENT
+
+13 cases sent

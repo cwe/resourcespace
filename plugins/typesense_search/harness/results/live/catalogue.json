@@ -8779,5 +8779,420 @@
             "search": "sculpture"
         },
         "same": true
+    },
+    "J1": {
+        "search": "!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388",
+        "params": {
+            "restypes": "5",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:12:11+00:00",
+        "core": {
+            "total": 1,
+            "rows": 1,
+            "refs": [
+                2181
+            ],
+            "ms": 554,
+            "error": null,
+            "search": "!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388"
+        },
+        "plugin": {
+            "total": 1,
+            "rows": 1,
+            "refs": [
+                2181
+            ],
+            "ms": 80,
+            "error": null,
+            "search": "!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388"
+        },
+        "same": true
+    },
+    "J2": {
+        "search": "!propertiesfext:jpg ,!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388",
+        "params": {
+            "restypes": "5",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:12:27+00:00",
+        "core": {
+            "total": 8,
+            "rows": 1,
+            "refs": [
+                2181
+            ],
+            "ms": 683,
+            "error": null,
+            "search": "!propertiesfext:jpg ,!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 57,
+            "error": null,
+            "search": "!propertiesfext:jpg ,!list2181:3879:4093 sculpture, landscape, title:sculpture, @@389@@388"
+        },
+        "same": false
+    },
+    "J3": {
+        "search": "!contributions9,sculpture",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:12:42+00:00",
+        "core": {
+            "total": 41283,
+            "rows": 1,
+            "refs": [
+                31616
+            ],
+            "ms": 579,
+            "error": null,
+            "search": "!contributions9,sculpture"
+        },
+        "plugin": {
+            "total": 41283,
+            "rows": 1,
+            "refs": [
+                127611
+            ],
+            "ms": 62,
+            "error": null,
+            "search": "!contributions9,sculpture"
+        },
+        "same": true
+    },
+    "J4": {
+        "search": "!contributions9,title:park, sculpture",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:12:58+00:00",
+        "core": {
+            "total": 19396,
+            "rows": 1,
+            "refs": [
+                31616
+            ],
+            "ms": 555,
+            "error": null,
+            "search": "!contributions9,title:park, sculpture"
+        },
+        "plugin": {
+            "total": 19396,
+            "rows": 1,
+            "refs": [
+                117939
+            ],
+            "ms": 137,
+            "error": null,
+            "search": "!contributions9,title:park, sculpture"
+        },
+        "same": true
+    },
+    "J5": {
+        "search": "date:rangestart2024",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:13:14+00:00",
+        "core": {
+            "total": 21151,
+            "rows": 1,
+            "refs": [
+                44274
+            ],
+            "ms": 7029,
+            "error": null,
+            "search": "date:rangestart2024"
+        },
+        "plugin": {
+            "total": 21151,
+            "rows": 1,
+            "refs": [
+                127611
+            ],
+            "ms": 62,
+            "error": null,
+            "search": "date:rangestart2024"
+        },
+        "same": true
+    },
+    "J6": {
+        "search": "date:rangestart2024-05end2024-06-31",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:13:41+00:00",
+        "core": {
+            "total": 1947,
+            "rows": 1,
+            "refs": [
+                116262
+            ],
+            "ms": 7760,
+            "error": null,
+            "search": "date:rangestart2024-05end2024-06-31"
+        },
+        "plugin": {
+            "total": 19079,
+            "rows": 1,
+            "refs": [
+                127482
+            ],
+            "ms": 63,
+            "error": null,
+            "search": "date:rangestart2024-05end2024-06-31"
+        },
+        "same": false
+    },
+    "J7": {
+        "search": "sculpture",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,0",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:14:09+00:00",
+        "core": {
+            "total": 49468,
+            "rows": 0,
+            "refs": [],
+            "ms": 700,
+            "error": null,
+            "search": "sculpture"
+        },
+        "plugin": {
+            "total": 49468,
+            "rows": 0,
+            "refs": [],
+            "ms": 98,
+            "error": null,
+            "search": "sculpture"
+        },
+        "same": true
+    },
+    "J8": {
+        "search": "sculpture, @@6125@@6130",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:14:25+00:00",
+        "core": {
+            "total": 284,
+            "rows": 1,
+            "refs": [
+                118342
+            ],
+            "ms": 1331,
+            "error": null,
+            "search": "sculpture, @@6125@@6130"
+        },
+        "plugin": {
+            "total": 284,
+            "rows": 1,
+            "refs": [
+                68640
+            ],
+            "ms": 62,
+            "error": null,
+            "search": "sculpture, @@6125@@6130"
+        },
+        "same": true
+    },
+    "J9": {
+        "search": "sculpture, @@6125, @@6130",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:14:41+00:00",
+        "core": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 417,
+            "error": null,
+            "search": "sculpture, @@6125, @@6130"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 111,
+            "error": null,
+            "search": "sculpture, @@6125, @@6130"
+        },
+        "same": true
+    },
+    "J10": {
+        "search": "sculpture, @@247",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:14:56+00:00",
+        "core": {
+            "total": 1429,
+            "rows": 1,
+            "refs": [
+                72478
+            ],
+            "ms": 516,
+            "error": null,
+            "search": "sculpture, @@247"
+        },
+        "plugin": {
+            "total": 1429,
+            "rows": 1,
+            "refs": [
+                84008
+            ],
+            "ms": 150,
+            "error": null,
+            "search": "sculpture, @@247"
+        },
+        "same": true
+    },
+    "J11": {
+        "search": "!propertiesfext:jpg ,sculpture, title:park",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:15:12+00:00",
+        "core": {
+            "total": 547,
+            "rows": 1,
+            "refs": [
+                72336
+            ],
+            "ms": 294,
+            "error": null,
+            "search": "!propertiesfext:jpg ,sculpture, title:park"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 54,
+            "error": null,
+            "search": "!propertiesfext:jpg ,sculpture, title:park"
+        },
+        "same": false
+    },
+    "J12": {
+        "search": "sculpture, \"@FULL_TEXT:distant island\"",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:15:28+00:00",
+        "core": {
+            "total": 461,
+            "rows": 1,
+            "refs": [
+                17151
+            ],
+            "ms": 283,
+            "error": null,
+            "search": "sculpture, \"@FULL_TEXT:distant island\""
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 46,
+            "error": null,
+            "search": "sculpture, \"@FULL_TEXT:distant island\""
+        },
+        "same": false
+    },
+    "J13": {
+        "search": "date:2024-05, date:rangestart2024-05-01end2024-05-31",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-06T13:15:43+00:00",
+        "core": {
+            "total": 524,
+            "rows": 1,
+            "refs": [
+                8198
+            ],
+            "ms": 138,
+            "error": null,
+            "search": "date:2024-05, date:rangestart2024-05-01end2024-05-31"
+        },
+        "plugin": {
+            "total": 572,
+            "rows": 1,
+            "refs": [
+                127482
+            ],
+            "ms": 60,
+            "error": null,
+            "search": "date:2024-05, date:rangestart2024-05-01end2024-05-31"
+        },
+        "same": false
     }
 }
