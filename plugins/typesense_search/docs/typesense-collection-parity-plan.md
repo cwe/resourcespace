@@ -48,8 +48,8 @@ Typesense.
 | 1 ⚠ | **`J` inside a collection returns nothing** unless the collection is itself a permitted featured collection. `TypesenseCollectionMode` and `TypesenseFeaturedCollectionsRestriction` each add a `$memberships(...)` join, and Typesense requires both to match the same membership document. | Live: collection 3837 gives 35 and 1,115 with each join alone, 0 together (Appendix A) |
 | 2 ⚠ | **Fixed 2026-09-24 (§2.4).** **Non-paged `fetchrows` is capped at 250 rows.** `-1` and `[x,-1]` become `per_page=250`, and integer `fetchrows` isn't zero-padded the way `search_special()` pads it. This hits the collection bar, the download, edit, share and feedback pages, and the API default. Two paths change data: `add_saved_search_items()` ("add all results to collection") adds only 250 resources, and the search page's selection clean-up (`pages/search.php`, `check_selection_collection`) removes selections past row 250. | Live: `!collection108` returns 250 of 328 |
 | 3 ⚠ | **Memberships are missing or stale.**<br>• **NULL `sortorder`**, the default from `add_resource_to_collection()`, can't be imported into the non-optional `int32` field. MySQL has **109,220** such rows and the index holds 44,801 docs in total, so most memberships are probably absent. Collection views, and `J`, silently miss those resources.<br>• Per-line import failures aren't detected, because the check looks for the literal `{"success":false}`. The reindex therefore reported them as indexed.<br>• There's no sync on save, and the full reindex only upserts, so removed members survive it.<br>• A member whose resource document isn't indexed can't be imported, because the reference needs it. | MySQL count vs index count. Exact split: see *Also found* |
-| 4 ⚠ | **The access check is looser than core's.** The plugin only calls `collection_readable()`. Core ([search_functions.php:1203-1238](../../../include/search_functions.php:1203)) also requires the collection to be one of the user's own, shared, public, selection, request or research collections, a permitted featured collection, or allowed by `$ignore_collection_access`. It also has an external-key path. `collection_readable()` is true for every collection for `R` and `h` users, and for `request_feedback` collections when `$collection_commenting` is on. Group-limited public collections and upload-share sessions differ too. The plugin also skips the check under `access_override`, which core doesn't. | Code |
-| 5 ◐ | **Ties are ordered differently.** The plugin sorts by `sortorder` only. Core sorts by `c.sortorder, c.date_added` (reversed), then `r.ref` ([search_functions.php:3184](../../../include/search_functions.php:3184)). | Live: collection 108 (180+ members share one `sortorder`) differs from row 20. The fix in Phase 0 matches 328/328 in both directions |
+| 4 ⚠ | **The access check is looser than core's.** The plugin only calls `collection_readable()`. Core ([search_functions.php:1203-1238](../../../include/search_functions.php#L1203)) also requires the collection to be one of the user's own, shared, public, selection, request or research collections, a permitted featured collection, or allowed by `$ignore_collection_access`. It also has an external-key path. `collection_readable()` is true for every collection for `R` and `h` users, and for `request_feedback` collections when `$collection_commenting` is on. Group-limited public collections and upload-share sessions differ too. The plugin also skips the check under `access_override`, which core doesn't. | Code |
+| 5 ◐ | **Ties are ordered differently.** The plugin sorts by `sortorder` only. Core sorts by `c.sortorder, c.date_added` (reversed), then `r.ref` ([search_functions.php:3184](../../../include/search_functions.php#L3184)). | Live: collection 108 (180+ members share one `sortorder`) differs from row 20. The fix in Phase 0 matches 328/328 in both directions |
 | 6 ◐ | **Relevance inside a collection.** Core's `score` there is `r.hit_count`. The plugin uses text match, or `ref:desc` with no keywords. Most internal `do_search('!collection…')` calls use the default `relevance`. | Code |
 | 7 ◐ | **Row fields.** `c.date_added`, `c.comment` and `commentset` are missing. Nothing in core's UI reads them from search rows, but `api_do_search()` returns whole rows, so API clients lose them. | grep |
 | 8 ◐ | **Archive and pending edge cases:**<br>• `$collections_omit_archived` is applied even under `access_override`; core applies it only without.<br>• Pending resources are hidden in external-share views, even though core shows them when `$collection_allow_not_approved_share` is set.<br>• `ert` and `$uploader_view_override` aren't modelled (a plugin-wide gap).<br>• `J` is skipped under `access_override`; core applies it. | Code |
@@ -190,7 +190,7 @@ Files touched:
   - a plugin table definition
 - Core:
   - [search_functions.php](../../../include/search_functions.php) for the shared access check
-  - [do_search.php:328](../../../include/do_search.php:328) if decision 2 is to fix core
+  - [do_search.php:328](../../../include/do_search.php#L328) if decision 2 is to fix core
 
 ### Phase 1 — keep collections served by Typesense
 
@@ -321,37 +321,37 @@ Line numbers are for the `typesense` branch as of 23 Sep 2026.
 
 | Path | Change | Hook |
 |---|---|---|
-| `add_resource_to_collection()` [collections_functions.php:341](../../../include/collections_functions.php:341) | Delete and re-insert one row. `sortorder` NULL unless passed; `date_added` now; comment wiped. | `Addtocollectionsuccess` (named args `resourceId`, `collectionId`), **before** the write |
-| `remove_resource_from_collection()` [:493](../../../include/collections_functions.php:493) | Delete one row | `Removefromcollectionsuccess`, **before** the write |
+| `add_resource_to_collection()` [collections_functions.php:341](../../../include/collections_functions.php#L341) | Delete and re-insert one row. `sortorder` NULL unless passed; `date_added` now; comment wiped. | `Addtocollectionsuccess` (named args `resourceId`, `collectionId`), **before** the write |
+| `remove_resource_from_collection()` [:493](../../../include/collections_functions.php#L493) | Delete one row | `Removefromcollectionsuccess`, **before** the write |
 | `collection_add_resources()` / `collection_remove_resources()` / `copy_collection()` adds / `update_smart_collection()` / request collections / API add and remove / collection bar / upload / edit pages | Through the two functions above | Once per resource, as above |
-| `delete_collection()` [:875](../../../include/collections_functions.php:875) | Delete all of the collection's rows | none |
-| `remove_all_resources_from_collection()` [:3610](../../../include/collections_functions.php:3610) | Delete all rows (also used for selection clears and logout) | none |
-| `copy_collection(…, remove_existing)` [:3300](../../../include/collections_functions.php:3300) | Wipe the target | none |
-| `add_saved_search_items()` [:2431](../../../include/collections_functions.php:2431) | Shift every `sortorder`, then re-add the results | none |
-| `update_collection_order()` [:3076](../../../include/collections_functions.php:3076) | Reorder; NULL → 99999 | none |
-| `swap_collection_order()` [:3024](../../../include/collections_functions.php:3024) | Swap `sortorder`/`date_added` (no callers) | none |
-| `collection_cleanup_inaccessible_resources()` [:4968](../../../include/collections_functions.php:4968) | Delete from the `-userref` review collection, as a side effect of a read | none |
-| `cleanup_anonymous_collections()` [:6027](../../../include/collections_functions.php:6027) | Deletes collections and leaves their rows orphaned | none |
-| `save_research_request()` [research_functions.php:228](../../../include/research_functions.php:228) | `INSERT … SELECT` copy | none |
-| `delete_resource()` [resource_functions.php:2956](../../../include/resource_functions.php:2956) | Delete the resource's rows (hard delete) | `beforedeleteresourcefromdb` (before), `afterdeleteresource` (after, no args) |
-| `update_archive_status()` [resource_functions.php:6412](../../../include/resource_functions.php:6412) | Deletion state removes rows (`$remove_deleted_resources_from_collections`) | `after_update_archive_status` (after) |
-| staticsync [pages/tools/staticsync.php:808](../../../pages/tools/staticsync.php:808), [:1221](../../../pages/tools/staticsync.php:1221) | Raw insert and delete | none |
-| action_dates plugin [hooks/all.php:223](../../action_dates/hooks/all.php:223) | Raw delete | none |
+| `delete_collection()` [:875](../../../include/collections_functions.php#L875) | Delete all of the collection's rows | none |
+| `remove_all_resources_from_collection()` [:3610](../../../include/collections_functions.php#L3610) | Delete all rows (also used for selection clears and logout) | none |
+| `copy_collection(…, remove_existing)` [:3300](../../../include/collections_functions.php#L3300) | Wipe the target | none |
+| `add_saved_search_items()` [:2431](../../../include/collections_functions.php#L2431) | Shift every `sortorder`, then re-add the results | none |
+| `update_collection_order()` [:3076](../../../include/collections_functions.php#L3076) | Reorder; NULL → 99999 | none |
+| `swap_collection_order()` [:3024](../../../include/collections_functions.php#L3024) | Swap `sortorder`/`date_added` (no callers) | none |
+| `collection_cleanup_inaccessible_resources()` [:4968](../../../include/collections_functions.php#L4968) | Delete from the `-userref` review collection, as a side effect of a read | none |
+| `cleanup_anonymous_collections()` [:6027](../../../include/collections_functions.php#L6027) | Deletes collections and leaves their rows orphaned | none |
+| `save_research_request()` [research_functions.php:228](../../../include/research_functions.php#L228) | `INSERT … SELECT` copy | none |
+| `delete_resource()` [resource_functions.php:2956](../../../include/resource_functions.php#L2956) | Delete the resource's rows (hard delete) | `beforedeleteresourcefromdb` (before), `afterdeleteresource` (after, no args) |
+| `update_archive_status()` [resource_functions.php:6412](../../../include/resource_functions.php#L6412) | Deletion state removes rows (`$remove_deleted_resources_from_collections`) | `after_update_archive_status` (after) |
+| staticsync [pages/tools/staticsync.php:808](../../../pages/tools/staticsync.php#L808), [:1221](../../../pages/tools/staticsync.php#L1221) | Raw insert and delete | none |
+| action_dates plugin [hooks/all.php:223](../../action_dates/hooks/all.php#L223) | Raw delete | none |
 | `pages/tools/database_prune.php`, `pages/tools/renumber_resources.php` | Orphan clean-up; renumbering refs | none |
 
 Collection-level changes also have no hooks: `create_collection()`, `save_collection()` (type,
 parent, public), `update_collection_type()`, `update_collection_parent()` and
 `collection_set_public()`. They matter because memberships store `collection_type`.
-[`collection_log()`](../../../include/collections_functions.php:3450) fires no hook and doesn't log
+[`collection_log()`](../../../include/collections_functions.php#L3450) fires no hook and doesn't log
 many changes (selection adds, reorders unless deduplicated, research copies, staticsync), so it
 isn't a single point where every change can be caught.
 
 ## Appendix C — The `J` + `j*` quirk
 
 Core builds `J` as a join
-([do_search.php:325-332](../../../include/do_search.php:325)):
+([do_search.php:325-332](../../../include/do_search.php#L325)):
 `JOIN collection_resource jcr … JOIN collection jc` plus
-[`featured_collections_permissions_filter_sql("AND", "jc.ref", true)`](../../../include/collections_functions.php:5251).
+[`featured_collections_permissions_filter_sql("AND", "jc.ref", true)`](../../../include/collections_functions.php#L5251).
 That filter returns one of these, based on `compute_featured_collections_access_control()`:
 
 | User's `j` permissions | Filter | Effective restriction |
@@ -363,10 +363,10 @@ That filter returns one of these, based on `compute_featured_collections_access_
 
 **Why this is a bug.** The empty string means "no permission filter needed", and that's only safe
 when the query already requires `c.type = FEATURED`. Every other caller adds that condition itself
-([collections_functions.php:1112](../../../include/collections_functions.php:1112),
-[:2751](../../../include/collections_functions.php:2751),
-[:5775](../../../include/collections_functions.php:5775),
-[resource_functions.php:4125](../../../include/resource_functions.php:4125)). The `J` join doesn't.
+([collections_functions.php:1112](../../../include/collections_functions.php#L1112),
+[:2751](../../../include/collections_functions.php#L2751),
+[:5775](../../../include/collections_functions.php#L5775),
+[resource_functions.php:4125](../../../include/resource_functions.php#L4125)). The `J` join doesn't.
 The permission text (*"display only resources that exist within featured collections to which the
 user has access"*) and core's own `-j` behaviour both point to featured-only.
 

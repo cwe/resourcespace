@@ -6,7 +6,7 @@ defer to core on), so it is written as a specification of *what core does today*
 locations that define each rule.
 
 All line references are to this checkout. The entry point is
-[`do_search()`](../../../include/do_search.php:44); the filter/special/sort helpers live in
+[`do_search()`](../../../include/do_search.php#L44); the filter/special/sort helpers live in
 [`include/search_functions.php`](../../../include/search_functions.php); the pipeline stages are the
 `do_search_*.php` includes.
 
@@ -50,7 +50,7 @@ row, a suggested-search string when there were no matches, or `[]`.
 
 `do_search()` normalises its arguments and then runs a fixed sequence of stages. Each stage is a
 separate `include` that can *short-circuit the whole search by returning early*
-([do_search.php:297-316](../../../include/do_search.php:297)).
+([do_search.php:297-316](../../../include/do_search.php#L297)).
 
 ```mermaid
 flowchart TD
@@ -76,8 +76,8 @@ flowchart TD
 Key ordering facts the plugin depends on:
 
 - **The `external_search` hook fires *before* `search_special()`**
-  ([do_search.php:342](../../../include/do_search.php:342) vs
-  [:382](../../../include/do_search.php:382)). So a provider sees *every* search — plain, special,
+  ([do_search.php:342](../../../include/do_search.php#L342) vs
+  [:382](../../../include/do_search.php#L382)). So a provider sees *every* search — plain, special,
   node, field-scoped — and must return `false` for anything it will not serve, letting core
   continue.
 - By the time the hook fires, `$sql_filter` and `$sql_join` **already carry the access joins, group
@@ -87,7 +87,7 @@ Key ordering facts the plugin depends on:
   `search_special()` wraps its own scope around them).
 - A resource ID typed on its own is handled two ways: with `$config_search_for_number` it becomes an
   exact `!resource`-style lookup; without it, core does a normal search but **boosts the exact ref
-  match to the top** ([do_search.php:320](../../../include/do_search.php:320)).
+  match to the top** ([do_search.php:320](../../../include/do_search.php#L320)).
 
 ---
 
@@ -98,7 +98,7 @@ in this order:
 
 | Token form | Meaning | Where handled |
 |---|---|---|
-| `!command[args]` (leading `!`) | Special search (§8). `!empty…` is the exception — treated as a field search, not a special. | [do_search.php:125](../../../include/do_search.php:125), `search_special()` |
+| `!command[args]` (leading `!`) | Special search (§8). `!empty…` is the exception — treated as a field search, not a special. | [do_search.php:125](../../../include/do_search.php#L125), `search_special()` |
 | `@@<node>` , `@@<node>@@<node>` | Node selection — OR within a token | `resolve_given_nodes()` → `$node_bucket` |
 | `@@!<node>` | Node exclusion (NOT) | `resolve_given_nodes()` → `$node_bucket_not` |
 | `fieldname:value` | Field-scoped search (§5) | `do_search_keywords.php` |
@@ -110,7 +110,7 @@ in this order:
 
 Multiple `@@` node tokens form **AND groups of ORs**: each `@@`-word becomes one bucket in
 `$node_bucket`, buckets are ANDed together, nodes inside a bucket are ORed
-([do_search.php:519-541](../../../include/do_search.php:519)). Free keywords are combined with AND
+([do_search.php:519-541](../../../include/do_search.php#L519)). Free keywords are combined with AND
 (all must match) unless expanded (e.g. a wildcard expands to many nodes → any-of).
 
 ---
@@ -129,9 +129,9 @@ resource↔node link is a row in `resource_node`. Keyword matching is therefore 
   expansion, which turns one keyword into an any-of set).
 - Only fields flagged for indexing (`keywords_index` / `partial_index`) contribute their words, and
   fields the user cannot see are excluded up front via `get_hidden_indexed_fields()`
-  ([do_search.php:286](../../../include/do_search.php:286)).
+  ([do_search.php:286](../../../include/do_search.php#L286)).
 - `metadata_field_view_access()` gates the *title* field too — a hidden title field is dropped from
-  the SELECT/sort ([do_search.php:267](../../../include/do_search.php:267)).
+  the SELECT/sort ([do_search.php:267](../../../include/do_search.php#L267)).
 
 Consequence: a keyword search is inherently **word-level and field-scoped at the index**, not
 free-form `LIKE '%…%'`. This is why the Typesense side maps a keyword search onto `q` + `query_by`
@@ -143,12 +143,12 @@ the same result set as a keyword search of that field.
 ## 5. Field searching (`fieldname:value`)
 
 `do_search_keywords.php` inspects each `fieldname:value` token and branches on the **field type**
-([do_search_keywords.php:86-265](../../../include/do_search_keywords.php:86)):
+([do_search_keywords.php:86-265](../../../include/do_search_keywords.php#L86)):
 
 - **Fixed-list fields** (`$FIXED_LIST_FIELD_TYPES` =
   checkbox `2`, dropdown `3`, category tree `7`, dynamic keyword `9`, radio `12`): the value is
   resolved to matching **node refs**, which are pushed into `$node_bucket` as an OR group
-  ([:251-265](../../../include/do_search_keywords.php:251)). From that point it is just a node
+  ([:251-265](../../../include/do_search_keywords.php#L251)). From that point it is just a node
   search — the legacy `shortname:value` form and a UI `@@node` selection converge to the same thing.
   Category-tree searches also match descendants because ancestor nodes are stored on the resource at
   save time.
@@ -156,9 +156,9 @@ the same result set as a keyword search of that field.
   scoped to that field** — word-level matching, honouring wildcards.
 - **Date fields**: parsed as a date (or partial date / range), including special forms like
   `field:numrange1|1234` and date-range `start…end` handling
-  ([:185-206](../../../include/do_search_keywords.php:185)).
+  ([:185-206](../../../include/do_search_keywords.php#L185)).
 - **`!empty<fieldref>` / `!emptyshortname`**: resources with *no* value in that field
-  ([:310](../../../include/do_search_keywords.php:310)).
+  ([:310](../../../include/do_search_keywords.php#L310)).
 - A field the user cannot view is skipped (never probed).
 
 So: **fixed-list `field:value` → node bucket; text/date `field:value` → field-scoped keyword/date
@@ -187,18 +187,18 @@ Two layers run for (almost) every search: **`search_filter()`** builds the share
 and **`do_search()` itself** adds the custom-access joins. Both are keyed off the user's
 permissions.
 
-### 7.1 `search_filter()` — [search_functions.php:730](../../../include/search_functions.php:730)
+### 7.1 `search_filter()` — [search_functions.php:730](../../../include/search_functions.php#L730)
 
 Adds, in order, only the clauses that apply:
 
 1. **Resource types** — `resource_type IN (restypes)`, *unless* `restypes` is blank, starts with
-   `Global`, or the search is `!collection` ([:751](../../../include/search_functions.php:751)).
+   `Global`, or the search is `!collection` ([:751](../../../include/search_functions.php#L751)).
 2. **Recent day limit** — `creation_date > curdate() - INTERVAL n DAY`.
 3. **`resource_created_by_filter`** — restrict to given creators (`-1` = current user).
 4. **`T<type>` permissions** — `resource_type NOT IN (…)` (hide whole types from this user).
 5. **"Use" access** — non-`v` users never see access=2 (confidential) unless a custom-access grant
-   (`rca`/`rca2`) says otherwise ([:815-821](../../../include/search_functions.php:815)).
-6. **Archive / workflow states** ([:823-872](../../../include/search_functions.php:823)):
+   (`rca`/`rca2`) says otherwise ([:815-821](../../../include/search_functions.php#L815)).
+6. **Archive / workflow states** ([:823-872](../../../include/search_functions.php#L823)):
    - `!collection` / `!list` / `!archivepending` / `!userpending` → **any** archive state (these
      define their own state, or a collection may legitimately hold pending items). `!collection`
      still hides `archive=2` when `$collections_omit_archived` and no `e2` perm.
@@ -209,16 +209,16 @@ Adds, in order, only the clauses that apply:
    - Plus a blanket rule hiding pending (`archive=-2`/`-1`) resources from non-`v` users unless the
      user created them or has `ert<type>`.
 7. **`z<state>` permissions + `$additional_archive_states`** — exclude states this user is blocked
-   from ([:874-902](../../../include/search_functions.php:874)); `$uploader_view_override` lets a
+   from ([:874-902](../../../include/search_functions.php#L874)); `$uploader_view_override` lets a
    user still see their own.
 8. **`heightmin`** media restriction.
 9. **`r.ref > 0`** — always; never returns the negative-ref upload templates.
 10. **`$access` exact-level filter** — only honoured for `v` users.
 11. **`editable_only`** — a large extra block (`e<state>`, `ert`, `XE`/`XE-` type rules,
     `edit_access_for_contributor`) restricting to editable resources
-    ([:928-1062](../../../include/search_functions.php:928)).
+    ([:928-1062](../../../include/search_functions.php#L928)).
 
-### 7.2 Custom access grants (`rca` / `rca2`) — [do_search.php:183](../../../include/do_search.php:183)
+### 7.2 Custom access grants (`rca` / `rca2`) — [do_search.php:183](../../../include/do_search.php#L183)
 
 For non-`v`, non-override users, `do_search()` LEFT-JOINs `resource_custom_access` twice:
 
@@ -239,9 +239,9 @@ in `search_filter()`, this is the whole grant model:
 
 The SELECT also computes `resultant_access` (LEAST of resource + custom access, with `X<type>` and
 `$userderestrictfilter` nuances) so downstream display logic knows the effective level without
-re-querying ([do_search.php:216-262](../../../include/do_search.php:216)).
+re-querying ([do_search.php:216-262](../../../include/do_search.php#L216)).
 
-### 7.3 Group search filter (`usersearchfilter`) — [get_filter_sql()](../../../include/search_functions.php:1957)
+### 7.3 Group search filter (`usersearchfilter`) — [get_filter_sql()](../../../include/search_functions.php#L1957)
 
 A user group can carry a **search filter**: a set of node rules that silently constrain every search
 for that group. Each rule has `nodes_on` (must be linked) and `nodes_off` (must not be), expressed
@@ -257,7 +257,7 @@ The whole filter is then OR'd with two escape hatches: a custom-access grant
 (`$open_access_for_contributor`). Applied in
 [`do_search_filtering.php`](../../../include/do_search_filtering.php).
 
-### 7.4 Featured-collections-only mode (`J` permission) — [do_search.php:325](../../../include/do_search.php:325)
+### 7.4 Featured-collections-only mode (`J` permission) — [do_search.php:325](../../../include/do_search.php#L325)
 
 When the user has `J`, results are restricted to resources that belong to a featured collection the
 user may access — a JOIN to `collection_resource`/`collection` filtered by
@@ -268,7 +268,7 @@ user may access — a JOIN to `collection_resource`/`collection` filtered by
 
 ## 8. Special searches (`!command`)
 
-`search_special()` ([search_functions.php:1090](../../../include/search_functions.php:1090))
+`search_special()` ([search_functions.php:1090](../../../include/search_functions.php#L1090))
 recognises a leading `!` and returns a result set directly (bypassing the standard SELECT). It runs
 *after* the `external_search` hook, so a provider can serve or defer any of these. Node/keyword
 criteria from earlier stages are already baked into `$sql_join`/`$sql_filter`, so most specials
@@ -303,17 +303,17 @@ combine with keywords (e.g. `!collection123 sunset`).
 | `!empty<field>` | Resources with an empty field | Handled in the keyword stage, not here. |
 
 Plugins can add their own via the **`addspecialsearch`** hook
-([:1695](../../../include/search_functions.php:1695)).
+([:1695](../../../include/search_functions.php#L1695)).
 
 **Refs-only / count reduction**: for `return_refs_only`, disk-usage or count queries,
 `search_special()` strips the heavy display columns and `GROUP BY r.ref`
-([:1702-1758](../../../include/search_functions.php:1702)).
+([:1702-1758](../../../include/search_functions.php#L1702)).
 
 ---
 
 ## 9. Sort ordering
 
-`set_search_order_by()` ([search_functions.php:3137](../../../include/search_functions.php:3137))
+`set_search_order_by()` ([search_functions.php:3137](../../../include/search_functions.php#L3137))
 maps an `order_by` **key** to a SQL `ORDER BY` fragment. Every option ends in `r.ref` for a stable
 tiebreak:
 
@@ -344,14 +344,14 @@ fields, rather than silently substituting relevance.
 ## 10. Result shapes (`fetchrows`, `return_refs_only`, `returnsql`, disk usage)
 
 `fetchrows` controls the window and the **return format**
-([do_search.php:418-477](../../../include/do_search.php:418)):
+([do_search.php:418-477](../../../include/do_search.php#L418)):
 
 - **`-1`** (default) — every row, as a flat array. Nothing is padded, because every row is
   returned.
 - **integer `n`** — the first `n` rows as a flat array, **padded with `0` entries** up to the true
   total (legacy behaviour so callers can `count()` or page by index). `do_search()` pads full rows
   only; `search_special()` pads refs-only results too
-  ([search_functions.php:1799-1814](../../../include/search_functions.php:1799)).
+  ([search_functions.php:1799-1814](../../../include/search_functions.php#L1799)).
 - **`[offset, limit]` array** — returns the structured `['total'=>…, 'data'=>[…]]` from
   `sql_limit_with_total_count()`, **not padded**; `[0,0]` returns just the total. The main
   search-results grid uses this form. `[x,-1]` with `x > 0` returns every row from the start:
@@ -364,7 +364,7 @@ fields, rather than silently substituting relevance.
 When there are **no matches**, a keyword search returns a **suggested search string** (keywords
 removed, least-used first) rather than an empty array — unless the search was field-scoped or a
 single keyword, in which case it returns `""`
-([do_search.php:479-511](../../../include/do_search.php:479)).
+([do_search.php:479-511](../../../include/do_search.php#L479)).
 
 > Plugin note: the `typesense_search` UI badge keys off this — the main grid uses an
 > `[offset, limit]` array, so incidental scalar-`fetchrows` searches on the page (the selection
@@ -397,13 +397,13 @@ These must be honoured or a re-implementation will diverge from core:
 
 ## 12. Extension hooks
 
-- **`external_search`** — the main override point ([do_search.php:342](../../../include/do_search.php:342)).
+- **`external_search`** — the main override point ([do_search.php:342](../../../include/do_search.php#L342)).
   Return a result set (even an empty one) to take over the search, or `false` to let core continue.
   Receives the structured args (`$search`, `$keywords`, `$node_bucket`, `$node_bucket_not`,
   `$restypes`, `$order_by`, `$archive`, `$fetchrows`, `$access_override`, `$return_refs_only`,
   `$editable_only`, `$returnsql`, `$access`, `$smartsearch`, plus the pre-built `$sql_filter`,
   `$sql_join`, `$select`).
-- **`addspecialsearch`** — add a `!command` ([search_functions.php:1695](../../../include/search_functions.php:1695)).
+- **`addspecialsearch`** — add a `!command` ([search_functions.php:1695](../../../include/search_functions.php#L1695)).
 - **`alternativeresults`**, **`modifyfetchrows`**, **`dosearchmodifykeywords`**,
   **`modifyselect`/`modifyselect2`**, **`search_pipeline_setup`**, **`modifyorderarray`**,
   **`modifycollectionsearchsql`**, **`beforereturnresults`**, **`zero_search_results`** — finer
@@ -417,9 +417,9 @@ A single search request routinely combines several of the criteria types above. 
 stack is structural: **every keyword, `field:value` and node token is resolved into either
 `$node_bucket` or the keyword-union arrays, and both are baked into the shared `$sql_join` /
 `$sql_filter` before `search_special()` and the `external_search` hook run**
-([do_search_union_assembly.php:38-76](../../../include/do_search_union_assembly.php:38),
-[do_search_nodes.php:8-35](../../../include/do_search_nodes.php:8), then
-[do_search.php:382](../../../include/do_search.php:382)). So a special search *wraps* the keyword +
+([do_search_union_assembly.php:38-76](../../../include/do_search_union_assembly.php#L38),
+[do_search_nodes.php:8-35](../../../include/do_search_nodes.php#L8), then
+[do_search.php:382](../../../include/do_search.php#L382)). So a special search *wraps* the keyword +
 node criteria rather than replacing them. `restypes`, `archive` and `access` arrive as separate
 arguments and are ANDed in by `search_filter()`.
 
@@ -438,29 +438,29 @@ plugin** column records what the `typesense_search` plugin does with the same co
 
 | Combination | Core | How it stacks in core (verified) | Typesense plugin |
 |---|---|---|---|
-| keyword **+** keyword | ✅ | Each keyword is a union; criteria ANDed ([union_assembly:55-74](../../../include/do_search_union_assembly.php:55)). | ✅ served — one `q`, AND via `drop_tokens_threshold=0` |
-| keyword **OR** keyword — `red;green` | ✅ | `explode(';')` sets `union_or` → ORed group ([keywords:301](../../../include/do_search_keywords.php:301)). Fixed-list too ([:258](../../../include/do_search_keywords.php:258)). | ↩️ core — **vetoed** (`typesense_build_q_from_keywords`): Typesense has no term-level OR across `query_by`, so core ORs it correctly |
-| keyword **NOT** — `-word` | ✅ | `omit` flag → excluded from the union ([keywords:305](../../../include/do_search_keywords.php:305)). | ✅ served — Typesense honours `-word` (minor stemming difference vs core's exact word) |
+| keyword **+** keyword | ✅ | Each keyword is a union; criteria ANDed ([union_assembly:55-74](../../../include/do_search_union_assembly.php#L55)). | ✅ served — one `q`, AND via `drop_tokens_threshold=0` |
+| keyword **OR** keyword — `red;green` | ✅ | `explode(';')` sets `union_or` → ORed group ([keywords:301](../../../include/do_search_keywords.php#L301)). Fixed-list too ([:258](../../../include/do_search_keywords.php#L258)). | ↩️ core — **vetoed** (`typesense_build_q_from_keywords`): Typesense has no term-level OR across `query_by`, so core ORs it correctly |
+| keyword **NOT** — `-word` | ✅ | `omit` flag → excluded from the union ([keywords:305](../../../include/do_search_keywords.php#L305)). | ✅ served — Typesense honours `-word` (minor stemming difference vs core's exact word) |
 | quoted phrase — `"red car"` | ✅ | `split_keywords()` keeps the phrase intact. | ≈ partial — quotes passed into `q`; phrase adjacency not separately validated |
-| full-text boolean phrase | ✅ | `MATCH(name) AGAINST(… IN BOOLEAN MODE)` union ([keywords:29-49](../../../include/do_search_keywords.php:29)). | ↩️ core — **vetoed** (`@FULL_TEXT…` detected): no boolean-mode equivalent in Typesense |
+| full-text boolean phrase | ✅ | `MATCH(name) AGAINST(… IN BOOLEAN MODE)` union ([keywords:29-49](../../../include/do_search_keywords.php#L29)). | ↩️ core — **vetoed** (`@FULL_TEXT…` detected): no boolean-mode equivalent in Typesense |
 | keyword **+** node select `@@n` | ✅ | Node JOIN in `$sql_join`; keyword union ANDed alongside. | ✅ served — `q` + `nodes:=[…]` |
-| keyword **+** fixed-list `field:value` | ✅ | Fixed-list value → `$node_bucket` ([keywords:247-268](../../../include/do_search_keywords.php:247)); ANDed with the keyword. | ✅ served — core pre-resolves to `$node_bucket` → `nodes:=[…]` |
-| multiple node buckets (AND of ORs) | ✅ | One JOIN per bucket, ANDed; `IN(…)` = OR within ([nodes:8-22](../../../include/do_search_nodes.php:8)). | ✅ served — one `nodes:=[…]` clause per bucket, ANDed |
-| node select **+** node exclude `@@!n` | ✅ | Exclusion → `NOT EXISTS (…)` prefixed to the filter ([nodes:31-35](../../../include/do_search_nodes.php:31)). | ✅ served — `nodes:!=[…]` |
-| keyword **+** text `field:value` | ✅ | Field-scoped keyword (`search_field_restrict`) ([keywords:291-294](../../../include/do_search_keywords.php:291)). | ✅ served — bare-colon `field_<ref>_s`/`_text` filter + free-text `q` |
+| keyword **+** fixed-list `field:value` | ✅ | Fixed-list value → `$node_bucket` ([keywords:247-268](../../../include/do_search_keywords.php#L247)); ANDed with the keyword. | ✅ served — core pre-resolves to `$node_bucket` → `nodes:=[…]` |
+| multiple node buckets (AND of ORs) | ✅ | One JOIN per bucket, ANDed; `IN(…)` = OR within ([nodes:8-22](../../../include/do_search_nodes.php#L8)). | ✅ served — one `nodes:=[…]` clause per bucket, ANDed |
+| node select **+** node exclude `@@!n` | ✅ | Exclusion → `NOT EXISTS (…)` prefixed to the filter ([nodes:31-35](../../../include/do_search_nodes.php#L31)). | ✅ served — `nodes:!=[…]` |
+| keyword **+** text `field:value` | ✅ | Field-scoped keyword (`search_field_restrict`) ([keywords:291-294](../../../include/do_search_keywords.php#L291)). | ✅ served — bare-colon `field_<ref>_s`/`_text` filter + free-text `q` |
 | multiple `field:value` (mixed field types) | ✅ | Fixed-list → node bucket, text/date → union; all ANDed. | ✅ served — each becomes a node clause or a `field_*` filter, ANDed |
-| date `field:value` / range / `numrange` | ✅ | Dedicated date/number JOINs ([keywords:128-246](../../../include/do_search_keywords.php:128)). | ✅ served — plain value (`field_<ref>_q`) **and date range** as an interval overlap on `field_<ref>_range_start`/`_range_end` (via `typesense_parse_date`), for **all** date field types incl. DATE_RANGE. Numeric `numrange` ✅ served on `field_<ref>_f` (single bound = exact match, mirroring core), for numeric-constrained (`field_constraint==1`) indexed fields |
-| any search **+** `restypes` argument | ✅ | `resource_type IN (…)` — **except `!collection`, which ignores restypes** ([search_functions:751](../../../include/search_functions.php:751)). | ✅ served — `resource_type:=[…]`; `!collection` skip honoured ([restrictions/standard.php:42](../include/restrictions/standard.php)) |
-| any search **+** `archive` states argument | ✅ | Advanced search passes explicit states ([search_functions:846-853](../../../include/search_functions.php:846)). | ✅ served — `archive:=[…]` |
+| date `field:value` / range / `numrange` | ✅ | Dedicated date/number JOINs ([keywords:128-246](../../../include/do_search_keywords.php#L128)). | ✅ served — plain value (`field_<ref>_q`) **and date range** as an interval overlap on `field_<ref>_range_start`/`_range_end` (via `typesense_parse_date`), for **all** date field types incl. DATE_RANGE. Numeric `numrange` ✅ served on `field_<ref>_f` (single bound = exact match, mirroring core), for numeric-constrained (`field_constraint==1`) indexed fields |
+| any search **+** `restypes` argument | ✅ | `resource_type IN (…)` — **except `!collection`, which ignores restypes** ([search_functions:751](../../../include/search_functions.php#L751)). | ✅ served — `resource_type:=[…]`; `!collection` skip honoured ([restrictions/standard.php:42](../include/restrictions/standard.php)) |
+| any search **+** `archive` states argument | ✅ | Advanced search passes explicit states ([search_functions:846-853](../../../include/search_functions.php#L846)). | ✅ served — `archive:=[…]` |
 | special **+** keyword — `!collection123 sunset` | ✅ | Keyword union already in `$sql_filter`; the special's SQL includes `AND (… filter …)`. | ✅ served — mode scope + shared keyword step compose |
 | special **+** node / fixed-list refine — `!collection123 country:france` | ✅ | Node JOIN already in `$sql_join`, carried into the special's query. | ✅ served — mode scope + `nodes:=[…]` |
 | special **+** text `field:value` — `!collection123 caption:report` | ✅ | The field-scoped union is in `$sql_join`/`$sql_filter`. | ✅ served — the bare-colon field filter composes with the mode *(previously deferred; now implemented)* |
 | `!list1:2:3` **+** keyword | ✅ | `r.ref IN (…) AND (sql_filter)` where the filter holds the keyword union. | ✅ served — `ref:=[…]` + `q` |
 | `!last50` **+** keyword | ✅ | Inner `… WHERE sql_filter ORDER BY ref DESC LIMIT 1000` — caps the *matched* set, not the whole table; the `50` is lost, because core reads the count from everything after `!last` up to the first comma and `50 keyword` is not numeric. | ✅ served — recent-N cutoff + `q`, then your sort ([modes/last.php](../include/modes/last.php)) |
-| `!properties` multi-property — `!propertieshmin:100;fext:jpg` | ✅ | `;`-separated, each ANDed ([search_functions:1502-1596](../../../include/search_functions.php:1502)). | ↩️ core — no `!properties` mode → `UnsupportedSpecialMode` vetoes |
+| `!properties` multi-property — `!propertieshmin:100;fext:jpg` | ✅ | `;`-separated, each ANDed ([search_functions:1502-1596](../../../include/search_functions.php#L1502)). | ↩️ core — no `!properties` mode → `UnsupportedSpecialMode` vetoes |
 | `!properties…` **+** keyword (space-separated) | ✅ | Explicitly designed to combine — first space-token is the property list, the rest are keywords. | ↩️ core — vetoes with the special |
 | special **+** special — `!collection123 !last50` | ❌ | Only the **first** matching `!` branch runs; the second is left as stray keyword text. Not a real combination. | ↩️ core-equivalent — plugin also honours only the first special |
-| `field:value` on a **non-viewable** field | ⚠️ aborts | Returns `false` for the *whole* search, not just that clause ([keywords:121-124](../../../include/do_search_keywords.php:121)). | ↩️ core — plugin vetoes (won't probe hidden data); core then aborts |
+| `field:value` on a **non-viewable** field | ⚠️ aborts | Returns `false` for the *whole* search, not just that clause ([keywords:121-124](../../../include/do_search_keywords.php#L121)). | ↩️ core — plugin vetoes (won't probe hidden data); core then aborts |
 | `-field:value` (negate a fixed-list field) | ⚠️ degrades | `-country` isn't a field name, so it splits into loose keywords `-country` / `france` rather than a field-scoped exclusion. Use `@@!<node>` for a true node exclusion. | ↩️ core — plugin vetoes `negative field-scoped search`; core degrades as noted |
 
 ### 13.2 Stacking rules (the mental model)
@@ -533,7 +533,7 @@ correctly with a keyword, `ref` sort (both directions), a resource-type restrict
 
 > **Indexing note:** numeric range/sort relies on `field_<ref>_f`, which is populated for
 > **numeric-constrained** single-line fields (`field_constraint == 1`)
-> ([typesense_search_functions.php:1025](../include/typesense_search_functions.php:1025)). A dataset
+> ([typesense_search_functions.php:1025](../include/typesense_search_functions.php#L1025)). A dataset
 > with no such field simply has no `_f` values, so a `numrange` there matches nothing (Typesense
 > returns 0 under `validate_field_names=0`, rather than erroring). *(This was previously a bug —
 > the check read `$value == 1` instead of the field's numeric flag — now fixed; a reindex populates
@@ -611,8 +611,8 @@ default-archive filter because they define their own scope.
 Four criteria in one string, all ANDed: a text field-scoped keyword (`report` in caption, → keyword
 union), a fixed-list field (`france` → node bucket), a free keyword (`sunset` → union) and an
 exclusion (`-draft` → omitted union). Core assembles the two unions and the node JOIN into one query
-([union_assembly](../../../include/do_search_union_assembly.php:38),
-[nodes](../../../include/do_search_nodes.php:8)); access/archive filters apply on top. A resource
+([union_assembly](../../../include/do_search_union_assembly.php#L38),
+[nodes](../../../include/do_search_nodes.php#L8)); access/archive filters apply on top. A resource
 must satisfy every clause. *(The Typesense plugin serves the fixed-list + free-keyword + exclusion
 parts and vetoes to core when a text `field:value` is present.)*
 

@@ -96,12 +96,12 @@ All verified in [`typesense_search_functions.php`](../include/typesense_search_f
 | 2 | `typesense_search_index_resource()` passes the document as `typesense_search_request()`'s third argument (`$batch`), not the fourth (`$payload`). | No body is sent even with a correct URL. |
 | 3 | It builds the legacy shape via `typesense_search_get_document_data()` (:614): `attributes[]`, no `ref_s`, `access`, `nodes`, `populated_field_ids` or `field_<ref>_*`. | Fixing 1 and 2 alone would make every upsert **strip** the resource's node, access and field data. It would leave node filters, `!hasdata`, `field:value` and the access restriction (`access` missing → the filter can't evaluate as intended). |
 | 4 | `HookTypesense_searchAllBeforenodedelete` / `Afternodedelete` (:117, :133) listen for hooks core never fires; `node_functions.php` contains no `hook()` call at all. | Node deletes never reindex anything. |
-| 5 | `HookTypesense_searchAllAftersaveresourcedata` (:148) reads `global $ref` instead of the hook's first argument. Batch edit passes `$list` (an array) at [resource_functions.php:2396](../../../include/resource_functions.php:2396) and `$ref` is only the page's first resource. | Batch edits reindex at most one resource. |
-| 6 | `typesense_search_index_resource()` calls `typesense_search_ensure_collection()` first, which **creates empty collections** if the GET fails. do_search uses any non-`false` hook result, including an empty one ([do_search.php:370](../../../include/do_search.php:370)). | A lost or renamed index is silently replaced by an empty one and every search shows nothing. |
+| 5 | `HookTypesense_searchAllAftersaveresourcedata` (:148) reads `global $ref` instead of the hook's first argument. Batch edit passes `$list` (an array) at [resource_functions.php:2396](../../../include/resource_functions.php#L2396) and `$ref` is only the page's first resource. | Batch edits reindex at most one resource. |
+| 6 | `typesense_search_index_resource()` calls `typesense_search_ensure_collection()` first, which **creates empty collections** if the GET fails. do_search uses any non-`false` hook result, including an empty one ([do_search.php:370](../../../include/do_search.php#L370)). | A lost or renamed index is silently replaced by an empty one and every search shows nothing. |
 | 7 | `typesense_search_index_grants()` (:1413) exists, correctly deletes by `resource_id:=` and re-adds, but has no caller. | Grant changes never reach the index. |
 | 8 | The four full-reindex passes only upsert. Nothing is ever deleted. | Resources, memberships and grants removed in RS survive every reindex into an existing collection. |
 | 9 | The attributes pass imports with `action=update`. On Typesense a per-line `update` of a missing id fails (`404 Could not find a document`) inside an HTTP 200 (Appendix A). | Fine after pass 1, but any single-resource path built the same way would silently lose the update. |
-| 10 | `typesense_search_reindex_grants()` (:1369) pages with `resource > ? … LIMIT ?`; a batch boundary inside one resource's rows skips the rest of them. `copy_resource` produces `(usergroup NULL, user NULL)` rows ([resource_functions.php:3757](../../../include/resource_functions.php:3757)) which become `<ref>_g0` documents with `usergroup: 0`. | Occasional missing grants; junk grant documents (harmless for anonymous users since 0 ≠ -1, but wrong). |
+| 10 | `typesense_search_reindex_grants()` (:1369) pages with `resource > ? … LIMIT ?`; a batch boundary inside one resource's rows skips the rest of them. `copy_resource` produces `(usergroup NULL, user NULL)` rows ([resource_functions.php:3757](../../../include/resource_functions.php#L3757)) which become `<ref>_g0` documents with `usergroup: 0`. | Occasional missing grants; junk grant documents (harmless for anonymous users since 0 ≠ -1, but wrong). |
 | 11 | One `$typesense_search_timeout` (30 s) is used for both connect and total time, for reads and writes. | If the host is unreachable (packets dropped rather than refused) every search and every save waits up to 30 s. |
 | 12 | `typesense_search_hydrate_refs()` (:197) adds the `rca`/`rca2` joins only so `$select` resolves; no access or archive condition is applied. | Stale index data is shown as-is. |
 
@@ -139,39 +139,39 @@ must never be indexed.
 ## 3. Event inventory
 
 Key: **hook** = a core hook a plugin can use today (name, timing, arguments); **modified** = whether
-`resource.modified` is bumped (only `resource_log()` does this, [resource_functions.php:3842](../../../include/resource_functions.php:3842));
+`resource.modified` is bumped (only `resource_log()` does this, [resource_functions.php:3842](../../../include/resource_functions.php#L3842));
 **gap** = what the sync design must cover because no hook does.
 
 ### 3.1 Resource lifecycle
 
 | Event | Core path | Hook | modified | Gap / note |
 |---|---|---|---|---|
-| Create | `create_resource()` [rf:563](../../../include/resource_functions.php:563) | `resourcecreate($ref,$resource_type)` :603 — fires **before** autocomplete and the log; metadata not yet written | yes | Later metadata arrives through `update_field`/`aftersaveresourcedata`. Callers: API, upload (`upload_then_edit`), staticsync, contact sheets, csv_upload, emu, video_splice… |
-| Copy (incl. normal upload from the user template) | `copy_resource()` [rf:3674](../../../include/resource_functions.php:3674) | `afternewresource($to)` :3793 at the end | yes | Copies `access` and custom-access rows (as junk `(NULL,NULL)` rows for user grants). `resourcecreate` does **not** fire here. |
-| Upload sequence | [upload_batch.php](../../../pages/upload_batch.php) | `resourcecreate`/`afternewresource`, `after_update_archive_status` (:804, always called), `uploadfilesuccess(resource_ref)` [ip:501](../../../include/image_processing.php:501), `afterpluploadfile($ref,$extension)` :890 (last per file), `afterpreviewcreation` later (maybe from a job) | yes | One upload fires ~10 hooks and many `update_field` hooks (exif extraction). The queue must coalesce them. With `$upload_then_process` part of it runs in the `upload_processing` job. |
-| Soft delete (`$resource_deletion_state`, default 3) | `delete_resource()` [rf:2985](../../../include/resource_functions.php:2985) → `update_archive_status()` | `after_update_archive_status($resources[],$archive,$existing[])` [rf:6463](../../../include/resource_functions.php:6463) | yes | Core also deletes the resource's `collection_resource` rows (raw SQL, :6455, when `$remove_deleted_resources_from_collections`) — membership docs must go too. Restoring does not restore memberships. |
-| Hard delete (already in deletion state, or state unset; purge tool) | `delete_resource()` [rf:2996-3063](../../../include/resource_functions.php:2996) | `delete_resource_extra($ref)` :3030, `beforedeleteresourcefromdb($ref)` :3045, `afterdeleteresource()` :3063 (**no args**) | n/a | Deletes `resource_node`, `collection_resource`, `resource_custom_access` rows. Capture the ref in the *before* hook. `Removefromcollectionsuccess` does not fire for the membership rows. |
-| Bulk delete in a collection | `delete_resources_in_collection()` [rf:6468](../../../include/resource_functions.php:6468) | as above, `after_update_archive_status` once with arrays | yes | |
-| Archive / workflow change | `update_archive_status()` [rf:6412](../../../include/resource_functions.php:6412); `save_resource_data` :1346; batch :2260; API; workflow plugins | `after_update_archive_status` (fires even if unchanged) | yes (logged **before** the UPDATE) | **No hook:** `put_resource_data()` [rf:540](../../../include/resource_functions.php:540) (API `put_resource_data`), `update_resource()` :4584 (`after_update_resource(resourceId)` fires later), staticsync :719/:959/:1215, `remove_missing_files.php:25` (unlogged), rse_workflow_delete_state, emu, video_splice. |
-| Access level change | `save_resource_data` [rf:1382](../../../include/resource_functions.php:1382); batch :2304; `put_resource_data`; `copy_locked_data` :6833; csv_upload; action_dates | `aftersaveresourcedata` (single: `$ref`; batch: `$list[]`) | yes | **No hook:** `put_resource_data`, `copy_locked_data` (only `copy_locked_data_extra` from edit.php), csv_upload, staticsync, action_dates. Leaving access 3 deletes group grant rows (:1374, :2307). |
-| Resource type change | `update_resource_type()` [rf:4154](../../../include/resource_functions.php:4154) | **none** | only if the type changed | Also deletes now-invalid `resource_node` rows. Reached from `process_edit_form` (then `aftersaveresourcedata`, unless the save returns early at :682/:1239), batch edit, API `update_resource_type`, `copy_locked_data` (even on render), csv_upload, emu. `put_resource_data` can change the type with no node cleanup. |
+| Create | `create_resource()` [rf:563](../../../include/resource_functions.php#L563) | `resourcecreate($ref,$resource_type)` :603 — fires **before** autocomplete and the log; metadata not yet written | yes | Later metadata arrives through `update_field`/`aftersaveresourcedata`. Callers: API, upload (`upload_then_edit`), staticsync, contact sheets, csv_upload, emu, video_splice… |
+| Copy (incl. normal upload from the user template) | `copy_resource()` [rf:3674](../../../include/resource_functions.php#L3674) | `afternewresource($to)` :3793 at the end | yes | Copies `access` and custom-access rows (as junk `(NULL,NULL)` rows for user grants). `resourcecreate` does **not** fire here. |
+| Upload sequence | [upload_batch.php](../../../pages/upload_batch.php) | `resourcecreate`/`afternewresource`, `after_update_archive_status` (:804, always called), `uploadfilesuccess(resource_ref)` [ip:501](../../../include/image_processing.php#L501), `afterpluploadfile($ref,$extension)` :890 (last per file), `afterpreviewcreation` later (maybe from a job) | yes | One upload fires ~10 hooks and many `update_field` hooks (exif extraction). The queue must coalesce them. With `$upload_then_process` part of it runs in the `upload_processing` job. |
+| Soft delete (`$resource_deletion_state`, default 3) | `delete_resource()` [rf:2985](../../../include/resource_functions.php#L2985) → `update_archive_status()` | `after_update_archive_status($resources[],$archive,$existing[])` [rf:6463](../../../include/resource_functions.php#L6463) | yes | Core also deletes the resource's `collection_resource` rows (raw SQL, :6455, when `$remove_deleted_resources_from_collections`) — membership docs must go too. Restoring does not restore memberships. |
+| Hard delete (already in deletion state, or state unset; purge tool) | `delete_resource()` [rf:2996-3063](../../../include/resource_functions.php#L2996) | `delete_resource_extra($ref)` :3030, `beforedeleteresourcefromdb($ref)` :3045, `afterdeleteresource()` :3063 (**no args**) | n/a | Deletes `resource_node`, `collection_resource`, `resource_custom_access` rows. Capture the ref in the *before* hook. `Removefromcollectionsuccess` does not fire for the membership rows. |
+| Bulk delete in a collection | `delete_resources_in_collection()` [rf:6468](../../../include/resource_functions.php#L6468) | as above, `after_update_archive_status` once with arrays | yes | |
+| Archive / workflow change | `update_archive_status()` [rf:6412](../../../include/resource_functions.php#L6412); `save_resource_data` :1346; batch :2260; API; workflow plugins | `after_update_archive_status` (fires even if unchanged) | yes (logged **before** the UPDATE) | **No hook:** `put_resource_data()` [rf:540](../../../include/resource_functions.php#L540) (API `put_resource_data`), `update_resource()` :4584 (`after_update_resource(resourceId)` fires later), staticsync :719/:959/:1215, `remove_missing_files.php:25` (unlogged), rse_workflow_delete_state, emu, video_splice. |
+| Access level change | `save_resource_data` [rf:1382](../../../include/resource_functions.php#L1382); batch :2304; `put_resource_data`; `copy_locked_data` :6833; csv_upload; action_dates | `aftersaveresourcedata` (single: `$ref`; batch: `$list[]`) | yes | **No hook:** `put_resource_data`, `copy_locked_data` (only `copy_locked_data_extra` from edit.php), csv_upload, staticsync, action_dates. Leaving access 3 deletes group grant rows (:1374, :2307). |
+| Resource type change | `update_resource_type()` [rf:4154](../../../include/resource_functions.php#L4154) | **none** | only if the type changed | Also deletes now-invalid `resource_node` rows. Reached from `process_edit_form` (then `aftersaveresourcedata`, unless the save returns early at :682/:1239), batch edit, API `update_resource_type`, `copy_locked_data` (even on render), csv_upload, emu. `put_resource_data` can change the type with no node cleanup. |
 
 ### 3.2 Metadata writes
 
 | Path | Writes nodes via | Hook | modified | Gap / note |
 |---|---|---|---|---|
-| Edit page | `save_resource_data()` [rf:645](../../../include/resource_functions.php:645) | `befsaveresourcedata($ref)` :655; `aftersaveresourcedata($ref,$nodes_to_add,$nodes_to_remove,$autosave_field,$fields,$updated_resources)` :1397 | yes | Early returns without the after-hook at :682 (locked) and :1239 (field errors) after some writes (in-place text node renames, EDTF `update_field`, `fieldN`). Text edits often **rename the node in place** (:1199) instead of touching `resource_node`. |
-| Batch edit | `save_resource_data_multi()` [rf:1464](../../../include/resource_functions.php:1464) | `saveextraresourcedata($list)` :2392; `aftersaveresourcedata($list,…)` :2396 | only where values changed | Node writes are unlogged (`add_resource_nodes_multi`, `delete_resource_nodes_multi`); early return at :2356 skips both after-hooks **after** the writes. |
-| `update_field()` [rf:2443](../../../include/resource_functions.php:2443) | nodes / in-place rename | `update_field($resource,$field,$value,$existing,$fieldinfo,$newnodes,$newvalues)` :2814 | yes (unless `$log=false`) | Not fired on validation failures or unchanged text. Used by API `update_field`, `set_resource_defaults`, exif/text extraction, geolocation, autocomplete (text), locked fields, csv text columns, most plugins (vision, clip, tesseract, whisper, openai_gpt, tms_link, emu…). |
-| API `add_resource_nodes` / `add_resource_nodes_multi` [ab:769/807](../../../include/api_bindings.php:769) | `add_resource_nodes*` | **none** | yes (logged) | No API to delete nodes; no API for `save_resource_data`. |
-| API `put_resource_data` [ab:379](../../../include/api_bindings.php:379) | `resource` columns incl. `modified` | **none** | yes | |
-| csv_upload fixed-list columns [csv:659-811](../../../plugins/csv_upload/include/csv_functions.php:659) | `set_node`, `delete_resource_nodes`, `add_resource_nodes` | **none** | yes (logged) | Text columns use `update_field` (hook fires). Runs on the web or as a `csv_upload` job. |
-| Metadata templates / "save all remaining" [edit.php:676-712](../../../pages/edit.php:676) | `copyAllDataToResource` → `copy_resource_nodes` (additive), `copy_locked_data`, `copy_locked_fields` | **none** (`copy_locked_data_extra` only) | yes (logged) | No `aftersaveresourcedata` for the other resources of the batch. |
-| Fixed-list autocomplete [rf:5925](../../../include/resource_functions.php:5925) | `add_resource_nodes` | **none** | yes | Text autocomplete goes through `update_field`. |
-| Annotations [annotation_functions.php:436-522](../../../include/annotation_functions.php:436) | `add/delete_resource_nodes` | **none** | yes | |
+| Edit page | `save_resource_data()` [rf:645](../../../include/resource_functions.php#L645) | `befsaveresourcedata($ref)` :655; `aftersaveresourcedata($ref,$nodes_to_add,$nodes_to_remove,$autosave_field,$fields,$updated_resources)` :1397 | yes | Early returns without the after-hook at :682 (locked) and :1239 (field errors) after some writes (in-place text node renames, EDTF `update_field`, `fieldN`). Text edits often **rename the node in place** (:1199) instead of touching `resource_node`. |
+| Batch edit | `save_resource_data_multi()` [rf:1464](../../../include/resource_functions.php#L1464) | `saveextraresourcedata($list)` :2392; `aftersaveresourcedata($list,…)` :2396 | only where values changed | Node writes are unlogged (`add_resource_nodes_multi`, `delete_resource_nodes_multi`); early return at :2356 skips both after-hooks **after** the writes. |
+| `update_field()` [rf:2443](../../../include/resource_functions.php#L2443) | nodes / in-place rename | `update_field($resource,$field,$value,$existing,$fieldinfo,$newnodes,$newvalues)` :2814 | yes (unless `$log=false`) | Not fired on validation failures or unchanged text. Used by API `update_field`, `set_resource_defaults`, exif/text extraction, geolocation, autocomplete (text), locked fields, csv text columns, most plugins (vision, clip, tesseract, whisper, openai_gpt, tms_link, emu…). |
+| API `add_resource_nodes` / `add_resource_nodes_multi` [ab:769/807](../../../include/api_bindings.php#L769) | `add_resource_nodes*` | **none** | yes (logged) | No API to delete nodes; no API for `save_resource_data`. |
+| API `put_resource_data` [ab:379](../../../include/api_bindings.php#L379) | `resource` columns incl. `modified` | **none** | yes | |
+| csv_upload fixed-list columns [csv:659-811](../../../plugins/csv_upload/include/csv_functions.php#L659) | `set_node`, `delete_resource_nodes`, `add_resource_nodes` | **none** | yes (logged) | Text columns use `update_field` (hook fires). Runs on the web or as a `csv_upload` job. |
+| Metadata templates / "save all remaining" [edit.php:676-712](../../../pages/edit.php#L676) | `copyAllDataToResource` → `copy_resource_nodes` (additive), `copy_locked_data`, `copy_locked_fields` | **none** (`copy_locked_data_extra` only) | yes (logged) | No `aftersaveresourcedata` for the other resources of the batch. |
+| Fixed-list autocomplete [rf:5925](../../../include/resource_functions.php#L5925) | `add_resource_nodes` | **none** | yes | Text autocomplete goes through `update_field`. |
+| Annotations [annotation_functions.php:436-522](../../../include/annotation_functions.php#L436) | `add/delete_resource_nodes` | **none** | yes | |
 | Plugins writing nodes directly: google_vision (:104-108), clip (:217-219), faces (:231/268), museumplus (raw DELETE :172), rse_version revert | `set_node` + `add_resource_nodes` | **none** (`afterpreviewcreation` precedes the vision/clip/faces writes) | mostly yes | The write happens *inside* the `afterpreviewcreation` hook, after any hook the plugin fires at the same time — ordering matters. |
 | Tools: `nodes_remove_duplicates`, `migrate_fixed_to_text`, `cleanup_invalid_nodes`, `database_prune`, `renumber_resources`, `join_fields`, `remove_html`, staticsync | raw / unlogged | **none** (`dbprune` only) | no | Only the rolling crawl catches these. |
-| Related keywords | `save_related_keywords()` [sf:2423](../../../include/search_functions.php:2423) | `after_save_related_keywords($keyword,$related)` :2430 | n/a | Synonyms; works once bug 1 is fixed. |
+| Related keywords | `save_related_keywords()` [sf:2423](../../../include/search_functions.php#L2423) | `after_save_related_keywords($keyword,$related)` :2430 | n/a | Synonyms; works once bug 1 is fixed. |
 
 `delete_resource_nodes_multi()` never logs, `add_resource_nodes_multi()` logs only when asked, and
 `delete_all_resource_nodes()` / `delete_node_resources()` never log.
@@ -180,14 +180,14 @@ Key: **hook** = a core hook a plugin can use today (name, timing, arguments); **
 
 | Event | Core path | Hook | Effect on the index |
 |---|---|---|---|
-| Node rename / parent / order | `set_node()` [nf:15](../../../include/node_functions.php:15) (MFO admin :85, API `set_node`, migrations) | **none** | The name is stored in every resource's `field_<ref>_*` → every resource using the node needs a resync (thousands possible). Core itself only remaps `node_keyword`. Ancestors are stored per resource at save time, so a parent change does not retro-change existing resources (nothing to do). |
-| Node delete | `delete_node()` [nf:165](../../../include/node_functions.php:165) → `delete_node_resources()` :1514 | **none** | Affected resources must be resynced; the list must be read **before** the delete. `check_delete_nodes()` runs after saves but only deletes unused text nodes (no resources affected). |
+| Node rename / parent / order | `set_node()` [nf:15](../../../include/node_functions.php#L15) (MFO admin :85, API `set_node`, migrations) | **none** | The name is stored in every resource's `field_<ref>_*` → every resource using the node needs a resync (thousands possible). Core itself only remaps `node_keyword`. Ancestors are stored per resource at save time, so a parent change does not retro-change existing resources (nothing to do). |
+| Node delete | `delete_node()` [nf:165](../../../include/node_functions.php#L165) → `delete_node_resources()` :1514 | **none** | Affected resources must be resynced; the list must be read **before** the delete. `check_delete_nodes()` runs after saves but only deletes unused text nodes (no resources affected). |
 | Node active toggle | `update_node_active_state()` :2726, API | **none** | Core search ignores `node.active`; nothing to do. |
-| Field config saved | `save_resource_type_field()` [cf:1877](../../../include/config_functions.php:1877) | `afterresourcetypefieldeditsave()` :2059 — no args, old values not visible (`$GLOBALS['ref']`, `$_POST` available) | `keywords_index`/`partial_index`/`complete_index` decide whether `field_<ref>_*` exists; `type` decides `_s`/`_ss`/`_text`/dates; `field_constraint` switches `_s` ↔ `_f`+`_q` and its `query_by` mapping; `active`/`name` decide visibility. Any of these → resync every resource with nodes in that field. Core never reindexes automatically. |
-| Field deleted | `delete_resource_type_field()` [rf:8426](../../../include/resource_functions.php:8426) | `after_delete_resource_type_field()` :8468 — no args, rows already gone (`$GLOBALS['affected_resources']` available in page context) | Documents keep stale `field_<ref>_*` and `populated_field_ids`; find them in Typesense (`populated_field_ids:=<ref>`) and resync. |
+| Field config saved | `save_resource_type_field()` [cf:1877](../../../include/config_functions.php#L1877) | `afterresourcetypefieldeditsave()` :2059 — no args, old values not visible (`$GLOBALS['ref']`, `$_POST` available) | `keywords_index`/`partial_index`/`complete_index` decide whether `field_<ref>_*` exists; `type` decides `_s`/`_ss`/`_text`/dates; `field_constraint` switches `_s` ↔ `_f`+`_q` and its `query_by` mapping; `active`/`name` decide visibility. Any of these → resync every resource with nodes in that field. Core never reindexes automatically. |
+| Field deleted | `delete_resource_type_field()` [rf:8426](../../../include/resource_functions.php#L8426) | `after_delete_resource_type_field()` :8468 — no args, rows already gone (`$GLOBALS['affected_resources']` available in page context) | Documents keep stale `field_<ref>_*` and `populated_field_ids`; find them in Typesense (`populated_field_ids:=<ref>`) and resync. |
 | Field created / copied | `create_resource_type_field()`, `admin_copy_field.php` | **none** | Nothing until resources get values. The regex schema (`field_.*_s`…) needs no schema change. |
 | Resource type create/rename/delete | [admin_resource_type_edit.php](../../../pages/admin/admin_resource_type_edit.php) | **none** | Delete moves resources via `update_resource_type` (logged). |
-| `$stemming`, `$partial_index_min_word_length`, `$resource_field_verbatim_keyword_regex`, `$view_title_field`, `$date_field`, `$config_separators` | `config.php` edits only; `set_config_option()` [cf:124](../../../include/config_functions.php:124) has no hook and none of these are on the system-config page | **none** | `$stemming` is schema-level (the schema currently stems `title`/`_text` unconditionally) → collection rebuild. `$view_title_field`/`$date_field` → every document. No runtime event exists; detect by snapshot diff (§6.5). |
+| `$stemming`, `$partial_index_min_word_length`, `$resource_field_verbatim_keyword_regex`, `$view_title_field`, `$date_field`, `$config_separators` | `config.php` edits only; `set_config_option()` [cf:124](../../../include/config_functions.php#L124) has no hook and none of these are on the system-config page | **none** | `$stemming` is schema-level (the schema currently stems `title`/`_text` unconditionally) → collection rebuild. `$view_title_field`/`$date_field` → every document. No runtime event exists; detect by snapshot diff (§6.5). |
 
 ### 3.4 Collections
 
@@ -198,7 +198,7 @@ Appendix B; the inventory adds a few:
 
 | Event | Core path | Hook | Note |
 |---|---|---|---|
-| Add | `add_resource_to_collection()` [cf:341](../../../include/collections_functions.php:341) | `Addtocollectionsuccess` :454, before the delete+insert | Always delete + re-insert: re-adding resets `date_added`, `sortorder` → NULL. Callers: `collection_add_resources`, API, collections page, `copy_collection`, `update_smart_collection`, upload (:817 and the `-userref` review collection :822), edit.php, requests, csv_upload, rse_version… |
+| Add | `add_resource_to_collection()` [cf:341](../../../include/collections_functions.php#L341) | `Addtocollectionsuccess` :454, before the delete+insert | Always delete + re-insert: re-adding resets `date_added`, `sortorder` → NULL. Callers: `collection_add_resources`, API, collections page, `copy_collection`, `update_smart_collection`, upload (:817 and the `-userref` review collection :822), edit.php, requests, csv_upload, rse_version… |
 | Remove | `remove_resource_from_collection()` :493 | `Removefromcollectionsuccess` :502, before the DELETE | Fires even when not a member. |
 | Reorder | `update_collection_order()` :3076 | **none** | NULL `sortorder` → 99999 for the rest. |
 | "Add all results" | `add_saved_search_items()` :2431 | **none** | Shifts every `sortorder`, re-adds. |
@@ -224,12 +224,12 @@ only "collection grants" are one-off snapshots written per resource by `open_acc
 
 | Writer | Where | Hook | modified |
 |---|---|---|---|
-| Edit page / batch edit custom access | `save_resource_custom_access()` [rf:4073](../../../include/resource_functions.php:4073) (deletes all group rows, inserts from `$_POST`, incl. `access=2` rows) | `aftersaveresourcedata` fires afterwards, but cannot tell whether grants changed | only if the access level changed |
+| Edit page / batch edit custom access | `save_resource_custom_access()` [rf:4073](../../../include/resource_functions.php#L4073) (deletes all group rows, inserts from `$_POST`, incl. `access=2` rows) | `aftersaveresourcedata` fires afterwards, but cannot tell whether grants changed | only if the access level changed |
 | Leaving access 3 | `delete_resource_custom_access_usergroups()` :6633 | `aftersaveresourcedata` | yes |
-| Request approval; "grant internal access" on collection email | `open_access_to_user()` [uf:2186](../../../include/user_functions.php:2186) (sets `user_expires`) | **none** usable (`saverequest` is a pre-hook, `additional_email_collection` has no resource list) | **no** |
+| Request approval; "grant internal access" on collection email | `open_access_to_user()` [uf:2186](../../../include/user_functions.php#L2186) (sets `user_expires`) | **none** usable (`saverequest` is a pre-hook, `additional_email_collection` has no resource list) | **no** |
 | Email resource with access | `open_access_to_group()` :2205 via `resolve_open_access()` | `additional_email_resource` (skipped if the send fails) | yes (`E`) |
 | Request declined / back to pending | `remove_access_to_user()` :2257 | **none** | **no** |
-| Resource share page | `delete_resource_custom_user_access()` [rf:6726](../../../include/resource_functions.php:6726) | **none** | yes |
+| Resource share page | `delete_resource_custom_user_access()` [rf:6726](../../../include/resource_functions.php#L6726) | **none** | yes |
 | `pages/ajax/remove_custom_access.php` | raw delete | **none** | no (nothing calls it in core) |
 | Copy / locked-field copy | `copy_resource` :3757 (junk `(NULL,NULL)` rows), `copy_locked_data` :6837 (duplicates, drops expiry) | `afternewresource` / edit.php only | yes |
 | csv_upload | :424 | **none** | yes |
@@ -248,7 +248,7 @@ only "collection grants" are one-off snapshots written per resource by `open_acc
 | Rolling `sync_hash` crawl (Appendix C, not used) | any resource-document difference, however made, incl. node renames; orphans; missing docs | nothing, but with a delay of one full pass |
 
 Note that `resource.modified` is bumped by **every** `resource_log()` call — downloads
-([collections_functions.php:4628](../../../include/collections_functions.php:4628)), emails,
+([collections_functions.php:4628](../../../include/collections_functions.php#L4628)), emails,
 preview creation — and is written before the data change in several paths (archive change, hard
 delete). It is a coarse "something was logged" signal, not a change timestamp.
 
@@ -310,7 +310,7 @@ mark function), so the choice is purely about what the mark function does. Types
 describes this table-and-scheduled-import pattern as its recommended "buffer table" approach
 (Appendix D). `job_queue_add()` is not the right queue for per-object rows: one job row each,
 dedupe only against pending jobs, a job user required, the runner off by default and each handler
-responsible for its own final status ([job_functions.php:301-413](../../../include/job_functions.php:301)).
+responsible for its own final status ([job_functions.php:301-413](../../../include/job_functions.php#L301)).
 
 ### 5.3 Scheduling
 
@@ -379,10 +379,10 @@ costs nothing measurable and closes the security gap for stale documents:
 
 - append `search_filter($search, $archive, $restypes, $recent_search_daylimit, $access_override,
   $return_disk_usage, $editable_only, $access, $smartsearch)`
-  ([search_functions.php:730](../../../include/search_functions.php:730)) — it is a pure function of
+  ([search_functions.php:730](../../../include/search_functions.php#L730)) — it is a pure function of
   the hook arguments and the user's globals and returns a `PreparedStatementQuery`;
 - keep the `rca`/`rca2` joins and add `NOT (rca.resource IS NULL AND r.access=3)` for non-`v`
-  users, as [do_search.php:183-197](../../../include/do_search.php:183) does;
+  users, as [do_search.php:183-197](../../../include/do_search.php#L183) does;
 - `r.ref > 0`.
 
 A row the user may no longer see is dropped from the page (the page gets shorter; `total` stays as
@@ -395,7 +395,7 @@ resources the index lacks — that is freshness, handled by the queue and the re
 ### 5.8 Plugin loading
 
 - A group-restricted plugin's hooks only run for users in those groups
-  ([plugin_functions.php:1671](../../../include/plugin_functions.php:1671)), and not at all in
+  ([plugin_functions.php:1671](../../../include/plugin_functions.php#L1671)), and not at all in
   `batch/cron.php`. The parity-testing setup (plugin enabled for one group only) would therefore
   stop indexing edits made by the other group. **Indexing must be global:** set
   `disable_group_select: 1` in [typesense_search.yaml](../typesense_search.yaml) and gate *serving*
@@ -442,7 +442,7 @@ Every bulk kind is applied intraday under the fallback; nothing waits for the ni
 ### 6.2 Queue table (`plugins/typesense_search/dbstruct/table_typesense_search_sync_queue.txt`)
 
 Created automatically for active plugins by `check_db_structs()`
-([database_functions.php:879](../../../include/database_functions.php:879)).
+([database_functions.php:879](../../../include/database_functions.php#L879)).
 
 | Column | Purpose |
 |---|---|
@@ -488,7 +488,7 @@ Rules:
 |---|---|
 | `resourcecreate`, `afternewresource`, `afterpluploadfile`, `uploadfilesuccess`, `afterpreviewcreation`, `after_update_resource` | `resource R` (1); `afternewresource` also `grants R` (0), since copies carry grants |
 | `update_field` | `resource R` (1) |
-| `aftersaveresourcedata` (int or array first argument), `saveextraresourcedata($list)` | `resource R…` (1) and `grants R…` (0); the batch-edit early return at [rf:2356](../../../include/resource_functions.php:2356) skips both hooks after the writes — corrected by the rebuild |
+| `aftersaveresourcedata` (int or array first argument), `saveextraresourcedata($list)` | `resource R…` (1) and `grants R…` (0); the batch-edit early return at [rf:2356](../../../include/resource_functions.php#L2356) skips both hooks after the writes — corrected by the rebuild |
 | `after_update_archive_status($refs, $archive, …)` | `resource R…` (0); when `$archive == $resource_deletion_state` and `$remove_deleted_resources_from_collections`: `memberships_of_resource R…` (0) |
 | `beforedeleteresourcefromdb($ref)` | `resource R` (0) — resolved as a delete when the row is gone |
 | `Addtocollectionsuccess(resourceId, collectionId)`, `Removefromcollectionsuccess` | `membership (C, R)` (1) — applied after the write by the flush or the worker |
@@ -617,10 +617,10 @@ shorten delays; correctness is guaranteed by the rebuild either way.
 
 | Hook | Where | Args |
 |---|---|---|
-| `after_resource_nodes_changed` | end of `add_resource_nodes()`, `add_resource_nodes_multi()`, `delete_resource_nodes()`, `delete_resource_nodes_multi()`, `delete_all_resource_nodes()`, `copy_resource_nodes()` ([node_functions.php:1208-1581](../../../include/node_functions.php:1208)). Fires inside the save transaction; listeners only mark rows and act at request end. Covers CSV fixed-list columns, annotations, fixed-list autocomplete, metadata templates, the API node calls and the vision, clip and faces plugins in one place. | `$resources[]` |
-| `after_set_node` | `set_node()` after the UPDATE, when name or parent changed ([:104-131](../../../include/node_functions.php:104)); also covers in-place renames of single-use text nodes | `$node, $field, $old_name, $new_name` |
+| `after_resource_nodes_changed` | end of `add_resource_nodes()`, `add_resource_nodes_multi()`, `delete_resource_nodes()`, `delete_resource_nodes_multi()`, `delete_all_resource_nodes()`, `copy_resource_nodes()` ([node_functions.php:1208-1581](../../../include/node_functions.php#L1208)). Fires inside the save transaction; listeners only mark rows and act at request end. Covers CSV fixed-list columns, annotations, fixed-list autocomplete, metadata templates, the API node calls and the vision, clip and faces plugins in one place. | `$resources[]` |
+| `after_set_node` | `set_node()` after the UPDATE, when name or parent changed ([:104-131](../../../include/node_functions.php#L104)); also covers in-place renames of single-use text nodes | `$node, $field, $old_name, $new_name` |
 | `beforenodedelete` / `afternodedelete` | `delete_node()` around the deletes (:182-185) — the names the plugin already expects | `$node` |
-| `after_update_resource_type` | `update_resource_type()` after the UPDATE ([rf:4163](../../../include/resource_functions.php:4163)) | `$resource, $old_type, $new_type` |
+| `after_update_resource_type` | `update_resource_type()` after the UPDATE ([rf:4163](../../../include/resource_functions.php#L4163)) | `$resource, $old_type, $new_type` |
 | `after_resource_custom_access_change` | end of `save_resource_custom_access()`, `delete_resource_custom_access_usergroups()`, `open_access_to_user()`, `open_access_to_group()`, `remove_access_to_user()`, `delete_resource_custom_user_access()`, `pages/ajax/remove_custom_access.php` | `$resource` |
 | `after_put_resource_data` | `put_resource_data()` after the UPDATE (:540) | `$resource` |
 | Collection bulk hooks (the collection plan's list) | after the writes in `update_collection_order`, `delete_collection`, `remove_all_resources_from_collection`, `add_saved_search_items`, `copy_collection`, `save_collection`, `update_collection_type`, `collection_set_public`, `collection_cleanup_inaccessible_resources` | `$collection` |

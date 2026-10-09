@@ -1186,3 +1186,17 @@ K8  "\"@FULL_TEXT:[QUOTES]library book[QUOTES]\""
     => DIFFERENT
 
 8 cases sent
+A34  "\"@FULL_TEXT:+distant -island\""
+    core   total=880  (146 ms)
+    plugin total=880  (76 ms)
+    => SAME
+C25  "usagerights:social media;website"
+    core   total=0  (101 ms)
+    plugin total=0  (45 ms)
+    => SAME
+C26  "usagerights:website;social"
+    core   total=82  (168 ms)
+    plugin total=82  (46 ms)
+    => SAME
+
+3 cases sent

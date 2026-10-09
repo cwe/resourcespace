@@ -28,7 +28,10 @@ function where(string $refs): string
         if ($ref === '') {
             continue;
         }
-        $links[] = '[' . basename($ref) . '](../../../' . $ref . ')';
+        // GitHub-style anchor: path#L<line>.
+        $parts = explode(':', $ref);
+        $line = count($parts) > 1 ? array_pop($parts) : '';
+        $links[] = '[' . basename($ref) . '](../../../' . implode(':', $parts) . ($line !== '' ? '#L' . $line : '') . ')';
     }
     return implode(', ', $links);
 }
@@ -68,7 +71,8 @@ $md[] = '';
 $md[] = '- **Search** names the form. **String and parameters** is exactly what is sent to the API (`do_search`, or';
 $md[] = '  `search_get_previews` for a day limit); parameters not shown are `restypes=""`, `order_by=relevance`, `archive=0`,';
 $md[] = '  `sort=desc`, `fetchrows=0,1`.';
-$md[] = '- **What core does** is read from the code; **Where** links to it.';
+$md[] = '- **What core does** is read from the code; **Where** links to it. **Documented** links the knowledge base page that';
+$md[] = '  describes the form, checked on 9 October 2026; a dash means the knowledge base does not mention it.';
 $md[] = '- **Core** and **Plugin** are the totals from `harness/live/catalogue_run.php` (a user whose group has the plugin';
 $md[] = '  off, and one whose group has it in Typesense-only mode, so a plugin 0 can mean "declined"). Five refs are shown when the row';
 $md[] = '  checks an order. "–" means not run yet' . ($latest !== '' ? '; the last run was ' . $latest : '') . '. Rows marked n/a cannot be sent through the API.';
@@ -92,8 +96,36 @@ foreach ($catalogue as $entry) {
 }
 $md[] = '';
 
-$header = '| # | Search | String and parameters | What core does | Where | Core | Plugin | OK |';
-$rule = '|---|---|---|---|---|---|---|---|';
+$KB = array(
+    'searching' => array('Searching', 'https://www.resourcespace.com/knowledge-base/user/searching-in-resourcespace'),
+    'simple' => array('Simple search', 'https://www.resourcespace.com/knowledge-base/user/simple-search'),
+    'advanced' => array('Advanced search', 'https://www.resourcespace.com/knowledge-base/user/advanced-search'),
+    'special' => array('Special search terms', 'https://www.resourcespace.com/knowledge-base/user/special-search-terms'),
+    'excluding' => array('Excluding terms', 'https://www.resourcespace.com/knowledge-base/user/excluding-search-terms'),
+    'fulltext' => array('Full text searching', 'https://www.resourcespace.com/knowledge-base/user/fulltext-search'),
+    'geo' => array('Geographic search', 'https://www.resourcespace.com/knowledge-base/user/geographic-search'),
+    'indexing' => array('Indexing metadata', 'https://www.resourcespace.com/knowledge-base/resourceadmin/indexing-metadata'),
+    'fieldconfig' => array('Field configuration', 'https://www.resourcespace.com/knowledge-base/resourceadmin/basic-configure-metadata-field'),
+    'order' => array('Search order', 'https://www.resourcespace.com/knowledge-base/resourceadmin/search-order'),
+    'api' => array('do_search API', 'https://www.resourcespace.com/knowledge-base/api/do_search'),
+    'api_previews' => array('search_get_previews API', 'https://www.resourcespace.com/knowledge-base/api/search_get_previews'),
+);
+
+/** Links to the knowledge base pages that document a form, or a dash. */
+function documented(string $keys): string
+{
+    global $KB;
+    $links = array();
+    foreach (array_map('trim', explode(',', $keys)) as $key) {
+        if (isset($KB[$key])) {
+            $links[] = '[' . $KB[$key][0] . '](' . $KB[$key][1] . ')';
+        }
+    }
+    return count($links) ? implode(', ', $links) : '–';
+}
+
+$header = '| # | Search | String and parameters | What core does | Where | Documented | Core | Plugin | OK |';
+$rule = '|---|---|---|---|---|---|---|---|---|';
 $count = 0;
 foreach ($catalogue as $entry) {
     if (!is_array($entry)) {
@@ -128,7 +160,7 @@ foreach ($catalogue as $entry) {
     $core = ($entry['api'] ?? true) === false ? 'n/a' : measured($results[$entry['id']]['core'] ?? null);
     $plugin = ($entry['api'] ?? true) === false ? 'n/a' : measured($results[$entry['id']]['plugin'] ?? null);
     $what = cell($entry['core']) . (isset($entry['note']) ? ' ' . cell($entry['note']) : '');
-    $md[] = '| ' . $entry['id'] . ' | ' . cell($entry['type']) . ' | ' . $string . ' | ' . $what . ' | ' . where($entry['where']) . ' | ' . $core . ' | ' . $plugin . ' | [ ] |';
+    $md[] = '| ' . $entry['id'] . ' | ' . cell($entry['type']) . ' | ' . $string . ' | ' . $what . ' | ' . where($entry['where']) . ' | ' . documented($entry['kb'] ?? '') . ' | ' . $core . ' | ' . $plugin . ' | [ ] |';
 }
 $md[] = '';
 file_put_contents($out, implode("\n", $md) . "\n");

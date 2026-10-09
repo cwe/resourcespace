@@ -9440,5 +9440,100 @@
             "search": "\"@FULL_TEXT:[QUOTES]library book[QUOTES]\""
         },
         "same": false
+    },
+    "A34": {
+        "search": "\"@FULL_TEXT:+distant -island\"",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-09T08:59:33+00:00",
+        "core": {
+            "total": 880,
+            "rows": 1,
+            "refs": [
+                78171
+            ],
+            "ms": 146,
+            "error": null,
+            "search": "\"@FULL_TEXT:+distant -island\""
+        },
+        "plugin": {
+            "total": 880,
+            "rows": 1,
+            "refs": [
+                78171
+            ],
+            "ms": 76,
+            "error": null,
+            "search": "\"@FULL_TEXT:+distant -island\""
+        },
+        "same": true
+    },
+    "C25": {
+        "search": "usagerights:social media;website",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-09T08:59:48+00:00",
+        "core": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 101,
+            "error": null,
+            "search": "usagerights:social media;website"
+        },
+        "plugin": {
+            "total": 0,
+            "rows": 0,
+            "refs": [],
+            "ms": 45,
+            "error": null,
+            "search": "usagerights:social media;website"
+        },
+        "same": true
+    },
+    "C26": {
+        "search": "usagerights:website;social",
+        "params": {
+            "restypes": "",
+            "order_by": "relevance",
+            "archive": "0",
+            "fetchrows": "0,1",
+            "sort": "desc"
+        },
+        "function": "do_search",
+        "at": "2026-10-09T09:00:03+00:00",
+        "core": {
+            "total": 82,
+            "rows": 1,
+            "refs": [
+                69573
+            ],
+            "ms": 168,
+            "error": null,
+            "search": "usagerights:website;social"
+        },
+        "plugin": {
+            "total": 82,
+            "rows": 1,
+            "refs": [
+                69573
+            ],
+            "ms": 46,
+            "error": null,
+            "search": "usagerights:website;social"
+        },
+        "same": true
     }
 }

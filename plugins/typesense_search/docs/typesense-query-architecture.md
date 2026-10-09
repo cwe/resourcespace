@@ -3,11 +3,11 @@
 ## Context
 
 The `typesense_search` plugin translates an RS search into a Typesense query. Today that
-translation is a single monolithic function, [`typesense_search_get_refs()`](../../../plugins/typesense_search/include/typesense_search_functions.php:106),
+translation is a single monolithic function, [`typesense_search_get_refs()`](../../../plugins/typesense_search/include/typesense_search_functions.php#L106),
 which inlines pagination, `filter_by`, wildcard/prefix, sort mapping, `query_by`, param
 assembly, the HTTP call and ref extraction. The data needed for richer searches (node buckets,
 access context, special `!` commands, `field:value`, collection joins) isn't even passed in,
-and the gate [`typesense_search_supported()`](../../../plugins/typesense_search/include/typesense_search_functions.php:17)
+and the gate [`typesense_search_supported()`](../../../plugins/typesense_search/include/typesense_search_functions.php#L17)
 is a flat list of `return false`s. Adding a search type currently means editing several functions.
 
 **Goal (this plan):** restructure the query-build side into a clear, extensible pipeline so a
@@ -130,7 +130,7 @@ flowchart TD
 `Context` (normalize all hook args + user/permission snapshot), `Parse` (decompose the search
 string once — leading `!command`+args, `field:value`, quoted phrases, keywords, trailing `*`),
 pagination, sort mapping, `$typesense_search_global_filter` append, `Compile`, `Execute`,
-[`Hydrate`](../../../plugins/typesense_search/include/typesense_search_functions.php:506). These always
+[`Hydrate`](../../../plugins/typesense_search/include/typesense_search_functions.php#L506). These always
 run identically, so they live in the pipeline, not the registry.
 
 ### Result window
@@ -157,16 +157,16 @@ request sends Typesense's `offset`/`limit`, so any offset works (the search page
   expression it sits in, whatever it contains, and its inner expression is held to the same limit
   separately — over it, the search is refused when the join stands alone or inside an OR group,
   but **matches nothing, silently,** when the join is ANDed with other clauses.
-  [`typesense_search_filter_ops()`](../include/typesense_search_query.php:1078) returns the larger of
+  [`typesense_search_filter_ops()`](../include/typesense_search_query.php#L1078) returns the larger of
   the two costs for the compiled filter and
-  [`typesense_search_multi_search()`](../include/typesense_search_query.php:1141)
+  [`typesense_search_multi_search()`](../include/typesense_search_query.php#L1141)
   vetoes above `$typesense_search_filter_max_ops` (default 100, on the setup page; 0 = send
   regardless) before any request, so the search falls back instead of failing. Only AND-of-single-
   node shapes get near it — `$category_tree_search_use_and_logic` or `$checkbox_and` with more than
   40 nodes for a standard (non-`v`) user, whose archive and grant restrictions cost 19 of the 100;
   an OR bucket of any size costs one. Core is bounded on the same shape by MySQL's 61-table join
   limit (one `resource_node` join per node,
-  [do_search_nodes.php:11](../../../include/do_search_nodes.php:11)). Live-verified 2026-09-29/30.
+  [do_search_nodes.php:11](../../../include/do_search_nodes.php#L11)). Live-verified 2026-09-29/30.
   [**BUILT**; **FIXED** 2026-09-30 — the counter first counted the connectors inside a join too, so
   it vetoed a standard user's searches of 38–40 ANDed nodes that Typesense accepts]
 - **Cost:** each page costs more the deeper it is, because Typesense ranks every row before it. On
@@ -215,7 +215,7 @@ split (fixed-list `field:value` is already in `$node_bucket` → dropped; **othe
 handled per the field:value section below**; negative field search → veto; **OR-groups
 (`red;green`, or `caption:red;green`) → veto**, as Typesense has no term-level OR across `query_by`;
 **full-text boolean (`"@FULL_TEXT…"`) → veto**; incidental colon → free text), sets `query_by` (wraps
-[`typesense_build_query_by()`](../../../plugins/typesense_search/include/typesense_search_functions.php:186),
+[`typesense_build_query_by()`](../../../plugins/typesense_search/include/typesense_search_functions.php#L186),
 title gated on `metadata_field_view_access`), and translates `node_bucket`/`node_bucket_not` →
 `nodes:=`/`nodes:!=`. So a special search's scope and keyword/node matching combine automatically.
 
@@ -264,7 +264,7 @@ adds only its own scope (filters/sort/cap/joins) — keyword matching is the sha
 - `StandardSearchMode` — no special scope (a marker mode); the shared step does the keyword work.
 - `CollectionMode` — `!collection<id>`: `addJoinFilter(memberships, collection_ref:=<id>)`; keeps
   the collection-access validity checks/veto from the
-  [`typesense_collection_search()`](../../../plugins/typesense_search/include/typesense_search_functions.php:407) stub.
+  [`typesense_collection_search()`](../../../plugins/typesense_search/include/typesense_search_functions.php#L407) stub.
   Orders by membership `sortorder` (honouring the direction) **only when the collection is using its
   default order** (a `c.sortorder…` `order_by`); any explicit sort (resource ID, date, modified,
   relevance) is left to the standard sort mapping, mirroring core's outer re-sort of the members.
@@ -282,7 +282,7 @@ adds only its own scope (filters/sort/cap/joins) — keyword matching is the sha
   honour the 50]** With a relevance order core lists the newest N in **ref order**, DESC only when the
   resolved order-by string contains an upper-case `DESC` (the search page's default), so the API's
   lower-case `desc` gives oldest-first; replicated with the same test
-  ([search_functions.php:1115](../../../include/search_functions.php:1115)). **[FIXED 2026-09-29 —
+  ([search_functions.php:1115](../../../include/search_functions.php#L1115)). **[FIXED 2026-09-29 —
   it used to fall through to the text-match / ref-desc mapping]** **[FIXED — it used to force `ref:desc`, so the
   sort dropdown did nothing on the home/recent view]**
 - `UnsupportedSpecialMode` — recognises any `!command` no other mode claims (buckets B and C below,
@@ -311,15 +311,15 @@ sort), `!duplicates` (`GROUP BY … HAVING count>1`), `!nodownloads` (activity s
 
 ### Extension axis 2 — Restrictions (all apply, under every mode)
 Same contract; each adds visibility/scope clauses regardless of mode.
-- `StandardRestrictions` — migrates [`typesense_search_filter_by()`](../../../plugins/typesense_search/include/typesense_search_functions.php:374)
+- `StandardRestrictions` — migrates [`typesense_search_filter_by()`](../../../plugins/typesense_search/include/typesense_search_functions.php#L374)
   and the rest of RS `search_filter()`: resource type (restypes + `T` perm), archive
   (defaults/advanced + `z` perms), `created_by`, `recent_search_daylimit`, `ert` pending rules.
 - `FeaturedCollectionsRestriction` — when `checkperm("J")` and the search isn't the user's
   upload collection: `addJoinFilter(memberships, collection_ref:=[accessible FC refs])`,
-  ref set from the [`featured_collections_permissions_filter_sql()`](../../../include/do_search.php:329)
+  ref set from the [`featured_collections_permissions_filter_sql()`](../../../include/do_search.php#L329)
   logic (extracted into a reusable helper).
 - `GroupFilterRestriction` — reproduces the group `search_filter`
-  ([get_filter_sql()](../../../include/search_functions.php:1957)) as node filters from
+  ([get_filter_sql()](../../../include/search_functions.php#L1957)) as node filters from
   `get_filter()`/`get_filter_rules()`: per-rule nodes_on/off → `nodes:=`/`nodes:!=` (inverted for
   NONE), rules glued by AND (ALL/NONE) or OR (ANY), the whole thing OR'd with a grant-exists clause
   (`$custom_access_overrides_search_filter`) and `created_by` (`$open_access_for_contributor`).
@@ -341,7 +341,7 @@ Same contract; each adds visibility/scope clauses regardless of mode.
 - `typesense_search_build_query($ctx)` — pick the one applicable mode → `build`; then run every
   restriction → `build`; if anything vetoes, return null → hook returns `false`.
 - `typesense_search_execute($plan)` — compile params (assemble `filter_by`, join filters,
-  `sort_by`, apply result cap), HTTP GET via [`typesense_search_request()`](../../../plugins/typesense_search/include/typesense_search_functions.php:600), then the rest of
+  `sort_by`, apply result cap), HTTP GET via [`typesense_search_request()`](../../../plugins/typesense_search/include/typesense_search_functions.php#L600), then the rest of
   a window over 250 rows via `multi_search` (see *Result window*), extract refs + capped total.
 - `typesense_search_do_search()` = thin driver: context → parse → build → execute → hydrate.
 
@@ -353,7 +353,7 @@ Same contract; each adds visibility/scope clauses regardless of mode.
 - **Refactor** `typesense_search_get_refs()` → `typesense_search_execute()`; retire
   `typesense_search_filter_by()`, `typesense_search_supported()`, inline sort/pagination and the
   `typesense_parse_search()`/`typesense_collection_search()` stubs into the pipeline/units.
-- **Hook** [`HookTypesense_searchAllExternal_search`](../../../plugins/typesense_search/hooks/all.php:35) builds the context and calls the driver.
+- **Hook** [`HookTypesense_searchAllExternal_search`](../../../plugins/typesense_search/hooks/all.php#L35) builds the context and calls the driver.
 - **Small core helper** — extract the accessible-featured-collection ref list for the `J` restriction.
 
 ## Config dependencies (must be honoured or Typesense diverges from MySQL)
@@ -391,13 +391,13 @@ Each unit reads the relevant `config.default.php` options; several are current d
   `$random_sort` need fields not yet indexed / unsupported → **veto → MySQL fallback** for now.
 
 ## Hook data-flow quirks (verified against do_search())
-Pre-hook order of operations: `resolve_given_nodes` ([:111](../../../include/do_search.php:111)) →
-`do_search_keywords` ([:297](../../../include/do_search.php:297)) → `do_search_filtering`
-([:309](../../../include/do_search.php:309)) → **hook** ([:342](../../../include/do_search.php:342)) →
-`search_special` ([:382](../../../include/do_search.php:382)) → standard SQL.
+Pre-hook order of operations: `resolve_given_nodes` ([:111](../../../include/do_search.php#L111)) →
+`do_search_keywords` ([:297](../../../include/do_search.php#L297)) → `do_search_filtering`
+([:309](../../../include/do_search.php#L309)) → **hook** ([:342](../../../include/do_search.php#L342)) →
+`search_special` ([:382](../../../include/do_search.php#L382)) → standard SQL.
 
 **Integration state**
-- The hook's return handling is **enabled** ([do_search.php](../../../include/do_search.php:370)): when the
+- The hook's return handling is **enabled** ([do_search.php](../../../include/do_search.php#L370)): when the
   provider returns anything other than `false` (including an empty result set), core returns it;
   `false` lets core continue with `search_special` + the standard query.
 - The hook fires **before** `search_special` and the standard query, so the plugin sees **every**
@@ -418,14 +418,14 @@ Pre-hook order of operations: `resolve_given_nodes` ([:111](../../../include/do_
   tokens harmless with `drop_tokens_threshold=0`]
 - `$archive`: unfiltered exploded string array (`explode(",", …)`); must be `is_int_loose`
   filtered so a stray `""` triggers default states, not `archive:=[0]`. [**FIXED**]
-- `$order_by`: a resolved SQL fragment ([set_search_order_by](../../../include/search_functions.php:3137));
+- `$order_by`: a resolved SQL fragment ([set_search_order_by](../../../include/search_functions.php#L3137));
   only relevance/date/modified/ref map to sortable fields — rating/popularity/colour/title/
   random/status/custom-field sorts **veto** rather than silently sort by relevance. Also fixes
   the original `substr(...,0,5)=="field".$date_field` length bug (date sort never matched).
   [**FIXED**] The two modes with an order of their own (`!last`, `!collection`) now defer to this
   mapping for explicit sorts. [**FIXED**]
 - **Special + keyword / node refine** (`!collection123 sunset`, or a fixed-list refine within a
-  collection): core combines these — `do_search_union_assembly.php` ([:313](../../../include/do_search.php:313))
+  collection): core combines these — `do_search_union_assembly.php` ([:313](../../../include/do_search.php#L313))
   bakes the keyword-match **join into `$sql_join`** and criteria into `$sql_filter`, and node
   buckets too, all applied by `search_special`. The plugin now matches this: keyword matching +
   node buckets are a **shared step** (`typesense_apply_keyword_matching()`) run by the
@@ -437,8 +437,8 @@ Pre-hook order of operations: `resolve_given_nodes` ([:111](../../../include/do_
   the unfiltered scope.)
 - `$sql_filter` / `$sql_join` carry pre-applied access/group restrictions the plugin does not
   read: the `rca`/`rca2` custom-access joins + `NOT (rca.resource IS null AND r.access=3)`
-  ([do_search.php:184-197](../../../include/do_search.php:184)), and the group `search_filter`
-  (`do_search_filtering.php`, applied at [:309](../../../include/do_search.php:309)). Now **reproduced** by
+  ([do_search.php:184-197](../../../include/do_search.php#L184)), and the group `search_filter`
+  (`do_search_filtering.php`, applied at [:309](../../../include/do_search.php#L309)). Now **reproduced** by
   `AccessRestriction` (confidential/custom grants) and `GroupFilterRestriction` (node rules).
   [**BUILT** — needs a reindex to populate `access` + the grants collection; until then non-`v`
   searches error on the missing grant join and fall back to MySQL, which is safe.]
@@ -456,7 +456,7 @@ now sources them from a **separate all-nodes query** (every `resource_node` row 
 limited to indexed fields (they drive keyword matching). So `node_bucket` filters and
 `!hasdata<field>` work for non-keyword-indexed fields too. Category-tree hierarchy also works via
 ancestors stored on the resource at save (`$category_tree_add_parents = true`,
-[resource_functions.php:2623](../../../include/resource_functions.php:2623)). Requires a reindex.
+[resource_functions.php:2623](../../../include/resource_functions.php#L2623)). Requires a reindex.
 
 Note: the reindexer prepends `0` to `nodes[]` and `populated_field_ids[]` (`array_unshift($values, 0)`)
 **intentionally**, so these array fields always exist on every document. Keep it — node/field IDs
@@ -609,7 +609,7 @@ fallbacks are needed for syntax reasons:
     `sculpture @@!389` differ only by the keyword side (`sculpture` alone: 47,536 vs 49,468 — the
     stemming / related-keyword divergences already in the inventory). AND chains of N `@@389` words:
     core serves 57 (4 base tables + 57 joins = 61) and fails at 58 with "Bad prepared SQL statement"
-    ([do_search.php:453](../../../include/do_search.php:453)) — MySQL's 61-table join limit, live;
+    ([do_search.php:453](../../../include/do_search.php#L453)) — MySQL's 61-table join limit, live;
     it also takes 22–30 s from 40 joins up, against 60–130 ms in Typesense. On the un-updated
     host the Typesense user got an empty set for the 600- and 1,000-id buckets (GET cap) and from
     45 ANDed nodes (the operation cap, about 5 restriction clauses counted), exactly the two
@@ -626,8 +626,8 @@ fallbacks are needed for syntax reasons:
     returns the same total and a first page with no resource in common - core from ref 44274 (score
     125), the plugin from ref 127611 down. Core's relevance for a keyword-less node search is
     `score, user_rating, total_hit_count, field<$date_field>, r.ref`
-    ([search_functions.php:3180](../../../include/search_functions.php:3180)) and there `score` is
-    the hit-count expression ([do_search.php:402](../../../include/do_search.php:402)); in the rows
+    ([search_functions.php:3180](../../../include/search_functions.php#L3180)) and there `score` is
+    the hit-count expression ([do_search.php:402](../../../include/do_search.php#L402)); in the rows
     the API returned it equals the resource's `new_hit_count` in 195 of the top 200 and is within 2
     in the rest, so the per-node hit counts add almost nothing. Core therefore lists the most-viewed
     first, and the plugin, with no hit count in the index, lists by ref. Re-sorting core's top 400
@@ -656,7 +656,7 @@ fallbacks are needed for syntax reasons:
 
 The harness stubs RS, and the direct Typesense probes bypass the hook and hydration, so neither
 tests the real round trip. The RS API does:
-[`api_do_search()`](../../../include/api_bindings.php:15) calls the real `do_search()` — so the
+[`api_do_search()`](../../../include/api_bindings.php#L15) calls the real `do_search()` — so the
 `external_search` hook and the plugin fire — with `search`, `restypes`, `order_by`, `archive`,
 `sort` and `fetchrows`. Passing `fetchrows` as `offset,limit` takes the same structured path as the
 search grid. It runs with the **API user's own permissions** and deliberately allows no filter
@@ -665,7 +665,7 @@ overrides, so access rules are exercised for real.
 **A/B setup (no code changes):**
 1. Two user groups with **identical permissions**, and the plugin enabled for only one of them. The
    plugin allows group restriction, and
-   [`register_group_access_plugins()`](../../../include/plugin_functions.php:1671) only loads a
+   [`register_group_access_plugins()`](../../../include/plugin_functions.php#L1671) only loads a
    group-restricted plugin for members of those groups, so the other group is pure MySQL.
 2. One API user per group (both need the `s` search permission).
 3. "Only use Typesense" (`$typesense_search_only`) on during runs, so a search the plugin can't
