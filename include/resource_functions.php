@@ -2786,7 +2786,10 @@ function update_field($resource, $field, $value, array &$errors = array(), $log 
         }
 
         $curnode = $existing_resource_node["ref"] ?? 0 ;
-        if ($curnode > 0 && get_nodes_use_count([$curnode]) == 1) {
+        if ($value === '') {
+            // Empty metadata has no node. Remove only this resource's association so shared values remain intact.
+            delete_resource_nodes($resource, [$curnode], false);
+        } elseif ($curnode > 0 && get_nodes_use_count([$curnode]) == 1) {
             // Reuse same node
             set_node($curnode, $field, $value, null, 0);
         } else {

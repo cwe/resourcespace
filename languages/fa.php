@@ -2018,10 +2018,13 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 <a href="[teamresearchurl]">[teamresearchurl]</a>  
 
 [text_footer]';
-$lang['all__emailnotifyresourcesapproved'] = '[list] <br />
+$lang['all__emailnotifyresourcesapproved'] = '<br />
+[lang_userresourcesapproved]
+[list] <br />
 [lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
@@ -2105,7 +2108,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'اجا
 $lang['share_using_permissions_from_user_group'] = 'اشتراک با استفاده از مجوزهای گروه کاربری';
 $lang['externalshare_using_permissions_from_user_group'] = 'اگر به کاربران خارجی ایمیل می‌فرستید، لطفاً گروه کاربری را برای دسترسی انتخاب کنید';
 $lang['collection_download_too_large'] = 'متأسفیم، این مجموعه برای دانلود به عنوان یک فایل بسیار بزرگ است. سعی کنید اندازه مجموعه را کاهش دهید یا اندازه تصویر کوچکتری را انتخاب کنید.';
-$lang['all__passwordnewemailhtml'] = 'لطفاً روی لینک زیر کلیک کنید تا یک رمز عبور جدید برای حساب کاربری خود تنظیم کنید. <br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />نام کاربری: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />لطفاً روی لینک زیر کلیک کنید تا یک رمز عبور جدید برای حساب کاربری خود تنظیم کنید. <br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />نام کاربری: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'بارگذاری به طور موقت در دسترس نیست';
 $lang['disk_size_no_upload_explain'] = 'به دلیل محدودیت‌های فضای ذخیره‌سازی، بارگذاری به طور موقت غیرفعال شده است. از هرگونه ناراحتی پیش آمده عذرخواهی می‌کنیم.';
 $lang['dash'] = 'داشبورد';

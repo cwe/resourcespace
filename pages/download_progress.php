@@ -43,13 +43,21 @@ if ($url == '') {
     }
 } else {
     $url = sanitise_url($url);
-    if ($url !== '#') {
+    $link_parts = parse_url($url);
+    if (
+        mb_strpos($url, $baseurl_short) === 0
+        || mb_strpos($url, $baseurl) === 0
+        || mb_strpos( //If the scheme for the base url and the provided url don't match
+            mb_substr($url, mb_strlen(parse_url($url, PHP_URL_SCHEME))),
+            mb_substr($baseurl, mb_strlen(parse_url($baseurl, PHP_URL_SCHEME)))
+        ) === 0
+    ) {
         // check that the download redirect is complete i.e. contains, usage, email 
         $url_parts = [];
-        $link_parts = parse_url($url);
-        $url = explode('?', $url)[0];
         parse_str($link_parts['query'] ?? '', $url_parts);
-        $url = generateURL($url, $url_parts, ['usage' => $usage, 'usagecomment' => $usagecomment, 'email' => $email]);
+        $url = generateURL($link_parts['path'], $url_parts, ['usage' => $usage, 'usagecomment' => $usagecomment, 'email' => $email]);
+    } else {
+        $url = '#';
     }
 }
 

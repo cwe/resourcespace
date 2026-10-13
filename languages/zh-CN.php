@@ -118,8 +118,8 @@ $lang['editresearchrequests'] = '编辑搜索要求';
 $lang['savedsearch'] = '已储存的搜索';
 $lang['mustspecifyoneusername'] = '请指定最少一位用户';
 $lang['couldnotmatchallusernames'] = '未能找到所有匹配的用户';
-$lang['emailcollectionmessage'] = '相关的资源已发送.';
-$lang['emailcollectionmessageexternal'] = '相关的资源已发送';
+$lang['emailcollectionmessage'] = '已通过电子邮件向您发送来自 [applicationname] 的资源集合，该集合已添加到您的“我的集合”页面。';
+$lang['emailcollectionmessageexternal'] = '已通过电子邮件向您发送来自 [applicationname] 的资源集合。';
 $lang['clicklinkviewcollection'] = '单击下列的链接以检视资源.';
 $lang['zippedcollectiontextfile'] = '加入资源的数据';
 $lang['copycollectionremoveall'] = '复制前删除所有的资料';
@@ -339,7 +339,7 @@ $lang['name'] = '名字';
 $lang['action'] = '行动';
 $lang['field'] = '范围';
 $lang['save'] = '储存';
-$lang['cancel'] = '删除';
+$lang['cancel'] = '取消';
 $lang['view'] = '查看';
 $lang['type'] = '类型';
 $lang['text'] = '文字';
@@ -777,7 +777,7 @@ $lang['fieldtitle-keywords'] = '关键词';
 $lang['fieldtitle-country'] = '国家';
 $lang['fieldtitle-title'] = '标题';
 $lang['fieldtitle-story_extract'] = '故事摘要';
-$lang['fieldtitle-credit'] = '信用 (xìn yòng)';
+$lang['fieldtitle-credit'] = '署名';
 $lang['fieldtitle-date'] = '日期';
 $lang['fieldtitle-expiry_date'] = '到期日期';
 $lang['fieldtitle-caption'] = '说明文字';
@@ -884,9 +884,7 @@ $lang['property-icon'] = '图标';
 $lang['property-smart_theme_name'] = '智能特色集合名称';
 $lang['property-fits_field'] = 'FITS字段';
 $lang['property-read_only_field'] = '只读元数据字段（即在下载时不会写回）。';
-$lang['information-fits_field'] = 'FITS（文件信息工具集）字段将覆盖Exiftool的值，如果可以找到一个值！
-
-(FITS（文件信息工具集）字段将覆盖Exiftool的值，如果可以找到一个值！)';
+$lang['information-fits_field'] = 'FITS（文件信息工具集）字段将覆盖Exiftool的值，如果可以找到一个值！';
 $lang['property-exiftool_filter'] = 'Exiftool筛选器';
 $lang['property-help_text'] = '帮助文本';
 $lang['property-tooltip_text'] = '工具提示文本';
@@ -934,10 +932,10 @@ $lang['collections'] = '收藏夹';
 $lang['changethemeto'] = '更改主题';
 $lang['xlthumbstitle'] = '超大缩略图';
 $lang['largethumbstitle'] = '大缩略图';
-$lang['strip'] = '剥离 (Bōlí)';
-$lang['striptitle'] = '剥离视图';
+$lang['strip'] = '条带';
+$lang['striptitle'] = '条带视图';
 $lang['listtitle'] = '列表视图';
-$lang['on'] = '在 (zài)';
+$lang['on'] = '开启';
 $lang['off'] = '关闭';
 $lang['seconds'] = '秒 (miǎo)';
 $lang['pause'] = '暂停';
@@ -1053,7 +1051,7 @@ $lang['log_code_d'] = '下载的文件';
 $lang['log_code_e'] = '编辑过的';
 $lang['log_code_E'] = '已发送电子邮件';
 $lang['log_code_l'] = '已登录';
-$lang['log_code_m'] = '多人编辑的';
+$lang['log_code_m'] = '批量编辑';
 $lang['log_code_O'] = '用户选择加入';
 $lang['log_code_p'] = '已付款';
 $lang['log_code_r'] = '已还原或重新上传。';
@@ -1709,7 +1707,7 @@ $lang['upload-options'] = '上传选项';
 $lang['user-preferences'] = '偏好设置';
 $lang['allresources'] = '所有资源';
 $lang['smart_collection_result_limit'] = '智能集合：结果计数限制';
-$lang['untaggedresources'] = '没有%字段数据的资源';
+$lang['untaggedresources'] = '没有%field 数据的资源';
 $lang['secureyouradminaccount'] = '欢迎！为了保护您的服务器，您现在需要更改默认密码。';
 $lang['resources-all-types'] = '所有类型的资源';
 $lang['search-mode'] = '搜索...';
@@ -1973,7 +1971,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = '允许
 $lang['share_using_permissions_from_user_group'] = '使用用户组权限共享';
 $lang['externalshare_using_permissions_from_user_group'] = '如果您要给外部用户发送电子邮件，请选择用于访问的用户组。';
 $lang['collection_download_too_large'] = '抱歉，此集合文件过大，无法作为一个文件下载。请尝试减小集合大小或选择较小的图像大小。';
-$lang['all__passwordnewemailhtml'] = '请点击下面的链接为您的账户设置新密码。<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />用户名: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />请点击下面的链接为您的账户设置新密码。<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />用户名: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = '上传暂时不可用。';
 $lang['disk_size_no_upload_explain'] = '由于空间限制，上传功能已被暂时禁用。给您带来的不便，我们深表歉意。';
 $lang['dash'] = '破折号';
@@ -2396,9 +2394,10 @@ $lang['useaspreviewimage'] = '使用作为预览图像。';
 $lang['filechecksum'] = '文件校验和';
 $lang['system_notification'] = '[application_name] - 系统通知';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
-[消息]<br /><br />
+[message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['error_edit_filter_invalid'] = '编辑过滤器未正确配置给该用户组。请联系您的管理员。';
 $lang['error_search_filter_invalid'] = '搜索过滤器未正确配置给该用户组。请联系您的管理员。';
 $lang['action_lock'] = '锁定';
@@ -2579,8 +2578,9 @@ $lang['collectiontypes_separator'] = ', ';
 $lang['embedded_metadata_prepend_option'] = '前置';
 $lang['user_group'] = '用户组';
 $lang['all__emailbulk'] = '<br /><br />
-[文本]<br /><br />
-[文本_页脚]';
+[text]<br /><br />
+[text_footer]
+';
 $lang['all__emailcollection'] = '[fromusername] [lang_emailcollectionmessage] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
@@ -2589,11 +2589,12 @@ $lang['all__emailcollectionexternal'] = '[fromusername] [lang_emailcollectionmes
 [lang_clicklinkviewcollection] [list]';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[欢迎]<br /><br /> 
-[新登录详情]<br /><br /> 
-[用户名] : [username] <br /><br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[文本页脚]';
+[text_footer]
+';
 $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]
 
@@ -2630,10 +2631,11 @@ $lang['all__emailnotifyresourcessubmitted'] = '<br />
 [text_footer]';
 $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 [lang_userresourcesunsubmitted]
-[列表] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[文本页脚]';
+[text_footer]
+';
 $lang['all__emailresearchrequestassigned'] = '<br />
 [lang_researchrequestassignedmessage]<br /><br />
 [text_footer]';
@@ -2936,8 +2938,8 @@ $lang['fieldtitle-group_logo_dark'] = '组特定徽标 - 深色';
 $lang['fieldtitle-group_logo_dark_replace'] = '替换组特定徽标 - 深色';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = '应用程序徽标 - 深色';
 $lang['user_pref_appearance'] = '外观';
-$lang['user_pref_appearance_light'] = '光';
-$lang['user_pref_appearance_dark'] = '黑暗';
+$lang['user_pref_appearance_light'] = '浅色';
+$lang['user_pref_appearance_dark'] = '深色';
 $lang['user_pref_appearance_device'] = '设备默认';
 $lang['collection_download_include_alternatives'] = '是否包含备用文件？';
 $lang['group_config_inherit'] = '组配置从父用户组继承。这里没有需要配置的内容。';

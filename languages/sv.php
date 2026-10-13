@@ -241,7 +241,7 @@ $lang['resources_uploaded-1'] = '1 material överfördes korrekt.';
 $lang['resources_uploaded-n'] = '%done% material överfördes korrekt.';
 $lang['resources_failed-0'] = '0 överföringar misslyckades.';
 $lang['resources_failed-1'] = '1 överföring misslyckades.';
-$lang['resources_failed-n'] = '%failed% överföringar misslyckades.';
+$lang['resources_failed-n'] = '%done% överföringar misslyckades.';
 $lang['connect'] = 'Anslut';
 $lang['contributenewresource'] = 'Bidra med nytt material';
 $lang['viewcontributedps'] = 'Visa mina bidrag – under registrering';
@@ -357,7 +357,7 @@ $lang['retrypreviews'] = 'Försök skapa förhandsgranskningar igen';
 $lang['specifydefaultcontent'] = 'Ange den metadata som ska vara förvald för nya material';
 $lang['properties'] = '– typspecifika egenskaper';
 $lang['relatedresources'] = 'Relaterade material';
-$lang['relatedresources-filename_extension'] = 'Relaterade material – %extension';
+$lang['relatedresources-filename_extension'] = 'Relaterade material – %EXTENSION';
 $lang['relatedresources-id'] = 'Relaterade material – nr %id%';
 $lang['relatedresources-restype'] = 'Relaterade material – [restype]';
 $lang['indexedsearchable'] = 'Indexerade, sökbara fält';
@@ -404,7 +404,7 @@ $lang['pixels'] = 'pixlar';
 $lang['download'] = 'Hämtning';
 $lang['preview'] = 'Förhandsgranskning';
 $lang['fullscreenpreview'] = 'Förhandsgranska på bildskärm';
-$lang['originalfileoftype'] = 'Originalfil (%extension)';
+$lang['originalfileoftype'] = 'Originalfil (%EXTENSION)';
 $lang['fileoftype'] = '? Fil';
 $lang['log'] = 'Logg';
 $lang['resourcedetails'] = 'Egenskaper för material';
@@ -968,9 +968,9 @@ $lang['downloads'] = 'Hämtningar';
 $lang['all_users'] = 'alla användare';
 $lang['new_resource'] = 'nytt material';
 $lang['invalidextension_mustbe'] = 'Ogiltig filnamnsändelse, måste vara';
-$lang['invalidextension_mustbe-extensions'] = 'Ogiltig filnamnsändelse, måste vara %extensions.';
+$lang['invalidextension_mustbe-extensions'] = 'Ogiltig filnamnsändelse, måste vara %EXTENSIONS.';
 $lang['allowedextensions'] = 'Giltiga filnamnsändelser';
-$lang['allowedextensions-extensions'] = 'Giltiga filnamnsändelser: %extensions';
+$lang['allowedextensions-extensions'] = 'Giltiga filnamnsändelser: %EXTENSIONS';
 $lang['alternativebatchupload'] = 'Överför alternativa filer i grupp';
 $lang['confirmdeletefieldoption'] = 'Vill du ta bort det här fältalternativet?';
 $lang['cannotshareemptycollection'] = 'Denna samling är tom och kan inte delas.';
@@ -1049,8 +1049,8 @@ $lang['nodownloads'] = 'Inga hämtningar';
 $lang['uncollectedresources'] = 'Material som inte ingår i samlingar';
 $lang['nowritewillbeattempted'] = 'Exiftool kommer inte att försöka skriva metadata';
 $lang['notallfileformatsarewritable'] = 'Exiftool kan dock inte skriva i alla filtyper';
-$lang['filetypenotsupported'] = 'Filtypen %extension stöds inte';
-$lang['exiftoolprocessingdisabledforfiletype'] = 'Exiftool är inaktiverat för filtypen %extension';
+$lang['filetypenotsupported'] = 'Filtypen %EXTENSION stöds inte';
+$lang['exiftoolprocessingdisabledforfiletype'] = 'Exiftool är inaktiverat för filtypen %EXTENSION';
 $lang['nometadatareport'] = 'Ingen metadatarapport';
 $lang['metadatawritewillbeattempted'] = 'Exiftool kommer att försöka skriva nedanstående metadata.';
 $lang['metadatatobewritten'] = 'Exiftool kommer att skriva nedanstående metadata';
@@ -1181,7 +1181,7 @@ $lang['can_see_all_fields'] = 'Kan se alla fält';
 $lang['can_see_field'] = 'Kan se fältet';
 $lang['can_edit_all_fields'] = 'Kan redigera alla fält<br>(för redigeringsbara material)';
 $lang['can_edit_field'] = 'Kan redigera fältet';
-$lang['can_see_resource_type'] = 'Kan se material av typen';
+$lang['can_see_resource_type'] = 'Kan se material av typen \'%TYPE\'';
 $lang['restricted_access_only_to_resource_type'] = 'Begränsad åtkomst till material av typen';
 $lang['restricted_upload_for_resource_of_type'] = 'Tillåts inte överföra material av typen';
 $lang['edit_access_to_workflow_state'] = 'Kan redigera material med statusen';
@@ -1261,7 +1261,7 @@ $lang['intro-plupload_upload-replace_resource'] = 'Klicka på <b>Lägg till file
 $lang['intro-batch_edit'] = 'Ange förvalda inställningar för överföring och förvald metadata för materialen du kommer att överföra.';
 $lang['plupload-maxfilesize'] = 'Den största tillåtna filstorleken vid överföringar är %s.';
 $lang['collections-1'] = '(<strong>1</strong> samling)';
-$lang['collections-2'] = '(<strong>%number</strong> samlingar)';
+$lang['collections-2'] = '(<strong>%d</strong> samlingar med <strong>%d</strong> objekt)';
 $lang['total-collections-0'] = '<strong>Totalt: 0</strong> samlingar';
 $lang['total-collections-1'] = '<strong>Totalt: 1</strong> samling';
 $lang['total-collections-2'] = '<strong>Totalt: %number</strong> samlingar';
@@ -1442,8 +1442,8 @@ $lang['download_progress__introtext'] = 'Din hämtning startas inom kort. När h
 $lang['edit__batch'] = '';
 $lang['edit__multiple'] = 'Markera de fält du vill uppdatera med ny information. Omarkerade fält lämnas oförändrade.';
 $lang['home__restrictedtext'] = 'Klicka på webblänken som skickades till dig om du vill komma åt materialen som är utvalda för dig.';
-$lang['home__restrictedtitle'] = '<h1>Välkommen till ResourceSpace</h1>';
-$lang['home__welcometitle'] = 'Välkommen till ResourceSpace';
+$lang['home__restrictedtitle'] = '<h1>Välkommen till ResourceSpace [ver]</h1>';
+$lang['home__welcometitle'] = 'Välkommen till ResourceSpace [ver]';
 $lang['login__welcomelogin'] = 'Välkommen till ResourceSpace';
 $lang['research_request__introtext'] = 'Researchteamet hjälper dig att finna de bästa materialen till dina projekt. Fyll i formuläret nedan så noggrant som möjligt så att vi kan ge dig ett relevant svar. <br /><br />En medlem av teamet kommer att få i uppdrag att besvara din researchförfrågan. Vi kommer att hålla kontakt genom e-post under arbetets gång. När vi har slutfört arbetet kommer du att få ett e-postmeddelande med en webblänk till alla material vi rekommenderar.';
 $lang['resource_email__introtext'] = 'Dela snabbt och enkelt material med andra. Ett e-postmeddelande innehållande en webblänk till materialen skapas och skickas automatiskt. Du kan även lägga till ett eget meddelande.';
@@ -1503,8 +1503,8 @@ $lang['property-table_reference'] = 'Tabellreferens';
 $lang['property-code'] = 'Kod';
 $lang['themeselector'] = 'Utvalda samlingar';
 $lang['changethemeto'] = 'Byt tema till';
-$lang['strip'] = 'Avlägsna';
-$lang['striptitle'] = 'Avklädning vy';
+$lang['strip'] = 'Remsa';
+$lang['striptitle'] = 'Remsvy';
 $lang['perpage_option'] = '? per sida';
 $lang['on'] = 'På';
 $lang['off'] = 'Av';
@@ -1641,7 +1641,7 @@ $lang['mustaccept'] = 'Du måste kryssa i rutan för att acceptera villkoren inn
 $lang['termsmustindicateusage'] = 'Du måste ange planerad användning innan du kan fortsätta';
 $lang['termsmustspecifyusagecomment'] = 'Du måste ange planerade användningskommentarer innan du kan fortsätta';
 $lang['proceed'] = 'Fortsätt';
-$lang['db-default-encoding'] = '(databas-kodning: %kodning)';
+$lang['db-default-encoding'] = '(databas-kodning: %encoding)';
 $lang['disable_languages'] = 'Inaktivera språkvalsalternativ';
 $lang['import_export'] = 'Importera/Exportera';
 $lang['import'] = 'Importera';
@@ -2057,7 +2057,7 @@ $lang['prevent_user_group_sharing_externally'] = 'Förhindra användare från at
 $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Tillåt användargruppsval för att bestämma åtkomstnivå vid extern delning';
 $lang['share_using_permissions_from_user_group'] = 'Dela med behörigheter från användargrupp';
 $lang['collection_download_too_large'] = 'Tyvärr, denna samling är för stor för att laddas ner som en fil. Försök minska storleken på samlingen eller välj en mindre bildstorlek.';
-$lang['all__passwordnewemailhtml'] = 'Vänligen klicka på länken nedan för att ställa in ett nytt lösenord för ditt konto.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Användarnamn: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Vänligen klicka på länken nedan för att ställa in ett nytt lösenord för ditt konto.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Användarnamn: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Uppladdning tillfälligt otillgänglig';
 $lang['disk_size_no_upload_explain'] = 'På grund av utrymmesbegränsningar har uppladdning tillfälligt inaktiverats. Vi ber om ursäkt för eventuella olägenheter.';
 $lang['savethissearchtodash'] = 'Spara till panelruta';
@@ -2068,7 +2068,7 @@ $lang['existingdashtilefound-2'] = 'Den angivna rutan finns redan. Besök följa
 $lang['createdashtilefreetext'] = 'Skapa en kakel med endast text och streck';
 $lang['enterdefaultorderby'] = 'Ange standardpositionsnummer';
 $lang['dashtiletitle'] = 'Titel';
-$lang['dashtiletext'] = 'Text (Swedish translation: Text)';
+$lang['dashtiletext'] = 'Text';
 $lang['dashtilelink'] = 'Måltavellänk för kachel';
 $lang['nodashtilefound'] = 'Ingen matchande panel hittades';
 $lang['existingdashtilefound'] = 'Den angivna rutan finns redan på din instrumentpanel.';
@@ -2629,7 +2629,7 @@ $lang['map_esrinatgeo'] = 'National Geographic';
 $lang['map_nasagibs_group'] = 'NASA GIBS';
 $lang['map_mapbox_group'] = 'Mapbox';
 $lang['map_mapboxid'] = 'ID';
-$lang['field_ref_and_name'] = '%ref% - %namn%';
+$lang['field_ref_and_name'] = '%ref% - %name%';
 $lang['filestore'] = 'Filbutik';
 $lang['rs_ext_dependencies'] = 'ResourceSpace Externa Beroenden';
 $lang['write_access_to'] = 'Skrivåtkomst till';
@@ -2669,11 +2669,13 @@ $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessa
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
 [text_footer]';
-$lang['all__emailresourcerequest'] = '[lang_användarnamn] : [username] <br />
+$lang['all__emailresourcerequest'] = '<br />
+[lang_username] : [username] <br />
 [list] <br />
 [details]<br /><br />
-[lang_klickaförattvisaresurs] <br /><br />
-<a href="[url]">[url]</a>';
+[lang_clicktoviewresource] <br /><br />
+<a href="[url]">[url]</a>
+';
 $lang['help__introtext'] = '<iframe src="https://www.resourcespace.com/knowledge-base/?from_rs=true" style="width:1235px;height:600px;border:none;margin:-20px;" id="knowledge_base" />';
 $lang['externalshare_using_permissions_from_user_group'] = 'Om du skickar e-post till externa användare, vänligen välj användargruppen som ska användas för åtkomst';
 $lang['dash'] = 'Instrumentpanel';
@@ -2775,11 +2777,12 @@ $lang['completed_unset_no_file'] = 'Resurs markerad som fil saknas';
 $lang['php'] = 'PHP';
 $lang['requestapprovedmail_email'] = '[img_headerlogo]<br/><br/>[message]<br/>[expires]<br/><br/>Klicka på länken nedan för att visa och ladda ner de begärda resurserna.<br/><br/><a href=\'[url]\'>[url]</a>';
 $lang['all__emailresource'] = '<br />
-[fromusername] har skickat en resurs till dig<br /><br />
+[fromusername] [lang_hasemailedyouaresource]<br /><br />
 [message]<br /><br />
 <a href="[url]">[embed_thumbnail]</a><br /><br />
-Klicka för att visa resursen<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
-[text_footer]';
+[lang_clicktoviewresource]<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
+[text_footer]
+';
 $lang['notify_resource_change_email'] = 'En resurs som du laddade ner för [days] dagar sedan har ändrats. Klicka på länken nedan för att visa resursen.<br /><br /><a href=\'[url]\'>[url]</a>';
 $lang['notify_resource_change_notification'] = 'En resurs som du laddade ner för [days] dagar sedan har ändrats.';
 $lang['all__emailcollection'] = '<br />
@@ -2790,7 +2793,8 @@ $lang['all__emailcollectionexternal'] = '<br />
 [fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
-$lang['all__emailnewresearchrequestwaiting'] = '[användarnamn] ([användarens fullständiga namn] - [användarens e-post])
+$lang['all__emailnewresearchrequestwaiting'] = '<br />
+[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
 [lang_nameofproject]:[name]<br /><br />
 [lang_descriptionofproject]:[description]<br /><br />
@@ -2801,17 +2805,19 @@ $lang['all__emailnewresearchrequestwaiting'] = '[användarnamn] ([användarens f
 [lang_noresourcesrequired]: [noresources]<br /><br />
 <a href="[url]">[url]</a><br /><br />
 <a href="[teamresearchurl]">[teamresearchurl]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
 [message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
 [text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[välkommen]<br /><br /> 
+[welcome]<br /> 
 [lang_newlogindetails]<br /><br /> 
-[lang_användarnamn] : [username] <br /><br />
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['csv_export_filename'] = 'metadata_export_[search]_[time]';
 $lang['plugin-category-asset-processing'] = 'Tillgångsbehandling';
 $lang['plugin-category-authentication'] = 'Autentisering';

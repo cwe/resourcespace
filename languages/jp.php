@@ -617,8 +617,8 @@ $lang['download_progress__introtext'] = 'あなたのダウンロードはまも
 $lang['edit__batch'] = '';
 $lang['edit__multiple'] = 'どのフィールドを上書きしたいかを選択してください。 あなたが選択しないフィールドはそのままの状態でおかれるでしょう。';
 $lang['home__restrictedtext'] = 'あなたのために選択されたリソースにアクセスするためにメールされたリンクをクリックしてください。';
-$lang['home__restrictedtitle'] = '<h1>★サイトの名称を記述してください★</h1>';
-$lang['home__welcometitle'] = '★ウェルカムメッセージのタイトルを記述してください★';
+$lang['home__restrictedtitle'] = 'ResourceSpace [ver] へようこそ';
+$lang['home__welcometitle'] = 'ResourceSpace [ver] へようこそ';
 $lang['login__welcomelogin'] = '★ウェルカムメッセージを記入してください★';
 $lang['research_request__introtext'] = 'あなたのプロジェクトに、最も良いリソースを見つけるの手助けするために、私たちのプロの調査者がここにいます。 私たちが正確に評価基準を満たすことができるように、このフォームにできるだけ全てに記入してください。 <br /><br />調査チームのメンバーがあなたの要求にアサインされるでしょう。 途中経過をメールで報告します、そして、私たちが調査を完了した後、私たちが推薦するすべてのリソースへのリンクをメールで受け取ってください。';
 $lang['resource_email__introtext'] = 'メールで素早く他のユーザとこのリソースを共有できます。 自動的にリンクを送信します。 また、あなたはメールの一部として任意のメッセージも入れることができます。';
@@ -669,7 +669,7 @@ $lang['fieldtitle-country'] = '国家 (kokka)';
 $lang['fieldtitle-title'] = 'タイトル';
 $lang['fieldtitle-story_extract'] = 'ストーリー抜粋 (Sutōrī Bassui)';
 $lang['fieldtitle-credit'] = 'クレジット';
-$lang['fieldtitle-date'] = '日付 (Hizuke)';
+$lang['fieldtitle-date'] = '日付';
 $lang['fieldtitle-expiry_date'] = '有効期限';
 $lang['fieldtitle-caption'] = 'キャプション';
 $lang['fieldtitle-notes'] = 'ノート';
@@ -1655,9 +1655,7 @@ $lang['nopreviewresources'] = 'プレビューがないリソース';
 $lang['action-delete_permanently'] = '完全に削除する';
 $lang['horizontal'] = '水平 (すいへい)';
 $lang['vertical'] = '垂直 (Chuujiku)';
-$lang['cc-emailaddress'] = 'CC %emailaddress の日本語訳は次の通りです。
-
-CC %emailaddress（メールアドレス）';
+$lang['cc-emailaddress'] = 'CC %emailaddress';
 $lang['list-recipients-label'] = 'すべての受信者をメールでリストアップしますか？';
 $lang['list-recipients'] = 'このメッセージは以下のメールアドレスに送信されました：';
 $lang['sort'] = '並べ替える';
@@ -2010,7 +2008,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = '外部
 $lang['share_using_permissions_from_user_group'] = 'ユーザーグループの権限を使用して共有する。';
 $lang['externalshare_using_permissions_from_user_group'] = '外部ユーザーにメールを送信する場合は、アクセスに使用するユーザーグループを選択してください。';
 $lang['collection_download_too_large'] = '申し訳ありませんが、このコレクションは1つのファイルとしてダウンロードするには大きすぎます。コレクションのサイズを減らすか、より小さい画像サイズを選択してください。';
-$lang['all__passwordnewemailhtml'] = '以下のリンクをクリックして、アカウントの新しいパスワードを設定してください。<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />ユーザー名: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />以下のリンクをクリックして、アカウントの新しいパスワードを設定してください。<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />ユーザー名: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'アップロードは一時的に利用できません。';
 $lang['disk_size_no_upload_explain'] = 'スペースの制限により、アップロードは一時的に無効になっています。ご不便をおかけして申し訳ありません。';
 $lang['dash'] = 'ダッシュ';
@@ -2436,9 +2434,10 @@ $lang['useaspreviewimage'] = 'プレビュー画像として使用する。';
 $lang['filechecksum'] = 'ファイルのチェックサム';
 $lang['system_notification'] = '[application_name] - システム通知';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
-[メッセージ]<br /><br />
+[message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[テキスト_フッター]';
+[text_footer]
+';
 $lang['error_edit_filter_invalid'] = '編集フィルターがこのユーザーグループに正しく設定されていません。管理者に連絡してください。';
 $lang['error_search_filter_invalid'] = '検索フィルターがこのユーザーグループに正しく設定されていません。管理者に連絡してください。';
 $lang['action_lock'] = 'ロック';
@@ -2626,8 +2625,9 @@ $lang['terabyte-symbol-binary'] = 'TiB';
 $lang['ref-title'] = '%ref - %title';
 $lang['user_group'] = 'ユーザーグループ';
 $lang['all__emailbulk'] = '<br /><br />
-[テキスト]<br /><br />
-[テキスト_フッター]';
+[text]<br /><br />
+[text_footer]
+';
 $lang['all__emailcollection'] = '[fromusername] [lang_emailcollectionmessage] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
@@ -2636,11 +2636,12 @@ $lang['all__emailcollectionexternal'] = '[fromusername] [lang_emailcollectionmes
 [lang_clicklinkviewcollection] [list]';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[ようこそ]<br /><br /> 
-[新しいログイン情報]<br /><br /> 
-[ユーザー名] : [username] <br /><br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[フッターテキスト]';
+[text_footer]
+';
 $lang['all__emailnewresearchrequestwaiting'] = '<br />
 [username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
@@ -2656,22 +2657,25 @@ $lang['all__emailnewresearchrequestwaiting'] = '<br />
 [text_footer]';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
 [lang_userresourcesapproved]
-[リスト] <br />
+[list] <br />
 [lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcessubmitted'] = '<br />
 [lang_userresourcessubmitted]
-[リスト] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[テキストフッター]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 [lang_userresourcesunsubmitted]
-[リスト] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresearchrequestassigned'] = '<br />
 [lang_researchrequestassignedmessage]<br /><br />
 [text_footer]';
@@ -2686,11 +2690,13 @@ $lang['all__emailresource'] = '<br />
 <a href="[url]">[embed_thumbnail]</a><br /><br />
 [lang_clicktoviewresource]<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
 [text_footer]';
-$lang['all__emailresourcerequest'] = '[lang_username] : [username] <br />
-[リスト] <br />
-[詳細]<br /><br />
+$lang['all__emailresourcerequest'] = '<br />
+[lang_username] : [username] <br />
+[list] <br />
+[details]<br /><br />
 [lang_clicktoviewresource] <br /><br />
-<a href="[url]">[url]</a>';
+<a href="[url]">[url]</a>
+';
 $lang['help__introtext'] = '<iframe src="https://www.resourcespace.com/knowledge-base/?from_rs=true" style="width:1235px;height:600px;border:none;margin:-20px;" id="knowledge_base" />';
 $lang['upgrade_script'] = 'アップグレードスクリプト';
 $lang['upgrade_026_notification'] = 'アップグレードにより、%entity%が上書きしているいくつかの設定オプションが廃止されました。
@@ -2919,8 +2925,8 @@ $lang['fieldtitle-group_logo_dark'] = 'グループ専用ロゴ - ダーク';
 $lang['fieldtitle-group_logo_dark_replace'] = 'グループ特有のロゴを置き換える - ダーク';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'アプリケーションロゴ - ダーク';
 $lang['user_pref_appearance'] = '外観';
-$lang['user_pref_appearance_light'] = '光';
-$lang['user_pref_appearance_dark'] = '暗い';
+$lang['user_pref_appearance_light'] = 'ライト';
+$lang['user_pref_appearance_dark'] = 'ダーク';
 $lang['user_pref_appearance_device'] = 'デバイスのデフォルト';
 $lang['collection_download_include_alternatives'] = '代替ファイルを含めますか？';
 $lang['group_config_inherit'] = 'グループ設定は親ユーザーグループから継承されます。ここで設定するものはありません。';

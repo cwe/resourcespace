@@ -14,7 +14,7 @@ $lang['aboutus'] = 'O nas';
 $lang['interface'] = 'Interfejs';
 $lang['simplesearch'] = 'Wyszukaj';
 $lang['searchbutton'] = 'Szukaj';
-$lang['clearbutton'] = 'Nowe';
+$lang['clearbutton'] = 'Wyczyść';
 $lang['bycountry'] = 'Kraj';
 $lang['bydate'] = 'Po dacie';
 $lang['anyyear'] = 'Rok';
@@ -569,7 +569,7 @@ $lang['xlthumbstitle'] = 'Bardzo duże miniaturki';
 $lang['largethumbstitle'] = 'Duże miniatury';
 $lang['striptitle'] = 'Widok paska';
 $lang['listtitle'] = 'Widok listy';
-$lang['on'] = 'Na';
+$lang['on'] = 'Włączone';
 $lang['off'] = 'Wyłączone';
 $lang['seconds'] = 'sekundy';
 $lang['reload'] = 'Przeładuj';
@@ -789,9 +789,7 @@ $lang['continuetouser'] = 'Kontynuuj logowanie użytkownika';
 $lang['mustaccept'] = 'Musisz zaznaczyć pole wyboru, aby zaakceptować warunki przed kontynuacją';
 $lang['termsmustindicateusage'] = 'Musisz określić planowane wykorzystanie, aby kontynuować';
 $lang['termsmustspecifyusagecomment'] = 'Musisz dostarczyć zaplanowane komentarze dotyczące użytkowania, zanim będziesz mógł kontynuować';
-$lang['proceed'] = 'Proszę przetłumaczyć: Proceed
-
-Kontynuuj.';
+$lang['proceed'] = 'Kontynuuj';
 $lang['allmonths'] = 'Wszystkie miesiące';
 $lang['allgroups'] = 'Wszystkie grupy';
 $lang['status-ok'] = 'OK - dobrze';
@@ -827,9 +825,7 @@ $lang['from'] = 'Z: Od';
 $lang['to'] = 'do - robić';
 $lang['social_media'] = 'Media społecznościowe';
 $lang['single'] = 'Pojedynczy';
-$lang['double'] = 'Proszę przetłumaczyć: Double
-
-Podwójny.';
+$lang['double'] = 'Podwójny';
 $lang['single_width'] = 'Pojedyncza szerokość';
 $lang['double_width'] = 'Podwójna szerokość';
 $lang['filter_by_table'] = 'Filtruj według tabeli...';
@@ -848,7 +844,7 @@ $lang['stat-addedsmartcollection'] = 'Dodano inteligentną kolekcję';
 $lang['stat-removedresourcefromcollection'] = 'Usunięto zasób z kolekcji';
 $lang['stat-keywordusage-noresultsfound'] = 'Użycie słowa kluczowego - brak wyników';
 $lang['share_selected'] = 'Udostępnij wybrane';
-$lang['sharecollection-name'] = 'Udostępnij kolekcję - %nazwakolekcji';
+$lang['sharecollection-name'] = 'Udostępnij kolekcję - %collectionname';
 $lang['share_theme_category'] = 'Udostępnij kategorię wyróżnionej kolekcji';
 $lang['share_theme_category_subcategories'] = 'Czy zawierać wyróżnione kolekcje w podkategoriach dla użytkowników zewnętrznych?';
 $lang['email_theme_category'] = 'Kategoria wyróżnionej kolekcji e-mailowej';
@@ -939,11 +935,7 @@ $lang['setup-binpath'] = 'Ścieżka %bin';
 $lang['setup-begin_installation'] = 'Rozpocznij instalację!';
 $lang['setup-smtp-settings'] = 'Ustawienia SMTP';
 $lang['setup-if-usesmtp'] = 'Użyj zewnętrznego serwera SMTP do wysyłania wiadomości e-mail (np. Gmail). Wykorzystuje PHPMailer';
-$lang['setup-if-smtpsecure'] = 'Proszę przetłumaczyć: \'\', \'tls\' lub \'ssl\'. Dla Gmaila wymagane jest użycie \'tls\' lub \'ssl\'.
-
-\'\' - puste pole
-\'tls\' - protokół szyfrowania TLS
-\'ssl\' - protokół szyfrowania SSL';
+$lang['setup-if-smtpsecure'] = '\'\', \'tls\' lub \'ssl\'. Dla Gmaila wymagane jest użycie \'tls\' lub \'ssl\'.';
 $lang['setup-if-smtphost'] = 'Nazwa hosta, np. \'smtp.gmail.com\'.';
 $lang['setup-if-smtpport'] = 'Numer portu, np. 465 dla Gmaila z użyciem SSL.';
 $lang['setup-if-smtpauth'] = 'Wyślij dane uwierzytelniające do serwera SMTP (false, aby użyć anonimowego dostępu)';
@@ -1290,11 +1282,7 @@ $lang['nopreviewresources'] = 'Zasoby bez podglądów';
 $lang['action-delete_permanently'] = 'Usuń na stałe';
 $lang['horizontal'] = 'Poziomy';
 $lang['vertical'] = 'Pionowy';
-$lang['cc-emailaddress'] = 'Proszę przetłumaczyć: CC %emailaddress
-
-DW: CC %emailaddress
-
-Oznacza to, że wiadomość e-mail zostanie wysłana do głównego odbiorcy, a także do dodatkowego odbiorcy (w tym przypadku adres e-mail znajdujący się w zmiennej %emailaddress) w celu uzyskania kopii wiadomości. W języku polskim można to przetłumaczyć jako "DW: DWUKROTNIE DO %emailaddress".';
+$lang['cc-emailaddress'] = 'DW: %emailaddress';
 $lang['list-recipients-label'] = 'Wypisz wszystkich odbiorców w e-mailu?';
 $lang['list-recipients'] = 'Ta wiadomość została wysłana na następujące adresy e-mail:';
 $lang['sort'] = 'Sortowanie';
@@ -1695,7 +1683,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Zezwó
 $lang['share_using_permissions_from_user_group'] = 'Udostępnij korzystając z uprawnień grupy użytkowników';
 $lang['externalshare_using_permissions_from_user_group'] = 'Jeśli wysyłasz e-maile do użytkowników zewnętrznych, wybierz grupę użytkowników do wykorzystania w celu uzyskania dostępu';
 $lang['collection_download_too_large'] = 'Przepraszamy, ta kolekcja jest zbyt duża, aby pobrać ją jako jeden plik. Spróbuj zmniejszyć rozmiar kolekcji lub wybrać mniejszy rozmiar obrazu.';
-$lang['all__passwordnewemailhtml'] = 'Proszę kliknąć poniższy link, aby ustawić nowe hasło dla swojego konta.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nazwa użytkownika: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Proszę kliknąć poniższy link, aby ustawić nowe hasło dla swojego konta.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nazwa użytkownika: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Przesyłanie plików tymczasowo niedostępne';
 $lang['disk_size_no_upload_explain'] = 'Ze względu na ograniczenia przestrzeni, przesyłanie plików zostało tymczasowo wyłączone. Przepraszamy za wszelkie niedogodności.';
 $lang['savethissearchtodash'] = 'Zapisz do kafelka pulpitu';
@@ -2081,10 +2069,8 @@ $lang['filter_criteria_all'] = 'Wszystkie zasady muszą zostać spełnione';
 $lang['filter_criteria_none'] = 'ŻADNE z zasad nie muszą być spełnione';
 $lang['filter_criteria_any'] = 'KAŻDE z reguł musi zostać spełnione';
 $lang['filter_is_not_in'] = 'NIE JEST';
-$lang['filter_or'] = 'Proszę przetłumaczyć: OR
-
-LUB';
-$lang['filter_and'] = 'I w języku polskim "AND" oznacza "ORAZ"';
+$lang['filter_or'] = 'LUB';
+$lang['filter_and'] = 'ORAZ';
 $lang['error-sessionexpired'] = 'Twoja sesja wygasła lub jest nieważna';
 $lang['userresources_status_change'] = 'Zasoby, do których przyczyniłeś się, zostały przeniesione do stanu:';
 $lang['collection_description'] = 'Opis';
@@ -2225,7 +2211,7 @@ $lang['information_field_restype_deselect_cleanup'] = 'Aby usunąć istniejące 
 $lang['property-id'] = 'Id';
 $lang['mainmenu'] = 'Główne menu';
 $lang['xlthumbs'] = 'Bardzo duży';
-$lang['strip'] = 'Usuń';
+$lang['strip'] = 'Pasek';
 $lang['perpage_option'] = '? na stronę';
 $lang['systemlog'] = 'Dziennik';
 $lang['_dupe'] = '_duplikat';
@@ -2449,9 +2435,10 @@ $lang['all__emailcollection'] = '<br />
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
 $lang['all__emailcollectionexternal'] = '<br />
-[fromusername] wysłał(a) Ci wiadomość dotyczącą kolekcji <br /><br /> 
-Wiadomość : [message]<br /><br /> 
-Kliknij link, aby zobaczyć kolekcję: [list]';
+[fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
+[lang_message] : [message]<br /><br /> 
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emailresourcerequest'] = '[lang_username] : [username] <br />
 [list] <br />
@@ -2934,7 +2921,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Logo specyficzne dla grupy - Ciemne';
 $lang['fieldtitle-group_logo_dark_replace'] = 'Zastąp logo specyficzne dla grupy - Ciemne';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Logo aplikacji - Ciemny';
 $lang['user_pref_appearance'] = 'Wygląd';
-$lang['user_pref_appearance_light'] = 'Światło';
+$lang['user_pref_appearance_light'] = 'Jasny';
 $lang['user_pref_appearance_dark'] = 'Ciemny';
 $lang['user_pref_appearance_device'] = 'Domyślne urządzenie';
 $lang['collection_download_include_alternatives'] = 'Czy uwzględnić pliki alternatywne?';

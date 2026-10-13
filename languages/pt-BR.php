@@ -745,12 +745,12 @@ $lang['collections'] = 'Coleções';
 $lang['changethemeto'] = 'Alterar tema para';
 $lang['xlthumbstitle'] = 'Miniaturas extra grandes';
 $lang['largethumbstitle'] = 'Miniaturas grandes';
-$lang['strip'] = 'Tirar';
+$lang['strip'] = 'Tira';
 $lang['striptitle'] = 'Visualização de Tira';
 $lang['listtitle'] = 'Visualização em lista';
 $lang['perpage_option'] = '? por página';
-$lang['on'] = 'Em';
-$lang['off'] = 'Fora';
+$lang['on'] = 'Ligado';
+$lang['off'] = 'Desligado';
 $lang['seconds'] = 'segundos';
 $lang['reload'] = 'Recarregar';
 $lang['pause'] = 'Pausa';
@@ -761,12 +761,8 @@ $lang['treeobjecttype-report'] = 'Relatório';
 $lang['systemlog'] = 'Registro';
 $lang['ticktodeletehelp'] = 'Marque para excluir esta seção';
 $lang['createnewhelp'] = 'Criar uma nova seção de ajuda';
-$lang['pluginssetup'] = 'Plugins
-
-(Plugins)';
-$lang['pluginmanager'] = 'Plugins
-
-(Plugins)';
+$lang['pluginssetup'] = 'Plugins';
+$lang['pluginmanager'] = 'Plugins';
 $lang['users'] = 'Usuários';
 $lang['emailhtml'] = 'Habilitar suporte a HTML - o corpo do e-mail deve usar formatação HTML';
 $lang['emailmarkedinvalid'] = 'O e-mail foi marcado como inválido';
@@ -1469,9 +1465,7 @@ $lang['columnheader-downloaded_by_user'] = 'Baixado por usuário';
 $lang['columnheader-user_group'] = 'Grupo de usuários';
 $lang['columnheader-resource_title'] = 'Título do recurso';
 $lang['columnheader-title'] = 'Título';
-$lang['columnheader-downloads'] = 'Downloads
-
-(Downloads)';
+$lang['columnheader-downloads'] = 'Downloads';
 $lang['columnheader-group_name'] = 'Nome do grupo';
 $lang['columnheader-resource_downloads'] = 'Downloads de recursos';
 $lang['columnheader-views'] = 'Visualizações';
@@ -2024,7 +2018,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Permit
 $lang['share_using_permissions_from_user_group'] = 'Compartilhar usando permissões de grupo de usuários';
 $lang['externalshare_using_permissions_from_user_group'] = 'Se você está enviando e-mails para usuários externos, por favor selecione o grupo de usuários a ser utilizado para acesso';
 $lang['collection_download_too_large'] = 'Desculpe, esta coleção é muito grande para ser baixada como um único arquivo. Tente reduzir o tamanho da coleção ou selecionar um tamanho de imagem menor.';
-$lang['all__passwordnewemailhtml'] = 'Por favor, clique no link abaixo para definir uma nova senha para sua conta.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nome de usuário: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Por favor, clique no link abaixo para definir uma nova senha para sua conta.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nome de usuário: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Upload temporariamente indisponível';
 $lang['disk_size_no_upload_explain'] = 'Devido a restrições de espaço, o envio foi temporariamente desativado. Pedimos desculpas por qualquer inconveniente.';
 $lang['dash'] = 'Painel';
@@ -2613,7 +2607,7 @@ $lang['latlong'] = 'Lat / long';
 $lang['geodragmodepan'] = 'pan';
 $lang['centimetre-short'] = 'cm';
 $lang['megapixel-short'] = 'MP';
-$lang['cc-emailaddress'] = 'CC %emailaddress%';
+$lang['cc-emailaddress'] = 'CC %emailaddress';
 $lang['error-invalid_name'] = 'Nome inválido';
 $lang['inactive_entry_matched'] = 'Entrada inativa correspondente para';
 $lang['kilobyte-symbol'] = 'KB';
@@ -2790,11 +2784,12 @@ $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 <a href="[url]">[url]</a><br /><br />
 [text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[bem-vindo]<br /><br /> 
+[welcome]<br /> 
 [lang_newlogindetails]<br /><br /> 
 [lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['plugin-category-asset-processing'] = 'Processamento de Ativos';
 $lang['plugin-category-authentication'] = 'Autenticação';
 $lang['plugin-category-collaboration'] = 'Colaboração';
@@ -2925,7 +2920,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Logo específico do grupo - Escuro';
 $lang['fieldtitle-group_logo_dark_replace'] = 'Substituir logo específico do grupo - Escuro';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Logotipo do aplicativo - Escuro';
 $lang['user_pref_appearance'] = 'Aparência';
-$lang['user_pref_appearance_light'] = 'Luz';
+$lang['user_pref_appearance_light'] = 'Claro';
 $lang['user_pref_appearance_dark'] = 'Escuro';
 $lang['user_pref_appearance_device'] = 'Padrão do dispositivo';
 $lang['collection_download_include_alternatives'] = 'Incluir arquivos alternativos?';

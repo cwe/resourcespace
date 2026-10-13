@@ -14,7 +14,7 @@ $lang['aboutus'] = ' حول بنا ';
 $lang['interface'] = ' واجهة ';
 $lang['simplesearch'] = ' بحث بسيط ';
 $lang['searchbutton'] = ' بحث ';
-$lang['clearbutton'] = ' واضح ';
+$lang['clearbutton'] = 'مسح';
 $lang['bycountry'] = ' حسب البلد ';
 $lang['bydate'] = ' حسب التاريخ ';
 $lang['anyyear'] = ' أي سنة ';
@@ -910,7 +910,7 @@ $lang['property-field_constraint-none'] = 'لا شيء';
 $lang['property-query'] = 'الاستعلام';
 $lang['myrequests'] = 'طلباتي';
 $lang['xlthumbs'] = 'X-كبير جداً';
-$lang['on'] = 'على';
+$lang['on'] = 'تشغيل';
 $lang['off'] = 'إيقاف';
 $lang['purgecollectionareyousure'] = 'هل أنت متأكد أنك تريد إزالة هذه المجموعة وحذف جميع الموارد الموجودة بها؟';
 $lang['collectionsdeleteempty'] = 'حذف المجموعات الفارغة';
@@ -1046,7 +1046,7 @@ $lang['selectloading'] = 'اختر...';
 $lang['treeobjecttype-group'] = 'مجموعة';
 $lang['groupsmart'] = 'المجموعة (الذكية)';
 $lang['confirmaddgroupsmart'] = 'هل أنت متأكد أنك تريد تضمين الأعضاء بشكل ديناميكي في هذه المجموعة؟';
-$lang['back_to'] = 'العودة إلى %المنطقة';
+$lang['back_to'] = 'العودة إلى %area';
 $lang['treeobjecttype-field'] = 'حقل';
 $lang['save-return'] = 'حفظ والعودة';
 $lang['revert'] = 'إرجاع';
@@ -1134,7 +1134,7 @@ $lang['generateexternalurl'] = 'توليد رابط خارجي';
 $lang['generateexternalurls'] = 'توليد عناوين URL الخارجية';
 $lang['generatethemeurlsexternal'] = 'سيعمل الروابط أدناه للجميع ولا يتطلبون تسجيل الدخول.';
 $lang['showexistingthemeshares'] = 'عرض المشاركات الموجودة للمجموعات المميزة في هذه الفئة';
-$lang['externalusersharing-name'] = 'مشاركة المستخدم الخارجي - %اسم المجموعة%';
+$lang['externalusersharing-name'] = 'مشاركة المستخدم الخارجي - %collectionname%';
 $lang['confirmdeleteaccessresource'] = 'هل أنت متأكد أنك تريد حذف هذا المفتاح؟ لن يتمكن المستخدمون الذين تم منحهم الوصول باستخدام هذا المفتاح من الوصول إلى هذا المورد بعد الآن.';
 $lang['confirmdeleteaccessmulticol'] = 'هل أنت متأكد أنك تريد حذف هذه المفاتيح؟ لن يتمكن المستخدمون الذين تم منحهم الوصول باستخدام هذه المفاتيح من الوصول إلى المجموعات ذات الصلة بعد الآن.';
 $lang['confirmdeleteaccessmultires'] = 'هل أنت متأكد أنك تريد حذف هذه المفاتيح الخاصة بالوصول؟ لن يتمكن المستخدمون الذين حصلوا على الوصول باستخدام هذه المفاتيح من الوصول إلى الموارد ذات الصلة بعد الآن.';
@@ -1465,7 +1465,7 @@ $lang['columnheader-added'] = 'تمت الإضافة';
 $lang['columnheader-creation_date'] = 'تاريخ الإنشاء';
 $lang['columnheader-sent'] = 'تم الإرسال';
 $lang['columnheader-last_seen'] = 'آخر ظهور';
-$lang['period'] = 'يرجى ترجمة: فترة';
+$lang['period'] = 'فترة';
 $lang['lastndays'] = 'آخر ... أيام؟';
 $lang['specificdays'] = 'عدد محدد من الأيام';
 $lang['specificdaterange'] = 'نطاق تاريخ محدد';
@@ -1611,9 +1611,7 @@ $lang['nopreviewresources'] = 'الموارد بدون معاينات مسبقة
 $lang['action-delete_permanently'] = 'حذف بشكل دائم';
 $lang['horizontal'] = 'أفقي';
 $lang['vertical'] = 'عمودي';
-$lang['cc-emailaddress'] = 'CC %emailaddress
-
-نسخة إلى %emailaddress';
+$lang['cc-emailaddress'] = 'نسخة إلى %emailaddress';
 $lang['list-recipients-label'] = 'قائمة بجميع المستلمين في البريد الإلكتروني؟';
 $lang['list-recipients'] = 'تم إرسال هذه الرسالة إلى عناوين البريد الإلكتروني التالية:';
 $lang['sort'] = 'فرز';
@@ -1998,8 +1996,8 @@ $lang['user_preferences__introtext_new'] = 'يرجى إدخال كلمة مرو�
 $lang['user_request__introtext'] = 'يرجى إكمال النموذج أدناه لطلب حساب مستخدم.';
 $lang['view__storyextract'] = 'مقتطف من القصة:';
 $lang['notify_resource_change_email_subject'] = 'تم تعديل المورد';
-$lang['notify_resource_change_email'] = 'تم تعديل المورد الذي قمت بتنزيله خلال الـ [أيام] الماضية. انقر على الرابط أدناه لعرض المورد. <br /><br /><a href=\'[url]\'>[url]</a>';
-$lang['notify_resource_change_notification'] = 'تم تعديل المورد الذي قمت بتنزيله خلال الـ [أيام] السابقة.';
+$lang['notify_resource_change_email'] = 'تم تعديل المورد الذي قمت بتنزيله خلال الـ [days] أيام الماضية. انقر على الرابط أدناه لعرض المورد. <br /><br /><a href=\'[url]\'>[url]</a>';
+$lang['notify_resource_change_notification'] = 'تم تعديل المورد الذي قمت بتنزيله خلال الـ [days] أيام الماضية.';
 $lang['passwordresetemail'] = 'يرجى النقر على الرابط أدناه لإعادة تعيين كلمة المرور الخاصة بك.';
 $lang['password_reset_email_html'] = '[username]: اسم المستخدم <br /><br />يرجى النقر على الرابط أدناه لإعادة تعيين كلمة المرور الخاصة بك. <br /><br /><a href="[url]" target="_blank">[url]</a>';
 $lang['passwordnewemail'] = 'يرجى النقر على الرابط أدناه لتعيين كلمة مرور جديدة لحسابك.';
@@ -2016,7 +2014,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'الس
 $lang['share_using_permissions_from_user_group'] = 'مشاركة باستخدام أذونات من مجموعة المستخدمين';
 $lang['externalshare_using_permissions_from_user_group'] = 'إذا كنت ترسل رسائل بريد إلكتروني للمستخدمين الخارجيين، يرجى اختيار مجموعة المستخدمين المناسبة للوصول';
 $lang['collection_download_too_large'] = 'عذرًا، هذه المجموعة كبيرة جدًا للتنزيل كملف واحد. يرجى تقليل حجم المجموعة أو اختيار حجم صورة أصغر.';
-$lang['all__passwordnewemailhtml'] = 'يرجى النقر على الرابط أدناه لتعيين كلمة مرور جديدة لحسابك. <br /><br />الرابط: <a href="[url]" target="_blank" >[url]</a><br />اسم المستخدم: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />يرجى النقر على الرابط أدناه لتعيين كلمة مرور جديدة لحسابك. <br /><br />الرابط: <a href="[url]" target="_blank" >[url]</a><br />اسم المستخدم: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'الرفع غير متاح مؤقتًا';
 $lang['disk_size_no_upload_explain'] = 'بسبب قيود المساحة، تم تعطيل عملية الرفع مؤقتًا. نعتذر عن أي إزعاج.';
 $lang['savethissearchtodash'] = 'حفظ على بلاطة اللوحة';
@@ -2380,7 +2378,7 @@ $lang['oj-creation-failure-text'] = 'حدث خطأ. فشل إنشاء وظيفة
 $lang['oj-creation-success'] = 'تم إنشاء الوظيفة غير المتصلة [jobnumber]. سيتم إعلامك عند الانتهاء منها';
 $lang['email_auto_digest_inactive'] = 'هذه ملخص لرسائلك غير المقروءة';
 $lang['email_digest_disable'] = 'يمكنك تعطيل هذه الإشعارات عن طريق تسجيل الدخول وضبط تفضيلات المستخدم الخاصة بك على الرابط أدناه:';
-$lang['user_pref_inactive_digest'] = 'يرجى ترجمة: أرسل لي بريدًا إلكترونيًا يوميًا يحتوي على جميع الإشعارات غير المقروءة إذا لم يتم تسجيل الدخول لمدة أكثر من [days] يومًا؟';
+$lang['user_pref_inactive_digest'] = 'أرسل لي بريدًا إلكترونيًا يوميًا يحتوي على جميع الإشعارات غير المقروءة إذا لم يتم تسجيل الدخول لمدة أكثر من [days] يومًا؟';
 $lang['edit_copy_from_field'] = 'نسخ البيانات من الحقل';
 $lang['home_page'] = 'صفحة الرئيسية';
 $lang['login_word'] = 'تسجيل الدخول';
@@ -2445,14 +2443,10 @@ $lang['useaspreviewimage'] = 'استخدم كصورة معاينة';
 $lang['filechecksum'] = 'المُؤشِّر الإجمالي للملفات (Checksum)';
 $lang['system_notification'] = '[application_name] - إشعار النظام';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
-[message]<br /><br />
+[message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]<br />
-
-[img_headerlogo] - شعار الرأس<br />
-[message] - الرسالة<br />
-[url] - الرابط<br />
-[text_footer] - نص التذييل<br />';
+[text_footer]
+';
 $lang['error_edit_filter_invalid'] = 'المرشح للتحرير غير مُعدّل بشكل صحيح لهذه المجموعة من المستخدمين. يرجى الاتصال بالمسؤول الخاص بك';
 $lang['error_search_filter_invalid'] = 'عامل تصفية البحث غير مُعدّل بشكل صحيح لهذه المجموعة من المستخدمين. يرجى الاتصال بالمسؤول الخاص بك';
 $lang['action_lock'] = 'قفل';
@@ -2560,7 +2554,7 @@ $lang['job_status_2'] = 'اكتمال';
 $lang['information_field_restype_deselect_cleanup'] = 'لإزالة بيانات الحقل الحالية من أنواع الموارد التي تم إلغاء تحديدها، انقر فوق الرابط التالي [cleanup_link]';
 $lang['property-id'] = 'معرف';
 $lang['mainmenu'] = 'القائمة الرئيسية';
-$lang['strip'] = 'قطاعة';
+$lang['strip'] = 'شريط';
 $lang['collectionidprefix'] = 'معرّف_المجموعة';
 $lang['_dupe'] = 'نسخة مكررة';
 $lang['edit_multiple_existing_values'] = 'الكلمات الرئيسية الموجودة على الموارد في هذا التحديد';
@@ -2572,9 +2566,9 @@ $lang['edit_multiple_action_text_rm'] = 'سيتم إزالة هذه الكلما
 $lang['sortorder-desc'] = 'الوصف';
 $lang['title'] = 'العنوان';
 $lang['fileoftype'] = 'ملف؟';
-$lang['fileextension'] = 'امتداد الملف';
+$lang['fileextension'] = '%EXTENSION';
 $lang['log-rtchange'] = 'نوع المورد المحرر';
-$lang['log-missinglang'] = 'النوع (لغة مفقودة)';
+$lang['log-missinglang'] = '[type] (لغة مفقودة)';
 $lang['log-NOFIL'] = 'تم وضع علامة على أنه لا يحتوي على ملف';
 $lang['log-FIL'] = 'تم وضع علامة كوجود ملف';
 $lang['log-EDT'] = 'المورد المحرر';
@@ -2608,9 +2602,7 @@ $lang['inch-short'] = 'في';
 $lang['centimetre-short'] = 'سم';
 $lang['error-invalid_name'] = 'اسم غير صالح';
 $lang['inactive_entry_matched'] = 'تم العثور على إدخال غير نشط مُطابق ل';
-$lang['yyyy-mm-dd'] = 'YYYY-MM-DD
-
-YYYY-MM-DD';
+$lang['yyyy-mm-dd'] = 'YYYY-MM-DD';
 $lang['kilobyte-symbol'] = 'ميجابايت';
 $lang['megabyte-symbol'] = 'ميجابايت';
 $lang['gigabyte-symbol'] = 'جيجابايت';
@@ -2618,38 +2610,44 @@ $lang['kilobyte-symbol-binary'] = 'كيلوبايت (KiB)';
 $lang['megabyte-symbol-binary'] = 'ميغابايت';
 $lang['gigabyte-symbol-binary'] = 'جيبي (GiB)';
 $lang['terabyte-symbol-binary'] = 'تيرابايت';
-$lang['resourcetypes-collections'] = 'جميع أنواع الموارد وجميع أنواع المجموعات';
+$lang['resourcetypes-collections'] = 'جميع %resourcetypes% وجميع %collectiontypes%';
 $lang['merge_filename_title_suffix'] = 'لاحقة';
 $lang['user_group'] = 'مجموعة المستخدمين';
-$lang['all__emailbulk'] = 'يرجى ترجمة: <br /><br />
-[نص]<br /><br />
-[نص_تذييل]';
-$lang['all__emailcollection'] = 'يرجى ترجمة: <br />
+$lang['all__emailbulk'] = '<br /><br />
+[text]<br /><br />
+[text_footer]
+';
+$lang['all__emailcollection'] = '<br />
 [fromusername] [lang_emailcollectionmessage] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
-[lang_clicklinkviewcollection] [list]';
-$lang['all__emailcollectionexternal'] = 'يرجى ترجمة: <br />
+[lang_clicklinkviewcollection] [list]
+';
+$lang['all__emailcollectionexternal'] = '<br />
 [fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
-[lang_clicklinkviewcollection] [list]';
-$lang['all__emaillogindetails'] = '[مرحبًا]<br /><br />
-[lang_newlogindetails]<br /><br />
-[lang_username] : [اسم المستخدم] <br /><br />
-<a href="[رابط]">[رابط]</a><br /><br />
-[نص_تذييلي]';
-$lang['all__emailnewresearchrequestwaiting'] = 'الرجاء ترجمة: <br />
-[اسم المستخدم] ([الاسم الكامل للمستخدم] - [البريد الإلكتروني للمستخدم])
+[lang_clicklinkviewcollection] [list]
+';
+$lang['all__emaillogindetails'] = '<br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
+<a href="[url]">[url]</a><br /><br />
+[text_footer]
+';
+$lang['all__emailnewresearchrequestwaiting'] = '<br />
+[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
-[lang_nameofproject]:[الاسم]<br /><br />
-[lang_descriptionofproject]:[الوصف]<br /><br />
-[lang_deadline]:[الموعد النهائي]<br /><br />
-[lang_contacttelephone]:[الاتصال]<br /><br />
-[lang_finaluse]: [الاستخدام النهائي]<br /><br />
-[lang_shaperequired]: [الشكل المطلوب]<br /><br />
-[lang_noresourcesrequired]: [لا توجد موارد مطلوبة]<br /><br />
+[lang_nameofproject]:[name]<br /><br />
+[lang_descriptionofproject]:[description]<br /><br />
+[lang_deadline]:[deadline]<br /><br />
+[lang_contacttelephone]:[contact]<br /><br />
+[lang_finaluse]: [finaluse]<br /><br />
+[lang_shaperequired]: [shape]<br /><br />
+[lang_noresourcesrequired]: [noresources]<br /><br />
 <a href="[url]">[url]</a><br /><br />
 <a href="[teamresearchurl]">[teamresearchurl]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcesapproved'] = '[lang_userresourcesapproved]
 [list]
 [lang_viewcontributedsubittedl]
@@ -2657,23 +2655,20 @@ $lang['all__emailnotifyresourcesapproved'] = '[lang_userresourcesapproved]
 <a href="[url]">[url]</a>
 
 [text_footer]';
-$lang['all__emailnotifyresourcessubmitted'] = '[lang_userresourcessubmitted]
-[list] <br />
-[lang_viewalluserpending] <br /><br /> 
-<a href="[url]">[url]</a><br /><br />
-[text_footer] <br />
-
+$lang['all__emailnotifyresourcessubmitted'] = '<br />
 [lang_userresourcessubmitted]
 [list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer] <br />';
-$lang['all__emailnotifyresourcesunsubmitted'] = 'الموارد غير المقدمة من قبل المستخدمين:
-[list]
-عرض جميع الموارد المعلقة لدى المستخدمين
-<br /><br />
+[text_footer]
+';
+$lang['all__emailnotifyresourcesunsubmitted'] = '<br />
+[lang_userresourcesunsubmitted]
+[list] <br />
+[lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage]
 تم استكمال طلب البحث بنجاح.
 
@@ -2684,17 +2679,20 @@ $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessa
 
 [text_footer]
 نهاية الرسالة';
-$lang['all__emailresource'] = 'يرجى ترجمة: <br />
+$lang['all__emailresource'] = '<br />
 [fromusername] [lang_hasemailedyouaresource]<br /><br />
 [message]<br /><br />
 <a href="[url]">[embed_thumbnail]</a><br /><br />
 [lang_clicktoviewresource]<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
-[text_footer]';
-$lang['all__emailresourcerequest'] = '[lang_username] : [اسم المستخدم] <br />
+[text_footer]
+';
+$lang['all__emailresourcerequest'] = '<br />
+[lang_username] : [username] <br />
 [list] <br />
 [details]<br /><br />
-[lang_clicktoviewresource] <br/><br />
-<a href="[url]">[url]</a>';
+[lang_clicktoviewresource] <br /><br />
+<a href="[url]">[url]</a>
+';
 $lang['help__introtext'] = '<iframe src="https://www.resourcespace.com/knowledge-base/?from_rs=true" style="width:1235px;height:600px;border:none;margin:-20px;" id="knowledge_base" />';
 $lang['dash'] = 'لوحة القيادة';
 $lang['upgrade_script'] = 'سكريبت الترقية';
@@ -2745,7 +2743,7 @@ $lang['all__file_integrity_fail_email'] = '[img_headerlogo]<br />
 [text_footer]';
 $lang['error-edit_noaccess_related_resources'] = 'غير قادر على ربط الموارد. لا يوجد وصول إلى:';
 $lang['csv_export_filename'] = 'تصدير_البيانات_[search]_[time]';
-$lang['upload_share_email_template'] = 'الرجاء ترجمة: <br />
+$lang['upload_share_email_template'] = '<br />
 [from_name] [lang_upload_share_email_text] [applicationname]<br /><br /> 
 [lang_message] : [message]<br /><br />
 [lang_upload_share_email_clicklink]<br />
@@ -2754,16 +2752,13 @@ $lang['upload_share_email_template'] = 'الرجاء ترجمة: <br />
 <br />
 <br />
 [passwordtext]';
-$lang['all__emailnotifyuploadsharenew'] = '[lang_notify_upload_share_new]
-تم مشاركة ملف جديد معك.
-
-[lang_clicklinkviewcollection]
-انقر على الرابط التالي لعرض المجموعة:
-
-<a href="[url]">[url]</a>
-
+$lang['all__emailnotifyuploadsharenew'] = '<br />
+[lang_notify_upload_share_new]
+<br />
+[lang_clicklinkviewcollection] <br /><br /> 
+<a href="[url]">[url]</a><br /><br />
 [text_footer]
-نشكرك على استخدام ResourceSpace.';
+';
 $lang['share_expired_icon_title'] = 'منتهية الصلاحية';
 $lang['error_invalid_date_format'] = '"[value]" تاريخ غير صالح. يجب تنسيق جميع القيم في هذا الحقل على أنها YYYY-MM-DD';
 $lang['related_resource_create'] = 'إنشاء مورد ذي صلة جديد';
@@ -2806,7 +2801,8 @@ $lang['all__comments_flag_notification_email_body'] = 'من فضلك ترجم:';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emailresearchrequestassigned'] = '<br />
 [lang_researchrequestassignedmessage]<br /><br />
-[نص التذييل]';
+[text_footer]
+';
 $lang['upload__introtext'] = 'من فضلك ترجم';
 $lang['all__comments_flag_notification_email_subject'] = 'من فضلك ترجم';
 $lang['all__comments_policy'] = 'من فضلك ترجم';
@@ -2944,7 +2940,7 @@ $lang['fieldtitle-group_logo_dark'] = 'شعار خاص بالمجموعة - دا
 $lang['fieldtitle-group_logo_dark_replace'] = 'استبدال شعار المجموعة المحدد - داكن';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'شعار التطبيق - داكن';
 $lang['user_pref_appearance'] = 'المظهر';
-$lang['user_pref_appearance_light'] = 'ضوء';
+$lang['user_pref_appearance_light'] = 'فاتح';
 $lang['user_pref_appearance_dark'] = 'داكن';
 $lang['user_pref_appearance_device'] = 'الإعدادات الافتراضية للجهاز';
 $lang['group_config_inherit'] = 'تكوين المجموعة موروث من مجموعة المستخدمين الأصلية. لا يوجد شيء لتكوينه هنا.';

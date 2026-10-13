@@ -213,7 +213,7 @@ $lang['xlthumbs'] = 'Velmi velký';
 $lang['xlthumbstitle'] = 'Extra velké miniatury';
 $lang['largethumbs'] = 'Velký';
 $lang['largethumbstitle'] = 'Velké miniatury';
-$lang['strip'] = 'Odebrat';
+$lang['strip'] = 'Proužek';
 $lang['striptitle'] = 'Zobrazení proužku';
 $lang['list'] = 'Seznam';
 $lang['listtitle'] = 'Zobrazení seznamu';
@@ -1994,18 +1994,20 @@ $lang['action-move-to'] = 'Přesunout do';
 $lang['delete_user_group_checkbox_alert_message'] = 'Vezměte prosím na vědomí, že tato akce také odstraní veškerý obsah textu, který byl relevantní pro tuto uživatelskou skupinu. V Manage Content bylo nalezeno [recordscount] záznamů.';
 $lang['about__about'] = 'Váš text o vás jde sem.';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
-$lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [useremail])
+$lang['all__emailnewresearchrequestwaiting'] = '<br />
+[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
-[název projektu]:[name]<br /><br />
-[popis projektu]:[description]<br /><br />
-[termín]:[deadline]<br /><br />
-[kontaktní telefon]:[contact]<br /><br />
-[konečné použití]: [finaluse]<br /><br />
-[požadovaný tvar]: [shape]<br /><br />
-[počet požadovaných zdrojů]: [noresources]<br /><br />
+[lang_nameofproject]:[name]<br /><br />
+[lang_descriptionofproject]:[description]<br /><br />
+[lang_deadline]:[deadline]<br /><br />
+[lang_contacttelephone]:[contact]<br /><br />
+[lang_finaluse]: [finaluse]<br /><br />
+[lang_shaperequired]: [shape]<br /><br />
+[lang_noresourcesrequired]: [noresources]<br /><br />
 <a href="[url]">[url]</a><br /><br />
 <a href="[teamresearchurl]">[teamresearchurl]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
 [lang_userresourcesapproved]
 [list] <br />
@@ -2095,7 +2097,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Povoli
 $lang['share_using_permissions_from_user_group'] = 'Sdílet pomocí oprávnění ze skupiny uživatelů';
 $lang['externalshare_using_permissions_from_user_group'] = 'Pokud posíláte e-mail externím uživatelům, vyberte prosím uživatelskou skupinu pro přístup';
 $lang['collection_download_too_large'] = 'Je nám líto, tato kolekce je příliš velká na stažení jako jeden soubor. Zkuste zmenšit velikost kolekce nebo vybrat menší velikost obrázku.';
-$lang['all__passwordnewemailhtml'] = '<br /><br />Klikněte prosím na níže uvedený odkaz pro nastavení nového hesla k vašemu účtu.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />uživatelské jméno: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br /><br /><br />Klikněte prosím na níže uvedený odkaz pro nastavení nového hesla k vašemu účtu.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />uživatelské jméno: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Nahrávání dočasně nedostupné';
 $lang['disk_size_no_upload_explain'] = 'Kvůli omezením prostoru bylo nahrávání dočasně zakázáno. Omlouváme se za případné nepříjemnosti.';
 $lang['dash'] = 'Přehled';

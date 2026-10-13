@@ -611,8 +611,8 @@ $lang['download_progress__introtext'] = 'Votre téléchargement va démarrer rap
 $lang['edit__batch'] = '';
 $lang['edit__multiple'] = 'Veuillez choisir les champs que vous souhaitez écraser. Les champs non sélectionnés resteront inchangés.';
 $lang['home__restrictedtext'] = 'Veuillez cliquer sur le lien qui vous a été envoyé par mél pour accéder aux documents sélectionnés pour vous.';
-$lang['home__restrictedtitle'] = '<h1>Bienvenue dans ResourceSpace</h1>';
-$lang['home__welcometitle'] = 'Bienvenue dans ResourceSpace';
+$lang['home__restrictedtitle'] = '<h1>Bienvenue dans ResourceSpace [ver]</h1>';
+$lang['home__welcometitle'] = 'Bienvenue dans ResourceSpace [ver]';
 $lang['login__welcomelogin'] = 'Bienvenue dans ResourceSpace, veuillez vous identifier...';
 $lang['research_request__introtext'] = 'Nos professionnels sont là pour vous assister dans la recherche des meilleurs documents pour vos projets. Remplissez ce formulaire aussi précisément que possible pour que nous soyons capables de répondre précisément à votre requête. <br/><br/> Un membre de notre équipe de recherche sera assigné à votre requête. Nous garderons le contact via e-mail tout au long du processus. Et une fois la recherche terminée, vous recevrez par e-mail un lien vers tous les documents que nous recommandons.  ';
 $lang['resource_email__introtext'] = 'Partagez rapidement par mél ce document avec d\'autres utilisateurs. Un lien sera automatiquement envoyé. Vous pouvez aussi inclure un message dans le mél.';
@@ -812,15 +812,13 @@ $lang['property-table_reference'] = 'Référence de table';
 $lang['property-operation'] = 'Opération';
 $lang['themeselector'] = 'Collections en vedette';
 $lang['myrequests'] = 'Mes demandes';
-$lang['collections'] = 'Collections
-
-(Ensembles)';
+$lang['collections'] = 'Collections';
 $lang['changethemeto'] = 'Changer le thème en';
 $lang['xlthumbstitle'] = 'Vignettes extra larges';
 $lang['largethumbstitle'] = 'Grandes vignettes';
 $lang['striptitle'] = 'Vue en bande';
 $lang['listtitle'] = 'Vue en liste';
-$lang['on'] = 'Sur';
+$lang['on'] = 'Activé';
 $lang['seconds'] = 'secondes';
 $lang['reload'] = 'Recharger';
 $lang['filterbutton'] = 'Filtre';
@@ -1071,7 +1069,7 @@ $lang['status-notinstalled'] = 'Non installé';
 $lang['status-never'] = 'Jamais';
 $lang['softwareversion'] = 'Version ?';
 $lang['softwarenotfound'] = '\'?\' non trouvé';
-$lang['client-encoding'] = '(encodage-client : %encodage)';
+$lang['client-encoding'] = '(encodage-client : %encoding)';
 $lang['db-default-encoding'] = '(encodage de la base de données : %encoding)';
 $lang['browseruseragent'] = 'Agent utilisateur du navigateur';
 $lang['serverplatform'] = 'Plateforme de serveur';
@@ -1113,7 +1111,7 @@ $lang['stat-addedsmartcollection'] = 'Collection intelligente ajoutée';
 $lang['stat-removedresourcefromcollection'] = 'Supprimé la ressource de la collection';
 $lang['stat-keywordusage-noresultsfound'] = 'Utilisation de mot-clé - aucun résultat trouvé';
 $lang['share_selected'] = 'Partager la sélection';
-$lang['sharecollection-name'] = 'Partager la collection - %nomdelacollection';
+$lang['sharecollection-name'] = 'Partager la collection - %collectionname';
 $lang['share_theme_category'] = 'Partager la catégorie de collection en vedette';
 $lang['share_theme_category_subcategories'] = 'Inclure les collections vedettes dans les sous-catégories pour les utilisateurs externes ?';
 $lang['email_theme_category'] = 'Catégorie de collection en vedette par e-mail';
@@ -1122,7 +1120,7 @@ $lang['generateexternalurl'] = 'Générer une URL externe';
 $lang['generateexternalurls'] = 'Générer des URL externes';
 $lang['generatethemeurlsexternal'] = 'Les URLs ci-dessous fonctionneront pour tout le monde et ne nécessitent pas de connexion.';
 $lang['showexistingthemeshares'] = 'Afficher les partages existants pour les collections en vedette dans cette catégorie';
-$lang['externalusersharing-name'] = 'Partage externe avec les utilisateurs - %nomdelacollection%';
+$lang['externalusersharing-name'] = 'Partage externe avec les utilisateurs - %collectionname%';
 $lang['confirmdeleteaccessresource'] = 'Êtes-vous sûr(e) de vouloir supprimer cette clé d\'accès ? Les utilisateurs qui ont accédé à cette ressource en utilisant cette clé ne pourront plus y accéder.';
 $lang['confirmdeleteaccessmulticol'] = 'Êtes-vous sûr(e) de vouloir supprimer ces clés d\'accès ? Les utilisateurs qui ont été autorisés à accéder aux collections correspondantes ne pourront plus y accéder.';
 $lang['confirmdeleteaccessmultires'] = 'Êtes-vous sûr(e) de vouloir supprimer ces clés d\'accès ? Les utilisateurs qui ont été autorisés à accéder aux ressources pertinentes via ces clés ne pourront plus y accéder.';
@@ -1564,9 +1562,7 @@ $lang['confirmcopypermissions'] = 'Cela écrasera toutes les permissions actuell
 $lang['searching_and_access'] = 'Recherche / Accès';
 $lang['metadatafields'] = 'Champs de métadonnées';
 $lang['resource_creation_and_management'] = 'Création / gestion de ressources';
-$lang['themes_and_collections'] = 'Collections
-
-(Ensembles)';
+$lang['themes_and_collections'] = 'Collections';
 $lang['administration'] = 'Administration';
 $lang['other'] = 'Autre';
 $lang['custompermissions'] = 'Permissions personnalisées';
@@ -1927,7 +1923,7 @@ $lang['admin_resource_type_field_reorder_select_enable_reordering'] = 'Sélectio
 $lang['admin_resource_type_fields'] = 'Champs de métadonnées';
 $lang['admin_resource_type_field_migrate_data_prompt'] = 'Voulez-vous migrer les données existantes ?';
 $lang['admin_resource_type_field_cannot_migrate_data_prompt'] = 'Les données de ressource ne peuvent pas être migrées d\'un champ de liste fixe vers un champ de texte. Voulez-vous continuer ?';
-$lang['admin_resource_type_field_migrate_data'] = 'Traduction: Migrer les données de texte libre vers des options de liste fixe';
+$lang['admin_resource_type_field_migrate_data'] = 'Migrer les données de texte libre vers des options de liste fixe';
 $lang['admin_resource_type_field_migrate_delete_data'] = 'Supprimer les données redondantes après la migration ?';
 $lang['admin_resource_type_field_migrate_dry_run'] = 'Exécuter sans modifier aucune donnée ?';
 $lang['admin_resource_type_field_migrate_separator'] = 'Séparateur, par exemple , - ; :';
@@ -1993,7 +1989,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Autori
 $lang['share_using_permissions_from_user_group'] = 'Partager en utilisant les autorisations du groupe d\'utilisateurs';
 $lang['externalshare_using_permissions_from_user_group'] = 'Si vous envoyez un e-mail à des utilisateurs externes, veuillez sélectionner le groupe d\'utilisateurs à utiliser pour l\'accès';
 $lang['collection_download_too_large'] = 'Désolé, cette collection est trop volumineuse pour être téléchargée en un seul fichier. Essayez de réduire la taille de la collection ou de sélectionner une taille d\'image plus petite.';
-$lang['all__passwordnewemailhtml'] = 'Veuillez cliquer sur le lien ci-dessous pour définir un nouveau mot de passe pour votre compte.<br /><br />URL : <a href="[url]" target="_blank" >[url]</a><br />Nom d\'utilisateur : [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Veuillez cliquer sur le lien ci-dessous pour définir un nouveau mot de passe pour votre compte.<br /><br />URL : <a href="[url]" target="_blank" >[url]</a><br />Nom d\'utilisateur : [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Téléchargement temporairement indisponible';
 $lang['disk_size_no_upload_explain'] = 'En raison de contraintes d\'espace, le téléchargement a été temporairement désactivé. Nous nous excusons pour tout inconvénient.';
 $lang['savethissearchtodash'] = 'Enregistrer sur la tuile du tableau de bord';
@@ -2409,14 +2405,10 @@ $lang['useaspreviewimage'] = 'Utiliser comme image de prévisualisation';
 $lang['filechecksum'] = 'Somme de contrôle de fichier';
 $lang['system_notification'] = '[application_name] - notification système';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
-[message]<br /><br />
+[message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
 [text_footer]
-
-[img_headerlogo] : Logo d\'en-tête de l\'image
-[message] : Message
-[url] : URL
-[text_footer] : Texte de pied de page';
+';
 $lang['error_edit_filter_invalid'] = 'Le filtre de modification n\'est pas correctement configuré pour ce groupe d\'utilisateurs. Veuillez contacter votre administrateur';
 $lang['error_search_filter_invalid'] = 'Le filtre de recherche n\'est pas correctement configuré pour ce groupe d\'utilisateurs. Veuillez contacter votre administrateur';
 $lang['action_lock'] = 'Verrouiller';
@@ -2529,7 +2521,7 @@ $lang['property-id'] = 'Identifiant';
 $lang['property-code'] = 'Code';
 $lang['mainmenu'] = 'Menu principal';
 $lang['xlthumbs'] = 'Très grand';
-$lang['strip'] = 'Supprimer';
+$lang['strip'] = 'Bande';
 $lang['perpage_option'] = '? par page';
 $lang['off'] = 'Désactivé';
 $lang['pause'] = 'Pause';
@@ -2594,7 +2586,7 @@ $lang['map_nasagibs_group'] = 'NASA GIBS';
 $lang['map_mapbox_group'] = 'Mapbox';
 $lang['map_mapboxid'] = 'ID';
 $lang['reportbug-detail'] = 'Les informations suivantes ont été compilées pour inclusion dans le rapport de bogue. Vous pourrez modifier toutes les valeurs avant de soumettre un rapport.';
-$lang['field_ref_and_name'] = '%ref% - %nom%';
+$lang['field_ref_and_name'] = '%ref% - %name%';
 $lang['filestore'] = 'Stockage de fichiers';
 $lang['rs_ext_dependencies'] = 'Dépendances Externes de ResourceSpace';
 $lang['write_access_to'] = 'Accès en écriture à';
@@ -2617,15 +2609,16 @@ $lang['kilobyte-symbol-binary'] = 'Kio';
 $lang['megabyte-symbol-binary'] = 'Mio';
 $lang['gigabyte-symbol-binary'] = 'Gio';
 $lang['terabyte-symbol-binary'] = 'TiO';
-$lang['ref-title'] = '%ref - %titre';
+$lang['ref-title'] = '%ref - %title';
 $lang['resourcetypes_separator'] = ', ';
 $lang['collectiontypes_separator'] = ',';
 $lang['user_group'] = 'groupe d\'utilisateurs';
 $lang['admin_resource_type_field_reorder_information'] = 'Pour modifier l\'ordre d\'affichage, réorganisez les lignes du tableau en les faisant glisser et déposer.';
 $lang['all__emailcollectionexternal'] = '<br />
-[de fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
+[fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
-[lang_clicklinkviewcollection] [list]';
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
@@ -2757,9 +2750,10 @@ $lang['completed_set_no_file'] = 'Ressource marquée comme n\'ayant pas de fichi
 $lang['completed_unset_no_file'] = 'Ressource marquée comme fichier manquant';
 $lang['map_stamen_group'] = 'Stamen';
 $lang['all__emailcollection'] = '<br />
-[de fromusername] [lang_emailcollectionmessage] <br /><br /> 
+[fromusername] [lang_emailcollectionmessage] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
-[lang_clicklinkviewcollection] [list]';
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailresource'] = '<br />
 [fromusername] [lang_hasemailedyouaresource]<br /><br />
 [message]<br /><br />
@@ -2921,7 +2915,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Logo spécifique au groupe - Sombre';
 $lang['fieldtitle-group_logo_dark_replace'] = 'Remplacer le logo spécifique au groupe - Sombre';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Logo de l\'application - Sombre';
 $lang['user_pref_appearance'] = 'Apparence';
-$lang['user_pref_appearance_light'] = 'Lumière';
+$lang['user_pref_appearance_light'] = 'Clair';
 $lang['user_pref_appearance_dark'] = 'Sombre';
 $lang['user_pref_appearance_device'] = 'Paramètre par défaut de l\'appareil';
 $lang['collection_download_include_alternatives'] = 'Inclure des fichiers alternatifs ?';

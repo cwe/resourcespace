@@ -12,4 +12,4 @@
         <?php
     }
     ?>
-><?php echo escape($value); ?></textarea>
+><?php echo escape((string) $value); ?></textarea>

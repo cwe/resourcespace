@@ -214,7 +214,7 @@ $lang['xlthumbs'] = 'Çok büyük';
 $lang['xlthumbstitle'] = 'Ekstra büyük küçük resimler';
 $lang['largethumbs'] = 'Büyük';
 $lang['largethumbstitle'] = 'Büyük küçük resimler';
-$lang['strip'] = 'Çıkar';
+$lang['strip'] = 'Şerit';
 $lang['striptitle'] = 'Şerit görünümü';
 $lang['list'] = 'Liste';
 $lang['listtitle'] = 'Liste görünümü';
@@ -2091,7 +2091,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Kullan
 $lang['share_using_permissions_from_user_group'] = 'Kullanıcı grubunun izinlerini kullanarak paylaş';
 $lang['externalshare_using_permissions_from_user_group'] = 'Dış kullanıcılarla e-posta gönderiyorsanız, erişim için kullanılacak kullanıcı grubunu seçin';
 $lang['collection_download_too_large'] = 'Üzgünüz, bu koleksiyon tek bir dosya olarak indirilemeyecek kadar büyük. Koleksiyonun boyutunu küçültmeyi veya daha küçük bir görüntü boyutu seçmeyi deneyin.';
-$lang['all__passwordnewemailhtml'] = 'Lütfen hesabınız için yeni bir şifre belirlemek üzere aşağıdaki bağlantıya tıklayın.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />kullanıcı adı: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Lütfen hesabınız için yeni bir şifre belirlemek üzere aşağıdaki bağlantıya tıklayın.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />kullanıcı adı: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Yükleme geçici olarak kullanılamıyor';
 $lang['disk_size_no_upload_explain'] = 'Alan kısıtlamaları nedeniyle, yükleme geçici olarak devre dışı bırakıldı. Verdiğimiz rahatsızlıktan dolayı özür dileriz.';
 $lang['dash'] = 'Gösterge Paneli';

@@ -215,7 +215,7 @@ $lang['xlthumbs'] = 'Kubwa sana';
 $lang['xlthumbstitle'] = 'Vijipicha vikubwa zaidi';
 $lang['largethumbs'] = 'Kubwa';
 $lang['largethumbstitle'] = 'Vijipicha vikubwa';
-$lang['strip'] = 'Ondoa';
+$lang['strip'] = 'Mstari';
 $lang['striptitle'] = 'Mwonekano wa mstari';
 $lang['list'] = 'Orodha';
 $lang['listtitle'] = 'Mwonekano wa orodha';
@@ -447,7 +447,7 @@ $lang['showwatermark'] = 'Onyesha alama ya maji';
 $lang['hidewatermark'] = 'Ficha alama ya maji';
 $lang['imagecorrection'] = 'Hariri picha za hakikisho';
 $lang['previewthumbonly'] = '(onyesho la awali / kidole gumba pekee)';
-$lang['rotateclockwise'] = 'Zungusha kwa saa moja';
+$lang['rotateclockwise'] = 'Zungusha kwa mwelekeo wa saa';
 $lang['rotateanticlockwise'] = 'Zungusha kinyume na saa';
 $lang['increasegamma'] = 'Angaza hakikisho';
 $lang['decreasegamma'] = 'Giza hakikisho';
@@ -2011,10 +2011,13 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 <a href="[teamresearchurl]">[teamresearchurl]</a>  
   
 [text_footer]';
-$lang['all__emailnotifyresourcesapproved'] = '[list] <br />
+$lang['all__emailnotifyresourcesapproved'] = '<br />
+[lang_userresourcesapproved]
+[list] <br />
 [lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
@@ -2098,7 +2101,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Ruhusu
 $lang['share_using_permissions_from_user_group'] = 'Shiriki ukitumia ruhusa kutoka kwa kundi la mtumiaji';
 $lang['externalshare_using_permissions_from_user_group'] = 'Ikiwa unatumia barua pepe kwa watumiaji wa nje, tafadhali chagua kundi la watumiaji la kutumia kwa ufikiaji';
 $lang['collection_download_too_large'] = 'Pole, mkusanyiko huu ni mkubwa sana kupakuliwa kama faili moja. Jaribu kupunguza ukubwa wa mkusanyiko au chagua ukubwa mdogo wa picha.';
-$lang['all__passwordnewemailhtml'] = 'Tafadhali bonyeza kiungo hapa chini ili kuweka nenosiri jipya kwa akaunti yako. URL: <a href="[url]" target="_blank" >[url]</a> jina la mtumiaji: [username] [text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Tafadhali bonyeza kiungo hapa chini ili kuweka nenosiri jipya kwa akaunti yako. URL: <a href="[url]" target="_blank" >[url]</a> jina la mtumiaji: [username] [text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Kupakia kwa muda hakupatikani';
 $lang['disk_size_no_upload_explain'] = 'Kwa sababu ya ukosefu wa nafasi, kupakia kumezimwa kwa muda. Tunaomba radhi kwa usumbufu wowote.';
 $lang['dash'] = 'Dashibodi';

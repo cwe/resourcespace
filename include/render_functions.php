@@ -1914,7 +1914,7 @@ function display_field($n, $field, $newtab=false,$modal=false)
             {
             if ($original_field["ref"]==$field["ref"])
                 {
-                $value=$original_field["value"];
+                $value = (string) $original_field["value"];
                 }
             }
         $selected_nodes = $original_nodes;

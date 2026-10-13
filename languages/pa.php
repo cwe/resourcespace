@@ -214,7 +214,7 @@ $lang['xlthumbs'] = 'ਵੱਡਾ-ਵੱਡਾ';
 $lang['xlthumbstitle'] = 'ਵਧੇਰੇ ਵੱਡੇ ਥੰਬਨੇਲ';
 $lang['largethumbs'] = 'ਵੱਡਾ';
 $lang['largethumbstitle'] = 'ਵੱਡੇ ਥੰਬਨੇਲ';
-$lang['strip'] = 'ਹਟਾਓ';
+$lang['strip'] = 'ਸਟ੍ਰਿਪ';
 $lang['striptitle'] = 'ਸਟ੍ਰਿਪ ਦ੍ਰਿਸ਼ਟੀ';
 $lang['list'] = 'ਸੂਚੀ';
 $lang['listtitle'] = 'ਸੂਚੀ ਦ੍ਰਿਸ਼ਟੀਕੋਣ';
@@ -2098,7 +2098,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'ਬਾ
 $lang['share_using_permissions_from_user_group'] = 'ਵਰਤੋਂਕਾਰ ਸਮੂਹ ਤੋਂ ਅਧਿਕਾਰਾਂ ਦੀ ਵਰਤੋਂ ਕਰਕੇ ਸਾਂਝਾ ਕਰੋ';
 $lang['externalshare_using_permissions_from_user_group'] = 'ਜੇ ਤੁਸੀਂ ਬਾਹਰੀ ਯੂਜ਼ਰਾਂ ਨੂੰ ਈ-ਮੇਲ ਕਰ ਰਹੇ ਹੋ, ਤਾਂ ਕਿਰਪਾ ਕਰਕੇ ਪਹੁੰਚ ਲਈ ਵਰਤਣ ਲਈ ਯੂਜ਼ਰ ਗਰੁੱਪ ਚੁਣੋ।';
 $lang['collection_download_too_large'] = 'ਮਾਫ ਕਰਨਾ, ਇਹ ਕਲੈਕਸ਼ਨ ਇੱਕ ਫਾਈਲ ਵਜੋਂ ਡਾਊਨਲੋਡ ਕਰਨ ਲਈ ਬਹੁਤ ਵੱਡਾ ਹੈ। ਕਲੈਕਸ਼ਨ ਦਾ ਆਕਾਰ ਘਟਾਉਣ ਦੀ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਛੋਟੇ ਚਿੱਤਰ ਆਕਾਰ ਦੀ ਚੋਣ ਕਰੋ।';
-$lang['all__passwordnewemailhtml'] = 'ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਖਾਤੇ ਲਈ ਨਵਾਂ ਪਾਸਵਰਡ ਸੈੱਟ ਕਰਨ ਲਈ ਹੇਠਾਂ ਦਿੱਤੇ ਲਿੰਕ \'ਤੇ ਕਲਿਕ ਕਰੋ।<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />ਉਪਯੋਗਕਰਤਾ ਨਾਮ: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਖਾਤੇ ਲਈ ਨਵਾਂ ਪਾਸਵਰਡ ਸੈੱਟ ਕਰਨ ਲਈ ਹੇਠਾਂ ਦਿੱਤੇ ਲਿੰਕ \'ਤੇ ਕਲਿਕ ਕਰੋ।<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />ਉਪਯੋਗਕਰਤਾ ਨਾਮ: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'ਅਪਲੋਡਿੰਗ ਅਸਥਾਈ ਤੌਰ \'ਤੇ ਉਪਲਬਧ ਨਹੀਂ';
 $lang['disk_size_no_upload_explain'] = 'ਸਪੇਸ ਦੀਆਂ ਪਾਬੰਦੀਆਂ ਕਾਰਨ, ਅਪਲੋਡਿੰਗ ਨੂੰ ਅਸਥਾਈ ਤੌਰ \'ਤੇ ਅਯੋਗ ਕੀਤਾ ਗਿਆ ਹੈ। ਕਿਸੇ ਵੀ ਅਸੁਵਿਧਾ ਲਈ ਅਸੀਂ ਮਾਫੀ ਚਾਹੁੰਦੇ ਹਾਂ।';
 $lang['dash'] = 'ਡੈਸ਼';

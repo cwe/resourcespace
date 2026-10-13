@@ -7,7 +7,7 @@ $lang['usergroup-archivists'] = 'Arhiviști';
 $lang['usergroup-restricted_user_-_requests_emailed'] = 'Utilizator restricționat - Cereri trimise prin email';
 $lang['usergroup-restricted_user_-_requests_managed'] = 'Utilizator restricționat - Cererile sunt gestionate';
 $lang['resourcetype-photo'] = 'Fotografie';
-$lang['resourcetype-document'] = 'Document - Document';
+$lang['resourcetype-document'] = 'Document';
 $lang['resourcetype-video'] = 'Video';
 $lang['resourcetype-audio'] = 'Audio - Sunet';
 $lang['resourcetype-global_fields'] = 'Câmpuri globale';
@@ -28,13 +28,9 @@ $lang['fieldtitle-country'] = 'Țară';
 $lang['fieldtitle-title'] = 'Titlu';
 $lang['storyextract'] = 'Extrase din poveste';
 $lang['fieldtitle-story_extract'] = 'Extrase din poveste';
-$lang['fieldtitle-credit'] = 'Credit - Credit (or "Credite" in plural)';
-$lang['date'] = 'Vă rog să traduceți: Date
-
-Data.';
-$lang['fieldtitle-date'] = 'Vă rog să traduceți: Date
-
-Data.';
+$lang['fieldtitle-credit'] = 'Credit';
+$lang['date'] = 'Data';
+$lang['fieldtitle-date'] = 'Data';
 $lang['fieldtitle-expiry_date'] = 'Data de expirare';
 $lang['fieldtitle-caption'] = 'Legendă';
 $lang['fieldtitle-notes'] = 'Note';
@@ -71,9 +67,7 @@ $lang['fieldtype-text_box_large_multi-line'] = 'Câmp de text (multi-linie mare)
 $lang['fieldtype-text_box_formatted_and_tinymce'] = 'Câmp de text (formatat / TinyMCE)';
 $lang['fieldtype-check_box_list'] = 'Listă cu casete de bifat';
 $lang['fieldtype-drop_down_list'] = 'Lista derulantă';
-$lang['fieldtype-date'] = 'Vă rog să traduceți: Date
-
-Data.';
+$lang['fieldtype-date'] = 'Data';
 $lang['fieldtype-date_and_optional_time'] = 'Data și timp opțional';
 $lang['fieldtype-date_and_time'] = 'Data / oră';
 $lang['fieldtype-expiry_date'] = 'Data de expirare';
@@ -142,7 +136,7 @@ $lang['information-regexp_fail'] = 'Valoarea introdusă nu a fost în formatul n
 $lang['property-push_metadata'] = 'Apăsați metadatele';
 $lang['property-icon'] = 'Pictogramă';
 $lang['property-smart_theme_name'] = 'Numele colecției cu caracteristici inteligente';
-$lang['property-exiftool_field'] = 'Vă rugăm să traduceți: Câmp Exiftool';
+$lang['property-exiftool_field'] = 'Câmp Exiftool';
 $lang['property-fits_field'] = 'Câmpul FITS';
 $lang['property-read_only_field'] = 'Câmp de metadate doar pentru citire (adică nu se va scrie înapoi la Descărcare)';
 $lang['information-fits_field'] = 'Câmpul FITS (Setul de instrumente pentru informații despre fișiere) va suprascrie valorile Exiftool dacă o valoare poate fi găsită!';
@@ -169,7 +163,7 @@ $lang['information-id'] = 'Notă: \'Id\' de mai jos TREBUIE să fie setat la un 
 $lang['property-width'] = 'Lățime';
 $lang['property-height'] = 'Înălțime';
 $lang['property-quality'] = 'Calitate';
-$lang['property-pad_to_size'] = 'Vă rugăm să traduceți: Redimensionați la dimensiunea dorită';
+$lang['property-pad_to_size'] = 'Completați până la dimensiune';
 $lang['property-internal'] = 'Intern';
 $lang['property-allow_preview'] = 'Permite previzualizarea';
 $lang['property-allow_restricted_download'] = 'Permiteți descărcarea restricționată';
@@ -205,7 +199,7 @@ $lang['interface'] = 'Interfață';
 $lang['changethemeto'] = 'Schimbați tema în';
 $lang['simplesearch'] = 'Căutare simplă';
 $lang['searchbutton'] = 'Căutare';
-$lang['clearbutton'] = 'Vă rugăm să traduceți: Clar';
+$lang['clearbutton'] = 'Șterge';
 $lang['bycountry'] = 'După țară';
 $lang['bydate'] = 'După dată';
 $lang['anyyear'] = 'Orice an';
@@ -220,7 +214,7 @@ $lang['striptitle'] = 'Vizualizare cu bandă';
 $lang['list'] = 'Lista';
 $lang['listtitle'] = 'Vizualizare listă';
 $lang['perpage'] = 'pe pagină';
-$lang['on'] = 'Pe';
+$lang['on'] = 'Activat';
 $lang['off'] = 'Dezactivat';
 $lang['seconds'] = 'secunde';
 $lang['reload'] = 'Reîncarcă';
@@ -383,9 +377,7 @@ $lang['collection_download_settings-not-defined'] = '$collection_download_settin
 $lang['collection_download_settings-not-an-array'] = '$collection_download_settings nu este un array.';
 $lang['nothing_to_download'] = 'Nimic de descărcat.';
 $lang['copycollectionremoveall'] = 'Eliminați toate resursele înainte de a copia';
-$lang['purgeanddelete'] = 'Vă rugăm să traduceți: Purge
-
-"Curățare"';
+$lang['purgeanddelete'] = 'Curățare';
 $lang['purgecollectionareyousure'] = 'Sunteți sigur că doriți să eliminați această colecție ȘI SĂ ȘTERGEȚI toate resursele din ea?';
 $lang['collectionsdeleteempty'] = 'Ștergeți colecțiile goale';
 $lang['collectionsdeleteemptyareyousure'] = 'Sunteți sigur că doriți să ștergeți toate colecțiile goale proprii?';
@@ -424,7 +416,7 @@ $lang['downloadinprogress'] = 'Descărcare în curs de desfășurare';
 $lang['editmultipleresources'] = 'Editarea mai multor resurse';
 $lang['editresource'] = 'Editare resursă';
 $lang['resources_selected-1'] = '1 resursă selectată';
-$lang['resources_selected-2'] = '%număr de resurse selectate';
+$lang['resources_selected-2'] = '%number de resurse selectate';
 $lang['image'] = 'Imagine';
 $lang['previewimage'] = 'Previzualizare imagine';
 $lang['file'] = 'Fișier';
@@ -464,7 +456,7 @@ $lang['matchingresources'] = 'potrivirea resurselor';
 $lang['advancedsearch'] = 'Căutare avansată';
 $lang['archiveonlysearch'] = 'Resurse arhivate';
 $lang['allfields'] = 'Toate câmpurile';
-$lang['typespecific'] = 'Vă rugăm să traduceți: Tip specific';
+$lang['typespecific'] = 'Tip specific';
 $lang['youfound'] = 'Ai găsit';
 $lang['youfoundresources'] = 'resurse';
 $lang['youfoundresource'] = 'resursă';
@@ -573,16 +565,12 @@ $lang['log-EUP'] = 'Încărcare partajare externă';
 $lang['log_code_a'] = 'Accesul a fost modificat';
 $lang['log_code_b'] = 'Creat alternativă';
 $lang['log_code_c'] = 'Creat';
-$lang['log_code_C'] = 'Vă rugăm să traduceți: Copied
-
-Copiat.';
+$lang['log_code_C'] = 'Copiat';
 $lang['log_code_d'] = 'Fișier descărcat';
 $lang['log_code_e'] = 'Editat';
 $lang['log_code_E'] = 'Trimitere prin email';
 $lang['log_code_l'] = 'Conectat';
-$lang['log_code_m'] = 'Vă rugăm să traduceți: Multi-edited
-
-"Multi-editat"';
+$lang['log_code_m'] = 'Editat în bloc';
 $lang['log_code_O'] = 'Optare utilizatorului';
 $lang['log_code_p'] = 'Plătit';
 $lang['log_code_r'] = 'Revenit sau reîncărcat';
@@ -637,9 +625,7 @@ $lang['fullname'] = 'Nume complet';
 $lang['columnheader-full_name'] = 'Nume complet';
 $lang['emailaddress'] = 'Adresă de e-mail';
 $lang['columnheader-e-mail_address'] = 'Adresă de e-mail';
-$lang['suggest'] = 'Vă rugăm să traduceți: Suggest
-
-Sugerează';
+$lang['suggest'] = 'Sugerează';
 $lang['accountexpiresoptional'] = 'Expirarea contului (opțional)';
 $lang['lastactive'] = 'Ultima activitate';
 $lang['lastbrowser'] = 'Ultimul browser';
@@ -659,7 +645,7 @@ $lang['accountdisabled'] = 'Contul tău a fost dezactivat. Te rugăm să contact
 $lang['accountorpasswordexpired'] = 'Contul / parola a expirat.';
 $lang['nameofproject'] = 'Numele proiectului';
 $lang['descriptionofproject'] = 'Descrierea proiectului';
-$lang['descriptionofprojecteg'] = 'Vă rugăm să traduceți: (de exemplu, Publicul / Stilul / Subiectul / Focalizarea geografică)';
+$lang['descriptionofprojecteg'] = '(de exemplu, Publicul / Stilul / Subiectul / Focalizarea geografică)';
 $lang['deadline'] = 'Termen limită';
 $lang['nodeadline'] = 'Fără termen limită';
 $lang['noprojectname'] = 'Trebuie să specificați un nume de proiect';
@@ -779,9 +765,7 @@ $lang['termsmustindicateusage'] = 'Trebuie să indicați utilizarea planificată
 $lang['termsmustspecifyusagecomment'] = 'Trebuie să furnizați comentarii privind utilizarea planificată înainte de a putea continua';
 $lang['proceed'] = 'Continuați';
 $lang['contributedby'] = 'Contribuit de';
-$lang['format'] = 'Vă rugăm să traduceți: Format
-
-Formatul';
+$lang['format'] = 'Format';
 $lang['allmonths'] = 'Toate lunile';
 $lang['allgroups'] = 'Toate grupurile';
 $lang['status-ok'] = 'OK - Acordat / În regulă';
@@ -1014,7 +998,7 @@ $lang['clearcategoriesareyousure'] = 'Sunteți sigur că doriți să ștergeți 
 $lang['archive'] = 'Arhivă';
 $lang['collectionviewhover'] = 'Vezi toate resursele din această colecție';
 $lang['collectioncontacthover'] = 'Creați o foaie de contact cu resursele din această colecție';
-$lang['original'] = 'Vă rugăm să traduceți: Original';
+$lang['original'] = 'Original';
 $lang['password_not_min_length'] = 'Parola trebuie să aibă cel puțin ? caractere';
 $lang['password_not_min_alpha'] = 'Parola trebuie să aibă cel puțin ? caractere alfabetice (a-z, A-Z)';
 $lang['password_not_min_uppercase'] = 'Parola trebuie să conțină cel puțin ? caractere majuscule (A-Z)';
@@ -1055,7 +1039,7 @@ $lang['altfiledeletefail'] = 'Imposibil de șters fișierul alternativ.';
 $lang['altfilesdeletefail'] = 'Imposibil de șters unul sau mai multe fișiere alternative.';
 $lang['addalternativefile'] = 'Adăugați fișier alternativ';
 $lang['editalternativefile'] = 'Editați fișierul alternativ';
-$lang['description'] = 'Vă rugăm să traduceți: Descriere';
+$lang['description'] = 'Descriere';
 $lang['notuploaded'] = 'Nu a fost încărcat';
 $lang['uploadreplacementfile'] = 'Încărcați fișierul de înlocuire';
 $lang['backtomanagealternativefiles'] = 'Înapoi la gestionarea fișierelor alternative';
@@ -1157,9 +1141,9 @@ $lang['setup-include_not_writable'] = '\'/include\' nu poate fi scris. Este nece
 $lang['setup-begin_installation'] = 'Începeți instalarea!';
 $lang['setup-smtp-settings'] = 'Configurări SMTP';
 $lang['setup-if-usesmtp'] = 'Folosește un server SMTP extern pentru trimiterea de e-mailuri (de exemplu, Gmail). Folosește PHPMailer';
-$lang['setup-if-smtpsecure'] = 'Vă rugăm să traduceți: \'\', \'tls\' sau \'ssl\'. Pentru Gmail, este necesar \'tls\' sau \'ssl\'.';
+$lang['setup-if-smtpsecure'] = '\'\', \'tls\' sau \'ssl\'. Pentru Gmail, este necesar \'tls\' sau \'ssl\'.';
 $lang['setup-if-smtphost'] = 'Numele gazdei, de exemplu \'smtp.gmail.com\'.';
-$lang['setup-if-smtpport'] = 'Vă rugăm să traduceți: Numărul portului, de exemplu 465 pentru Gmail folosind SSL.';
+$lang['setup-if-smtpport'] = 'Numărul portului, de exemplu 465 pentru Gmail folosind SSL.';
 $lang['setup-if-smtpauth'] = 'Trimiteți credențialele către serverul SMTP (fals pentru a utiliza accesul anonim)';
 $lang['setup-if-smtpusername'] = 'Nume de utilizator (adresa de email completă).';
 $lang['setup-if-smtppassword'] = 'Parolă';
@@ -1168,7 +1152,7 @@ $lang['setup-configuration_file_output'] = 'Fișierul de configurare de ieșire'
 $lang['more-information'] = 'Mai multe informații';
 $lang['setup-structuralplugins'] = 'Șabloane de sistem';
 $lang['collectionlog'] = 'Jurnal de colecție';
-$lang['collectionlogheader'] = 'Jurnal de colecție - %colecție';
+$lang['collectionlogheader'] = 'Jurnal de colecție - %collection';
 $lang['collectionlog-r'] = 'Resursa eliminată';
 $lang['collectionlog-R'] = 'Șterse toate resursele';
 $lang['collectionlog-D'] = 'Șterse toate resursele';
@@ -1270,7 +1254,7 @@ $lang['plugins-icon'] = 'Pictogramă';
 $lang['plugins-deactivate'] = 'Dezactivare';
 $lang['plugins-moreinfo'] = 'Mai multe informații';
 $lang['plugins-activate'] = 'Activare';
-$lang['plugins-purge'] = 'Vă rugăm să traduceți: Configurare eliminare';
+$lang['plugins-purge'] = 'Configurare eliminare';
 $lang['plugins-headertext'] = 'Modulele suplimentare extind funcționalitatea ResourceSpace.';
 $lang['plugins-legacyinst'] = 'Activat prin intermediul fișierului config.php';
 $lang['plugins-upload-title'] = 'Obține configurația din fișier';
@@ -1287,8 +1271,7 @@ $lang['location-edit'] = 'Editați locația';
 $lang['location-details'] = 'Folosește modul "Trage" pentru a comuta între poziționarea pinului și panoramare. Folosește controalele de zoom pentru a mări sau micșora imaginea. Apasă pe Salvează pentru a salva poziția pinului și nivelul de zoom.';
 $lang['location-missing'] = 'Următoarele resurse nu au date de geolocalizare și nu sunt afișate pe harta de mai jos. Dați clic pe „Adăugați locație” pentru a edita datele de geolocalizare pentru fiecare resursă listată în această tabelă.';
 $lang['maps-disabled'] = 'Hărțile sunt dezactivate.';
-$lang['mapadd-introtext'] = 'Translatări: 
-- Panorați și măriți harta pentru a vedea zona de interes pentru acest resursă, apoi faceți clic pe butonul Adăugare marcator de sub controlul de mărire de pe partea stângă a hărții și faceți clic pe locația de pe hartă unde se află resursa. Schimbați harta de bază folosind butonul de hartă din colțul din dreapta sus. Salvați harta într-un fișier PNG folosind butonul de hartă din colțul din stânga jos.';
+$lang['mapadd-introtext'] = 'Panorați și măriți harta pentru a vedea zona de interes pentru acest resursă, apoi faceți clic pe butonul Adăugare marcator de sub controlul de mărire de pe partea stângă a hărții și faceți clic pe locația de pe hartă unde se află resursa. Schimbați harta de bază folosind butonul de hartă din colțul din dreapta sus. Salvați harta într-un fișier PNG folosind butonul de hartă din colțul din stânga jos.';
 $lang['mapadd2-introtext'] = 'Marcajul albastru indică locația resursei care poate fi mutată prin tragere. Schimbați harta de bază folosind butonul de hartă din colțul din dreapta sus. Salvați harta ca fișier PNG folosind butonul de hartă din colțul din stânga jos.';
 $lang['location-noneselected'] = 'Fără date de locație';
 $lang['location'] = 'Locație';
@@ -1300,7 +1283,7 @@ $lang['google_satellite'] = 'Satelit Google';
 $lang['marker'] = 'Marcator';
 $lang['markers'] = 'Marcaje';
 $lang['map_configuration'] = 'Harta rezultatelor căutării';
-$lang['edit_map_introtext'] = 'Translatie: Panoramare și zoom pe vizualizarea hărții de interes, apoi faceți clic pe hartă pentru a localiza marcajul de locație a resursei. Salvați cea mai recentă geolocație folosind butonul Salvează și apoi faceți clic pe „Înapoi la editarea resursei sau geolocalizarea colecției” pentru a reveni. Pentru a căuta o locație specifică sau un nume de caracteristică geografică, utilizați butonul de căutare din partea dreaptă sus. Schimbați harta de bază folosind butonul de straturi de hartă din partea dreaptă sus. Salvați harta într-un fișier PNG folosind butonul de hartă din partea stângă jos.';
+$lang['edit_map_introtext'] = 'Panoramare și zoom pe vizualizarea hărții de interes, apoi faceți clic pe hartă pentru a localiza marcajul de locație a resursei. Salvați cea mai recentă geolocație folosind butonul Salvează și apoi faceți clic pe „Înapoi la editarea resursei sau geolocalizarea colecției” pentru a reveni. Pentru a căuta o locație specifică sau un nume de caracteristică geografică, utilizați butonul de căutare din partea dreaptă sus. Schimbați harta de bază folosind butonul de straturi de hartă din partea dreaptă sus. Salvați harta într-un fișier PNG folosind butonul de hartă din partea stângă jos.';
 $lang['mapview'] = 'Hartă';
 $lang['maptitle'] = 'Vizualizare hartă';
 $lang['mapemptysearch'] = 'Niciun rezultat găsit în căutare.';
@@ -1311,9 +1294,7 @@ $lang['resource_type_marker_colour'] = 'Culoarea marcatorului de hartă';
 $lang['map_options'] = 'Opțiuni hartă de căutare';
 $lang['legend_text'] = 'Tipuri de resurse:';
 $lang['map_download'] = 'Descarcă harta ca fișier PNG, selectează o dimensiune în dreapta';
-$lang['map_osm_group'] = 'Vă rugăm să traduceți: OpenStreetMap (OSM)
-
-OpenStreetMap (OSM)';
+$lang['map_osm_group'] = 'OpenStreetMap (OSM)';
 $lang['map_osm'] = 'Valoare implicită';
 $lang['map_osmde'] = 'Stilul german';
 $lang['map_osmfrance'] = 'OSM Franța';
@@ -1410,7 +1391,7 @@ $lang['usagetotal'] = 'Descărcări totale';
 $lang['usagetotalno'] = 'Numărul total de descărcări';
 $lang['ok'] = 'OK - Acordat / În regulă';
 $lang['userratingstatsforresource'] = 'Statistici de evaluare a utilizatorilor pentru resursă';
-$lang['average'] = 'Vă rugăm să traduceți: Medie';
+$lang['average'] = 'Medie';
 $lang['popupblocked'] = 'Fereastra pop-up a fost blocată de browserul tău.';
 $lang['closethiswindow'] = 'Închideți această fereastră';
 $lang['requestaddedtocollection'] = 'Acest resursă a fost adăugată la colecția ta curentă. Poți solicita elementele din colecția ta făcând clic pe "Solicită toate" în bara de colecție de mai jos.';
@@ -1583,9 +1564,7 @@ $lang['geographicsearchmissing'] = 'Criteriile de căutare geografică lipsesc';
 $lang['geographicsearch_help'] = 'Trageți pentru a selecta o zonă de căutare';
 $lang['search_results_overlimit'] = 'S-au găsit prea multe resurse. Vă rugăm să rafinați căutarea pentru a permite această vizualizare';
 $lang['error-geotile-server-error'] = 'Imposibil de preluat dalele de la serverul tău de dale.';
-$lang['purge'] = 'Vă rugăm să traduceți: Purge
-
-"Curățare"';
+$lang['purge'] = 'Curățare';
 $lang['purgeuserstitle'] = 'Șterge utilizatorii';
 $lang['purgeusers'] = 'Șterge utilizatorii';
 $lang['purgeuserscommand'] = 'Ștergeți conturile de utilizator care au fost inactive în ultimele % luni și care au fost create înainte de acest interval.';
@@ -1720,7 +1699,7 @@ $lang['theme_home_promote'] = 'Promovați pe pagina principală?';
 $lang['theme_home_page_text'] = 'Textul de pe pagina principală';
 $lang['theme_home_page_image'] = 'Imaginea paginii principale';
 $lang['error-pageload'] = 'Ne pare rău, a apărut o eroare la încărcarea acestei pagini. Dacă efectuați o căutare, încercați să rafinați interogarea de căutare. Dacă problema persistă, vă rugăm să contactați administratorul sistemului';
-$lang['copy-field'] = 'Vă rugăm să traduceți: Copiere câmp';
+$lang['copy-field'] = 'Copiere câmp';
 $lang['copy-to-resource-type'] = 'Copiază în tipul de resursă';
 $lang['copy-completed'] = 'Copierea s-a finalizat. Noul câmp are ID-ul ?.';
 $lang['nothing-to-display'] = 'Nimic de afișat.';
@@ -1752,7 +1731,7 @@ $lang['nomatchingresults'] = 'Nu există rezultate potrivite';
 $lang['matchingresults'] = 'rezultate potrivite';
 $lang['resources'] = 'Resurse';
 $lang['share-resource'] = 'Distribuie resursa';
-$lang['scope'] = 'Vă rugăm să traduceți: Domeniu de aplicare';
+$lang['scope'] = 'Domeniu de aplicare';
 $lang['downloadmetadata'] = 'Descarcă metadatele';
 $lang['downloadingmetadata'] = 'Descărcarea metadatelor';
 $lang['file-contains-metadata'] = 'Fișierul pe care îl descărcați conține toate metadatele pentru acest resursă.';
@@ -1830,7 +1809,7 @@ $lang['merge_filename_title_question'] = 'Folosește numele fișierului în titl
 $lang['merge_filename_title_do_not_use'] = 'Nu utilizați';
 $lang['merge_filename_title_replace'] = 'Înlocuire';
 $lang['merge_filename_title_prefix'] = 'Prefix';
-$lang['merge_filename_title_suffix'] = 'Vă rugăm să traduceți: Sufix';
+$lang['merge_filename_title_suffix'] = 'Sufix';
 $lang['merge_filename_title_include_extensions'] = 'Includere extensii?';
 $lang['send_collection_to_admin_emailedcollectionname'] = 'Resurse trimise de utilizatori';
 $lang['send_collection_to_admin_emailsubject'] = 'Colectie incarcata de';
@@ -1908,7 +1887,7 @@ $lang['fieldhelp-no_config_override_help'] = 'Nu există ajutor pentru acest ele
 $lang['fieldhelp-tick_to_delete_group'] = 'Nu aveți permisiunea să ștergeți grupurile de utilizatori care conțin utilizatori activi sau care sunt părintele altor grupuri';
 $lang['fieldtitle-add_to_config_override'] = 'Adăugați la suprascrierea configurației';
 $lang['fieldtitle-advanced_options'] = 'Opțiuni avansate';
-$lang['fieldtitle-derestrict_filter'] = 'Vă rugăm să traduceți: Filtru nelimitat';
+$lang['fieldtitle-derestrict_filter'] = 'Filtru nelimitat';
 $lang['fieldtitle-group_logo'] = 'Logo specific grupului';
 $lang['fieldtitle-group_logo_replace'] = 'Înlocuiți logo-ul specific grupului';
 $lang['fieldtitle-tick_to_delete_group'] = 'Bifați pentru a șterge acest grup';
@@ -2005,7 +1984,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Permit
 $lang['share_using_permissions_from_user_group'] = 'Distribuiți folosind permisiunile din grupul de utilizatori';
 $lang['externalshare_using_permissions_from_user_group'] = 'Dacă trimiteți un e-mail către utilizatori externi, vă rugăm să selectați grupul de utilizatori pentru acces';
 $lang['collection_download_too_large'] = 'Ne pare rău, această colecție este prea mare pentru a fi descărcată ca un singur fișier. Încercați să reduceți dimensiunea colecției sau să selectați o dimensiune mai mică a imaginii.';
-$lang['all__passwordnewemailhtml'] = 'Vă rugăm să faceți clic pe link-ul de mai jos pentru a seta o nouă parolă pentru contul dvs.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Nume de utilizator: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Vă rugăm să faceți clic pe link-ul de mai jos pentru a seta o nouă parolă pentru contul dvs.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Nume de utilizator: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Încărcarea este temporar indisponibilă';
 $lang['disk_size_no_upload_explain'] = 'Din cauza restricțiilor de spațiu, încărcarea a fost dezactivată temporar. Ne cerem scuze pentru orice neplăcere.';
 $lang['savethissearchtodash'] = 'Salvează pe panoul de bord';
@@ -2314,9 +2293,7 @@ $lang['save_and_auto'] = 'Salvează tot cu valorile blocate';
 $lang['upload_sequence'] = 'Încărcare secvențială';
 $lang['default_upload_sequence'] = 'Secvența implicită de încărcare';
 $lang['upload_first_then_set_metadata'] = 'Încărcați mai întâi, apoi setați metadatele';
-$lang['set_metadata_then_upload'] = 'Vă rugăm să traduceți: Set metadata first, then upload
-
-Setați metadatele mai întâi, apoi încărcați.';
+$lang['set_metadata_then_upload'] = 'Setați metadatele mai întâi, apoi încărcați.';
 $lang['annotate_text_link_label'] = 'Comutator mod adnotare';
 $lang['annotate_annotation_label'] = 'Anotare';
 $lang['annotate_annotations_label'] = 'Adnotări';
@@ -2391,13 +2368,11 @@ $lang['filter_criteria_all'] = 'Toate regulile trebuie îndeplinite';
 $lang['filter_criteria_none'] = 'Trebuie îndeplinite NICIUNA dintre reguli';
 $lang['filter_criteria_any'] = 'Oricare dintre reguli trebuie îndeplinite';
 $lang['filter_is_not_in'] = 'NU ESTE';
-$lang['filter_or'] = 'Vă rugăm să traduceți: OR
-
-SAU';
+$lang['filter_or'] = 'SAU';
 $lang['filter_and'] = 'ȘI';
 $lang['error-sessionexpired'] = 'Sesiunea ta a expirat sau este invalidă în alt mod';
 $lang['userresources_status_change'] = 'Resursele la care ai contribuit au fost mutate în starea:';
-$lang['collection_description'] = 'Vă rugăm să traduceți: Descriere';
+$lang['collection_description'] = 'Descriere';
 $lang['replacebatchlocalfolder'] = 'Recuperați fișierele din folderul local de pe server? (aceasta va crea o sarcină offline)';
 $lang['replacebatch_resource_min'] = 'Cel mai mic ID resursă pentru înlocuire (ignorat dacă este specificată o colecție)';
 $lang['replacebatch_resource_max'] = 'Cel mai mare ID resursă pentru înlocuire';
@@ -2536,7 +2511,7 @@ $lang['information_field_restype_deselect_cleanup'] = 'Pentru a elimina datele e
 $lang['property-id'] = 'Id';
 $lang['mainmenu'] = 'Meniu principal';
 $lang['xlthumbs'] = 'Foarte mare';
-$lang['strip'] = 'Eliminare';
+$lang['strip'] = 'Bandă';
 $lang['perpage_option'] = '? pe pagină';
 $lang['upload_summary'] = 'Rezumat încărcare';
 $lang['private'] = 'Privat';
@@ -2660,9 +2635,10 @@ $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
 [text_footer]';
-$lang['all__emailresearchrequestassigned'] = '[mesaj_cereredecercetareatribuită]
-
-[text_footer]';
+$lang['all__emailresearchrequestassigned'] = '<br />
+[lang_researchrequestassignedmessage]<br /><br />
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
@@ -2730,10 +2706,11 @@ $lang['filter_is_in'] = 'ESTE';
 $lang['file_integrity_fail_latest'] = 'Vizualizați cele mai recente eșecuri de integritate a fișierelor';
 $lang['file_integrity_fail_all'] = 'Vizualizați toate resursele cu erori de integritate a fișierelor';
 $lang['all__file_integrity_fail_email'] = '[img_headerlogo]<br />
-Rezumatul integrității fișierului a eșuat <br /><br /> 
-Căutarea integrității fișierului a eșuat <br /><br /> 
+[lang_file_integrity_summary_failed] <br /><br /> 
+[lang_file_integrity_fail_search] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['error-edit_noaccess_related_resources'] = 'Nu se pot relaționa resursele. Fără acces la:';
 $lang['csv_export_filename'] = 'exportare_metadata_[search]_[time]';
 $lang['upload_share_email_template'] = '<br />
@@ -2922,7 +2899,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Logo specific grup - Întunecat';
 $lang['fieldtitle-group_logo_dark_replace'] = 'Înlocuiți logo-ul specific grupului - Întunecat';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Logo aplicație - Întunecat';
 $lang['user_pref_appearance'] = 'Aspect';
-$lang['user_pref_appearance_light'] = 'Lumină';
+$lang['user_pref_appearance_light'] = 'Luminos';
 $lang['user_pref_appearance_dark'] = 'Întunecat';
 $lang['user_pref_appearance_device'] = 'Implicitul dispozitivului';
 $lang['collection_download_include_alternatives'] = 'Include fișiere alternative?';

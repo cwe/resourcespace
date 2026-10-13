@@ -321,7 +321,7 @@ $lang['user'] = 'Пользователь';
 $lang['owner'] = 'Владелец';
 $lang['message'] = 'Сообщение';
 $lang['name'] = 'Имя';
-$lang['action'] = 'Действий';
+$lang['action'] = 'Действие';
 $lang['field'] = 'Поле';
 $lang['save'] = 'Сохранить';
 $lang['cancel'] = 'Отмена';
@@ -894,7 +894,7 @@ $lang['largethumbstitle'] = 'Большие миниатюры';
 $lang['strip'] = 'Полоса';
 $lang['striptitle'] = 'Просмотр полосы';
 $lang['listtitle'] = 'Список (режим просмотра)';
-$lang['on'] = 'На';
+$lang['on'] = 'Включено';
 $lang['off'] = 'Отключено';
 $lang['seconds'] = 'секунды';
 $lang['reload'] = 'Перезагрузить';
@@ -1091,9 +1091,7 @@ $lang['account_request_confirmation_email_to_requester'] = 'Ваш запрос 
 $lang['accountdoesnotexist'] = 'Эта учетная запись пользователя не существует. <br /> Если вы попали на эту страницу из-за ссылки в области сообщений пользователей, обратите внимание, что другой администратор мог уже обработать запрос на учетную запись и удалить эту учетную запись.';
 $lang['accountdisabled'] = 'Ваша учетная запись была отключена. Пожалуйста, свяжитесь с командой ресурсов.';
 $lang['accountorpasswordexpired'] = 'Учетная запись / пароль истекли.';
-$lang['square'] = 'Пожалуйста, переведите: Square
-
-Квадрат.';
+$lang['square'] = 'Квадрат';
 $lang['requesteditems'] = 'Запрошенные элементы';
 $lang['researchrequest_custom_field_required'] = 'Отсутствует обязательное пользовательское поле \'%field\'';
 $lang['selectloading'] = 'Выбрать...';
@@ -1133,7 +1131,7 @@ $lang['status-notinstalled'] = 'Не установлено';
 $lang['status-never'] = 'Никогда';
 $lang['softwareversion'] = 'Версия ?';
 $lang['softwarenotfound'] = 'Запрашиваемый символ \'?\' не найден';
-$lang['client-encoding'] = '(client-encoding: %encoding) - (кодировка клиента: %encoding)';
+$lang['client-encoding'] = '(кодировка клиента: %encoding)';
 $lang['db-default-encoding'] = 'кодировка базы данных: %encoding';
 $lang['browseruseragent'] = 'Браузер user-agent';
 $lang['serverplatform'] = 'Платформа сервера';
@@ -1626,15 +1624,13 @@ $lang['permission_nolock'] = 'Отключить блокировку редак
 $lang['nodownloadcollection'] = 'У вас нет доступа для загрузки любых ресурсов в этой коллекции.';
 $lang['ticktodeletethisresearchrequest'] = 'Отметьте, чтобы удалить этот запрос';
 $lang['done'] = 'Выполнено.';
-$lang['latlong'] = 'Пожалуйста, переведите: Lat / long
-
-Широта / Долгота';
+$lang['latlong'] = 'Широта / Долгота';
 $lang['geographicsearchresults'] = 'Результаты географического поиска';
 $lang['geographicsearchmissing'] = 'Отсутствуют критерии географического поиска';
 $lang['geographicsearch_help'] = 'Перетащите, чтобы выбрать область поиска';
 $lang['search_results_overlimit'] = 'Найдено слишком много ресурсов. Пожалуйста, уточните свой поиск, чтобы включить этот вид';
 $lang['error-geotile-server-error'] = 'Невозможно получить тайлы с вашего сервера тайлов.';
-$lang['purge'] = 'Удалить (completely remove/delete)';
+$lang['purge'] = 'Удалить';
 $lang['purgeuserstitle'] = 'Удалить пользователей';
 $lang['purgeusers'] = 'Удалить пользователей';
 $lang['purgeuserscommand'] = 'Удалить учетные записи пользователей, которые были неактивны в течение последних % месяцев и были созданы до этого периода.';
@@ -1653,9 +1649,7 @@ $lang['deletedresource'] = 'Удаленный ресурс';
 $lang['deletedresources'] = 'Удаленные ресурсы';
 $lang['nopreviewresources'] = 'Ресурсы без предварительного просмотра';
 $lang['action-delete_permanently'] = 'Удалить навсегда';
-$lang['cc-emailaddress'] = 'Пожалуйста, переведите: CC %emailaddress
-
-Копия (%emailaddress)';
+$lang['cc-emailaddress'] = 'Копия (%emailaddress)';
 $lang['list-recipients-label'] = 'Перечислить всех получателей в электронном письме?';
 $lang['list-recipients'] = 'Это сообщение было отправлено на следующие адреса электронной почты:';
 $lang['sort'] = 'Сортировать';
@@ -1822,7 +1816,7 @@ $lang['embedded_metadata_extract_option'] = 'Извлечь';
 $lang['embedded_metadata_donot_extract_option'] = 'Не извлекать';
 $lang['embedded_metadata_append_option'] = 'Добавить (Dobavit\')';
 $lang['embedded_metadata_prepend_option'] = 'Добавить в начало';
-$lang['embedded_metadata_custom_option'] = 'Пользовательский (Pользовательская for feminine nouns)';
+$lang['embedded_metadata_custom_option'] = 'Пользовательский';
 $lang['related_resource_confirm_delete'] = 'Это удалит связь, но не удалит ресурс.';
 $lang['batch_replace_filename_intro'] = 'Для замены пакета ресурсов вы можете загрузить файлы с именами, соответствующими уникальным идентификаторам ресурсов. Кроме того, вы можете выбрать поле метаданных, содержащее имена файлов, и система будет искать соответствие с загруженными именами файлов, чтобы определить файл, который нужно заменить';
 $lang['batch_replace_use_resourceid'] = 'Сопоставление имен файлов с идентификаторами ресурсов';
@@ -1971,8 +1965,8 @@ $lang['download_progress__introtext'] = 'Ваше скачивание начн�
 $lang['downloadfile_nofile'] = 'Запрашиваемый файл не найден.';
 $lang['edit__multiple'] = 'Пожалуйста, выберите поля, которые вы хотите перезаписать. Поля, которые вы не выберете, останутся без изменений.';
 $lang['home__restrictedtext'] = 'Пожалуйста, нажмите на ссылку, которую вам было отправлено по электронной почте, чтобы получить доступ к выбранным для вас ресурсам.';
-$lang['home__restrictedtitle'] = 'Добро пожаловать в ResourceSpace [версия]';
-$lang['home__welcometitle'] = 'Добро пожаловать в ResourceSpace [версия]';
+$lang['home__restrictedtitle'] = 'Добро пожаловать в ResourceSpace [ver]';
+$lang['home__welcometitle'] = 'Добро пожаловать в ResourceSpace [ver]';
 $lang['login__welcomelogin'] = 'Добро пожаловать в ResourceSpace. Пожалуйста, войдите в систему.';
 $lang['local_tz'] = 'Местный часовой пояс';
 $lang['research_request__introtext'] = 'Наши профессиональные исследователи готовы помочь вам найти лучшие ресурсы для ваших проектов. Пожалуйста, заполните эту форму максимально подробно, чтобы мы могли точно удовлетворить ваши критерии. <br /><br />Один из членов исследовательской команды будет назначен на ваш запрос. Мы будем поддерживать связь по электронной почте на протяжении всего процесса, и по завершении исследования вы получите электронное письмо с ссылкой на все рекомендуемые ресурсы.';
@@ -2000,7 +1994,7 @@ $lang['user_request__introtext'] = 'Пожалуйста, заполните ф�
 $lang['view__storyextract'] = 'Извлечение из истории:';
 $lang['notify_resource_change_email_subject'] = 'Ресурс был изменен';
 $lang['notify_resource_change_email'] = 'Ресурс, который вы загрузили в течение последних [days] дней, был изменен. Нажмите на ссылку ниже, чтобы просмотреть ресурс.<br /><br /><a href=\'[url]\'>[url]</a>';
-$lang['notify_resource_change_notification'] = 'Ресурс, который вы скачали в течение последних [дней] дней, был изменен.';
+$lang['notify_resource_change_notification'] = 'Ресурс, который вы скачали в течение последних [days] дней, был изменен.';
 $lang['passwordresetemail'] = 'Пожалуйста, нажмите на ссылку ниже, чтобы сбросить свой пароль.';
 $lang['password_reset_email_html'] = 'Имя пользователя: [username]<br /><br />Пожалуйста, нажмите на ссылку ниже, чтобы сбросить пароль.<br /><br /><a href="[url]" target="_blank" >[url]</a>';
 $lang['passwordnewemail'] = 'Пожалуйста, нажмите на ссылку ниже, чтобы установить новый пароль для вашей учетной записи.';
@@ -2017,7 +2011,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Раз
 $lang['share_using_permissions_from_user_group'] = 'Поделиться, используя разрешения из группы пользователей';
 $lang['externalshare_using_permissions_from_user_group'] = 'Если вы отправляете электронную почту внешним пользователям, выберите группу пользователей для предоставления доступа';
 $lang['collection_download_too_large'] = 'Извините, эта коллекция слишком большая для загрузки в одном файле. Попробуйте уменьшить размер коллекции или выбрать меньший размер изображения.';
-$lang['all__passwordnewemailhtml'] = 'Пожалуйста, нажмите на ссылку ниже, чтобы установить новый пароль для вашей учетной записи.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />имя пользователя: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Пожалуйста, нажмите на ссылку ниже, чтобы установить новый пароль для вашей учетной записи.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />имя пользователя: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Загрузка временно недоступна';
 $lang['disk_size_no_upload_explain'] = 'Из-за ограничений на место, загрузка временно отключена. Приносим извинения за неудобства.';
 $lang['savethissearchtodash'] = 'Сохранить на плитку рабочего стола';
@@ -2086,7 +2080,7 @@ $lang['tile_blank'] = 'Пустой';
 $lang['tile_analytics'] = 'Аналитика';
 $lang['tile_ftxt'] = 'Только текст';
 $lang['tile_thmsl'] = 'Рекомендуемая коллекция';
-$lang['tile_custm'] = 'Пользовательский (Pользовательская for feminine nouns)';
+$lang['tile_custm'] = 'Пользовательский';
 $lang['tile_pend'] = 'Ожидающий';
 $lang['plugin_category_general'] = 'Общее';
 $lang['plugin_category_advanced'] = 'Продвинутый';
@@ -2117,7 +2111,7 @@ $lang['userpreference_basic_simple_search_label'] = 'Основной прост
 $lang['userpreference_hide_search_resource_types'] = 'Скрыть типы ресурсов в простом и расширенном поиске';
 $lang['userpreference_cc_me_label'] = 'Сообщайте мне копию при отправке ресурсов и коллекций';
 $lang['userpreference_email_me_label'] = 'Отправляйте мне электронные письма вместо системных уведомлений, где это возможно';
-$lang['userpreference_email_digest_label'] = 'Пожалуйста, переведите: Отправляйте мне ежедневную сводку уведомлений вместо отдельных электронных писем';
+$lang['userpreference_email_digest_label'] = 'Отправляйте мне ежедневную сводку уведомлений вместо отдельных электронных писем';
 $lang['userpreference_system_management_notifications'] = 'Отправляйте мне сообщения о важных событиях системы, например, о низком дисковом пространстве.';
 $lang['userpreference_user_management_notifications'] = 'Отправляйте мне сообщения об администрировании пользователей, например, запросы на создание новых учетных записей пользователей';
 $lang['userpreference_resource_access_notifications'] = 'Отправляйте мне сообщения о доступе к ресурсам, например, о запросах на ресурсы';
@@ -2407,9 +2401,7 @@ $lang['filter_criteria_all'] = 'Все правила должны быть вы
 $lang['filter_criteria_none'] = 'НИ ОДНО из правил не должно быть выполнено';
 $lang['filter_criteria_any'] = 'ЛЮБОЕ из правил должно быть выполнено';
 $lang['filter_is_not_in'] = 'НЕ ЯВЛЯЕТСЯ';
-$lang['filter_or'] = 'Пожалуйста, переведите: OR
-
-"OR" переводится на русский язык как "ИЛИ".';
+$lang['filter_or'] = 'ИЛИ';
 $lang['filter_and'] = 'И';
 $lang['error-sessionexpired'] = 'Ваша сессия истекла или недействительна';
 $lang['userresources_status_change'] = 'Ресурсы, которые вы внесли, были перемещены в состояние:';
@@ -2445,9 +2437,10 @@ $lang['useaspreviewimage'] = 'Использовать как изображен
 $lang['filechecksum'] = 'Контрольная сумма файла';
 $lang['system_notification'] = '[application_name] - системное уведомление';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
-[сообщение]<br /><br />
+[message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[текст_нижнего_колонтитула]';
+[text_footer]
+';
 $lang['error_edit_filter_invalid'] = 'Фильтр редактирования неправильно настроен для этой группы пользователей. Пожалуйста, свяжитесь с администратором';
 $lang['error_search_filter_invalid'] = 'Фильтр поиска неправильно настроен для этой группы пользователей. Пожалуйста, свяжитесь с администратором';
 $lang['action_lock'] = 'Заблокировать';
@@ -2622,19 +2615,22 @@ $lang['terabyte-symbol-binary'] = 'ТиБ';
 $lang['ref-title'] = '%ref - %title';
 $lang['user_group'] = 'группа пользователей';
 $lang['all__emailbulk'] = '<br /><br />
-[текст]<br /><br />
-[текст_подвал]';
+[text]<br /><br />
+[text_footer]
+';
 $lang['all__emailcollection'] = '<br />
-[отпользователя] [lang_emailcollectionmessage] <br /><br /> 
-[lang_message] : [сообщение]<br /><br /> 
-[lang_clicklinkviewcollection] [список]';
+[fromusername] [lang_emailcollectionmessage] <br /><br /> 
+[lang_message] : [message]<br /><br /> 
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[добро пожаловать]<br /><br /> 
-[новые данные для входа]<br /><br /> 
-[имя пользователя] : [username] <br /><br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[текст нижнего колонтитула]';
+[text_footer]
+';
 $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
 [lang_nameofproject]:[name]<br /><br />
@@ -2649,24 +2645,29 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 [text_footer]';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
 [lang_userresourcesapproved]
-[список] <br />
+[list] <br />
 [lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[текст_подписи]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcessubmitted'] = '<br />
 [lang_userresourcessubmitted]
-[список] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[текст_подвала]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 [lang_userresourcesunsubmitted]
-[список] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[текст_подвала]';
-$lang['all__emailresearchrequestassigned'] = '[lang_researchrequestassignedmessage]<br /><br />
-[текст_подвал]';
+[text_footer]
+';
+$lang['all__emailresearchrequestassigned'] = '<br />
+[lang_researchrequestassignedmessage]<br /><br />
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '<br />
 [lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
@@ -2678,11 +2679,13 @@ $lang['all__emailresource'] = '<br />
 <a href="[url]">[embed_thumbnail]</a><br /><br />
 [lang_clicktoviewresource]<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
 [text_footer]';
-$lang['all__emailresourcerequest'] = '[lang_username] : [username] <br />
-[список] <br />
-[подробности]<br /><br />
+$lang['all__emailresourcerequest'] = '<br />
+[lang_username] : [username] <br />
+[list] <br />
+[details]<br /><br />
 [lang_clicktoviewresource] <br /><br />
-<a href="[url]">[url]</a>';
+<a href="[url]">[url]</a>
+';
 $lang['help__introtext'] = '<iframe src="https://www.resourcespace.com/knowledge-base/?from_rs=true" style="width:1235px;height:600px;border:none;margin:-20px;" id="knowledge_base" />';
 $lang['team_research__introtext'] = 'Организуйте и управляйте \'Запросами на исследование\'. <br /><br />Выберите \'редактировать исследование\', чтобы просмотреть детали запроса и назначить исследование члену команды. Можно основывать запрос на исследование на предыдущей коллекции, введя ID коллекции в экране \'редактировать\'. <br /><br />После назначения запроса на исследование выберите \'редактировать коллекцию\', чтобы добавить запрос на исследование в панель \'Коллекция по умолчанию\'. Используя стандартные инструменты, можно добавить ресурсы к исследованию. <br /><br />После завершения исследования выберите \'редактировать исследование\', измените статус на завершено, и пользователю, запросившему исследование, автоматически отправляется электронное письмо. Письмо содержит ссылку на исследование, и оно также автоматически добавляется в их панель \'Коллекция по умолчанию\'.';
 $lang['themes__manage'] = 'Организуйте и редактируйте избранные коллекции, доступные онлайн. Избранные коллекции - это специально продвигаемые коллекции. <br /><br /> <strong>1 Чтобы создать новую запись в избранной коллекции - создайте коллекцию</strong><br /> Выберите <strong>Мои коллекции</strong> в главном верхнем меню и создайте новую <strong>публичную</strong> коллекцию. Не забудьте указать имя избранной коллекции при настройке. Используйте существующее имя избранной коллекции, чтобы сгруппировать коллекцию под текущей избранной коллекцией (убедитесь, что вы ввели его точно так же), или выберите новое название, чтобы создать совершенно новую избранную коллекцию. Никогда не позволяйте пользователям добавлять/удалять ресурсы из избранных коллекций. <br /> <br /><strong>2 Чтобы редактировать содержимое существующей записи в избранной коллекции</strong><br /> Выберите <strong>редактировать коллекцию</strong>. Элементы этой коллекции появятся в панели <strong>Мои коллекции</strong> в нижней части экрана. Используйте стандартные инструменты для редактирования, удаления или добавления ресурсов. <br /> <br /><strong>3 Чтобы изменить имя избранной коллекции или переместить коллекцию, чтобы она отображалась под другой избранной коллекцией</strong><br /> Выберите <strong>редактировать свойства</strong> и измените категорию избранной коллекции или имя коллекции. Используйте существующее имя избранной коллекции, чтобы сгруппировать коллекцию под текущей избранной коллекцией (убедитесь, что вы ввели его точно так же), или выберите новое название, чтобы создать совершенно новую избранную коллекцию. <br /> <br /><strong>4 Чтобы удалить коллекцию из избранной коллекции</strong><br /> Выберите <strong>редактировать свойства</strong> и удалите слова в поле категории избранной коллекции.';
@@ -2783,9 +2786,10 @@ $lang['action_unset_no_file'] = 'Отметить как отсутствующ�
 $lang['completed_set_no_file'] = 'Ресурс отмечен как не имеющий файла';
 $lang['completed_unset_no_file'] = 'Ресурс помечен как отсутствующий файл';
 $lang['all__emailcollectionexternal'] = '<br />
-[отпользователя] [lang_emailcollectionmessageexternal] <br /><br /> 
-[lang_сообщение] : [сообщение]<br /><br /> 
-[lang_нажмитессылкудляпросмотраколлекции] [список]';
+[fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
+[lang_message] : [message]<br /><br /> 
+[lang_clicklinkviewcollection] [list]
+';
 $lang['plugin-category-asset-processing'] = 'Обработка активов';
 $lang['plugin-category-authentication'] = 'Аутентификация';
 $lang['plugin-category-collaboration'] = 'Сотрудничество';
@@ -2916,7 +2920,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Логотип группы - Темны�
 $lang['fieldtitle-group_logo_dark_replace'] = 'Заменить логотип группы - Темный';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Логотип приложения - Темный';
 $lang['user_pref_appearance'] = 'Внешний вид';
-$lang['user_pref_appearance_light'] = 'Свет';
+$lang['user_pref_appearance_light'] = 'Светлый';
 $lang['user_pref_appearance_dark'] = 'Темный';
 $lang['user_pref_appearance_device'] = 'Устройство по умолчанию';
 $lang['collection_download_include_alternatives'] = 'Включить альтернативные файлы?';

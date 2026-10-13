@@ -308,11 +308,11 @@ $lang['name'] = 'Name';
 $lang['action'] = 'Azione';
 $lang['field'] = 'Campo';
 $lang['save'] = 'Salva';
-$lang['cancel'] = 'Cancella';
+$lang['cancel'] = 'Annulla';
 $lang['view'] = 'Vedi';
 $lang['type'] = 'Tipo';
 $lang['text'] = 'Testo';
-$lang['yes'] = 'Si';
+$lang['yes'] = 'Sì';
 $lang['no'] = 'No';
 $lang['key'] = 'Legenda';
 $lang['languageselection'] = 'Seleziona la lingua';
@@ -939,7 +939,7 @@ $lang['stat-removedresourcefromcollection'] = 'Rimosso la risorsa dalla collezio
 $lang['stat-keywordusage-noresultsfound'] = 'Utilizzo di parole chiave - nessun risultato trovato';
 $lang['share_selected'] = 'Condividi selezionati';
 $lang['sharecollection'] = 'Condividi collezione';
-$lang['sharecollection-name'] = 'Condividi raccolta - %nome_raccolta';
+$lang['sharecollection-name'] = 'Condividi raccolta - %collectionname';
 $lang['share_theme_category'] = 'Condividi categoria di raccolta in evidenza';
 $lang['share_theme_category_subcategories'] = 'Includere le collezioni in evidenza nelle sottocategorie per gli utenti esterni?';
 $lang['email_theme_category'] = 'Categoria di raccolta in primo piano per e-mail';
@@ -1991,8 +1991,8 @@ $lang['user_preferences__introtext_new'] = 'Si prega di inserire una password qu
 $lang['user_request__introtext'] = 'Si prega di compilare il modulo sottostante per richiedere un account utente.';
 $lang['view__storyextract'] = 'Estratto della storia:';
 $lang['notify_resource_change_email_subject'] = 'Una risorsa è stata modificata';
-$lang['notify_resource_change_email'] = 'Una risorsa che hai scaricato nei giorni passati è stata modificata. Clicca sul link qui sotto per visualizzare la risorsa.<br /><br /><a href=\'[url]\'>[url]</a>';
-$lang['notify_resource_change_notification'] = 'Una risorsa che hai scaricato nei giorni passati è stata modificata.';
+$lang['notify_resource_change_email'] = 'Una risorsa che hai scaricato negli ultimi [days] giorni è stata modificata. Clicca sul link qui sotto per visualizzare la risorsa.<br /><br /><a href=\'[url]\'>[url]</a>';
+$lang['notify_resource_change_notification'] = 'Una risorsa che hai scaricato negli ultimi [days] giorni è stata modificata.';
 $lang['passwordresetemail'] = 'Si prega di cliccare sul link sottostante per reimpostare la tua password.';
 $lang['password_reset_email_html'] = 'Nome utente: [username]<br /><br />Clicca sul link sottostante per reimpostare la tua password.<br /><br /><a href="[url]" target="_blank" >[url]</a>';
 $lang['passwordnewemail'] = 'Si prega di cliccare sul link sottostante per impostare una nuova password per il tuo account.';
@@ -2009,7 +2009,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Consen
 $lang['share_using_permissions_from_user_group'] = 'Condividi utilizzando le autorizzazioni del gruppo utenti';
 $lang['externalshare_using_permissions_from_user_group'] = 'Se stai inviando un\'e-mail a utenti esterni, seleziona il gruppo utenti da utilizzare per l\'accesso';
 $lang['collection_download_too_large'] = 'Spiacente, questa collezione è troppo grande per essere scaricata come un unico file. Prova a ridurre le dimensioni della collezione o a selezionare una dimensione dell\'immagine più piccola.';
-$lang['all__passwordnewemailhtml'] = 'Si prega di cliccare sul link sottostante per impostare una nuova password per il tuo account.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Nome utente: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Si prega di cliccare sul link sottostante per impostare una nuova password per il tuo account.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Nome utente: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Caricamento temporaneamente non disponibile';
 $lang['disk_size_no_upload_explain'] = 'A causa di limitazioni di spazio, il caricamento è stato temporaneamente disabilitato. Ci scusiamo per eventuali inconvenienti.';
 $lang['dash'] = 'Cruscotto';
@@ -2421,7 +2421,7 @@ $lang['collection_actiontype_5'] = 'Ricerca';
 $lang['collection_actiontype_6'] = 'Avanzato';
 $lang['collection_actiontype_999'] = 'Altro';
 $lang['unknown_date_format_error'] = 'Errore: la riga %row% \'%date%\' nel campo [%field%] non è in formato valido yyyy-mm-dd hh:mm (sono ammessi parziali, ad esempio senza ora, giorno o mese)';
-$lang['date_format_error'] = 'Errore: %row% \'%date%\' inserimento non valido nella/e parte/i [%field%]';
+$lang['date_format_error'] = 'Errore: %row% \'%date%\' in [%field%], valore non valido nella/e parte/i %parts%';
 $lang['invalid_date_error'] = 'Errore: la riga %row% \'%date%\' in [%field%] non è una data valida';
 $lang['invalid_date_error2'] = 'Errore: valore data non valido: \'%date%\'. Si prega di utilizzare il formato: \'aaaa-mm-gg hh:mm:ss\' (l\'ora è facoltativa)';
 $lang['invalid_date_generic'] = 'Hai inserito una data non valida';
@@ -2536,8 +2536,8 @@ $lang['information_field_restype_deselect_cleanup'] = 'Per rimuovere i dati del 
 $lang['property-id'] = 'Id';
 $lang['mainmenu'] = 'Menu principale';
 $lang['xlthumbs'] = 'Extra-large';
-$lang['strip'] = 'Rimuovi';
-$lang['on'] = 'Su';
+$lang['strip'] = 'Striscia';
+$lang['on'] = 'Acceso';
 $lang['off'] = 'Spento';
 $lang['collectionidprefix'] = 'Col_ID';
 $lang['_dupe'] = '_duplicato';
@@ -2553,7 +2553,7 @@ $lang['sortorder-asc'] = 'ASC';
 $lang['sortorder-desc'] = 'DESC';
 $lang['title'] = 'Titolo';
 $lang['fileoftype'] = '? File';
-$lang['field-fileextension'] = '%ESTENSIONE';
+$lang['field-fileextension'] = '%EXTENSION';
 $lang['fileextension-inside-brackets'] = '[%EXTENSION]';
 $lang['fileextension'] = '%EXTENSION';
 $lang['log-rtchange'] = 'Tipo di risorsa modificato';
@@ -2686,9 +2686,9 @@ $lang['error-edit_noaccess_related_resources'] = 'Impossibile collegare le risor
 $lang['csv_export_filename'] = 'esportazione_metadati_[search]_[time]';
 $lang['upload_share_email_users'] = 'E-mail agli utenti<br><br>Digita ogni indirizzo e-mail, separato da una virgola';
 $lang['upload_share_email_template'] = '<br />
-[from_name] ha condiviso un file con te tramite [applicationname]<br /><br /> 
-Messaggio: [message]<br /><br />
-Clicca sul link per visualizzare il file<br />
+[from_name] [lang_upload_share_email_text] [applicationname]<br /><br /> 
+[lang_message] : [message]<br /><br />
+[lang_upload_share_email_clicklink]<br />
 <br />
 [link]
 <br />
@@ -2886,7 +2886,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Logo specifico del gruppo - Scuro';
 $lang['fieldtitle-group_logo_dark_replace'] = 'Sostituisci il logo specifico del gruppo - Scuro';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Logo dell\'applicazione - Scuro';
 $lang['user_pref_appearance'] = 'Aspetto';
-$lang['user_pref_appearance_light'] = 'Luce';
+$lang['user_pref_appearance_light'] = 'Chiaro';
 $lang['user_pref_appearance_dark'] = 'Scuro';
 $lang['user_pref_appearance_device'] = 'Impostazione predefinita del dispositivo';
 $lang['collection_download_include_alternatives'] = 'Includere file alternativi?';

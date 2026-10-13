@@ -215,7 +215,7 @@ $lang['xlthumbs'] = 'Дуже великий';
 $lang['xlthumbstitle'] = 'Дуже великі ескізи';
 $lang['largethumbs'] = 'Великий';
 $lang['largethumbstitle'] = 'Великі ескізи';
-$lang['strip'] = 'Видалити';
+$lang['strip'] = 'Смуга';
 $lang['striptitle'] = 'Смугастий вигляд';
 $lang['list'] = 'Список';
 $lang['listtitle'] = 'Перегляд списку';
@@ -2099,7 +2099,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Доз
 $lang['share_using_permissions_from_user_group'] = 'Поділитися з використанням дозволів від групи користувачів';
 $lang['externalshare_using_permissions_from_user_group'] = 'Якщо ви надсилаєте електронну пошту зовнішнім користувачам, будь ласка, виберіть групу користувачів для доступу';
 $lang['collection_download_too_large'] = 'Вибачте, ця колекція занадто велика для завантаження як один файл. Спробуйте зменшити розмір колекції або вибрати менший розмір зображення.';
-$lang['all__passwordnewemailhtml'] = 'Будь ласка, натисніть на посилання нижче, щоб встановити новий пароль для вашого облікового запису.
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Будь ласка, натисніть на посилання нижче, щоб встановити новий пароль для вашого облікового запису.
 
 URL: <a href="[url]" target="_blank" >[url]</a>
 ім\'я користувача: [username]

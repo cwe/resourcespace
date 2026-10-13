@@ -828,7 +828,7 @@ $lang['status-notinstalled'] = 'Не ўстаноўлена';
 $lang['status-never'] = 'Ніколі';
 $lang['softwareversion'] = '? версія';
 $lang['softwarenotfound'] = '\'?\' не знойдзены';
-$lang['client-encoding'] = '(client-encoding: %кодаванне)';
+$lang['client-encoding'] = '(client-encoding: %encoding)';
 $lang['db-default-encoding'] = '(кодзіроўка-базы-даных: %encoding)';
 $lang['browseruseragent'] = 'Карыстальніцкі агент браўзера';
 $lang['serverplatform'] = 'Серверная платформа';
@@ -2041,11 +2041,13 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 <a href="[url]">[url]</a><br /><br />
 <a href="[teamresearchurl]">[teamresearchurl]</a><br /><br />
 [text_footer]';
-$lang['all__emailnotifyresourcesapproved'] = 'Карыстальніцкія рэсурсы зацверджаны<br />
+$lang['all__emailnotifyresourcesapproved'] = '<br />
+[lang_userresourcesapproved]
 [list] <br />
-Праглядзець унесеныя матэрыялы<br /><br /> 
+[lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
@@ -2587,7 +2589,7 @@ $lang['filter_criteria_any'] = 'Кожнае з правілаў павінна 
 $lang['filter_is_in'] = 'IS';
 $lang['filter_is_not_in'] = 'НЕ ЯВЛЯЕЦЦА';
 $lang['filter_or'] = 'АБО';
-$lang['filter_and'] = 'І І';
+$lang['filter_and'] = 'І';
 $lang['error-sessionexpired'] = 'Ваша сесія скончылася або недапушчальная';
 $lang['userresources_status_change'] = 'Рэсурсы, якія вы ўнеслі, былі перамешчаны ў стан:';
 $lang['collection_description'] = 'Апісанне';
@@ -2669,7 +2671,7 @@ $lang['job_value'] = 'Значэнне';
 $lang['job_boost'] = 'Павялічыць працу';
 $lang['job_priority'] = 'Прыярытэт';
 $lang['csv_export_offline_option'] = 'Сгенераваць CSV файл офлайн? Гэта павінна выкарыстоўвацца для вялікіх набораў вынікаў. Вы будзеце паведамлены праз паведамленне ResourceSpace, калі CSV будзе даступны';
-$lang['csv_export_filename'] = 'экспарт_метададзеных_[пошук]_[час]';
+$lang['csv_export_filename'] = 'экспарт_метададзеных_[search]_[time]';
 $lang['csv_export_file_ready'] = 'Ваш экспарт CSV гатовы';
 $lang['offline_processing_disabled'] = 'Апрацоўка офлайн-задач не наладжана на гэтай сістэме. Каб уключыць гэта, калі ласка, звяжыцеся з вашым сістэмным адміністратарам.';
 $lang['csv_export_offline_only'] = 'Афлайн-апрацоўка павінна выкарыстоўвацца пры экспарце дадзеных для больш чым [resource_count] рэсурсаў';
@@ -2804,7 +2806,7 @@ $lang['language-it'] = 'італьянскі';
 $lang['language-jp'] = 'Japanese';
 $lang['language-ko'] = 'Korean';
 $lang['language-ms'] = 'Malay';
-$lang['language-nl'] = 'GALAMITY Translation not available for "Dutch" as it is a proper noun.';
+$lang['language-nl'] = 'Нідэрландская';
 $lang['language-no'] = 'Нарвежскі';
 $lang['language-pa'] = 'Панджабі';
 $lang['language-pl'] = 'польская';

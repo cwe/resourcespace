@@ -1315,7 +1315,7 @@ $lang['mapzoom'] = 'Phóng to bản đồ';
 $lang['openstreetmap'] = 'OpenStreetMap';
 $lang['google_terrain'] = 'Google terrain';
 $lang['google_default_map'] = 'Bản đồ mặc định của Google';
-$lang['strip'] = 'Cắt bỏ';
+$lang['strip'] = 'Dải';
 $lang['sortorder-asc'] = 'ASC';
 $lang['resourcerequesttype0'] = 'Chỉ email';
 $lang['google_satellite'] = 'Google vệ tinh';
@@ -2017,11 +2017,12 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 <a href="[teamresearchurl]">[teamresearchurl]</a>  
 [text_footer]';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
-Tài nguyên của bạn đã được phê duyệt
+[lang_userresourcesapproved]
 [list] <br />
-Xem tài nguyên đã đóng góp <br /><br /> 
+[lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = 'Vui lòng dịch: <br />
 [lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
@@ -2622,7 +2623,7 @@ $lang['job_value'] = 'Giá trị';
 $lang['job_boost'] = 'Tăng cường công việc';
 $lang['job_priority'] = 'Ưu tiên';
 $lang['csv_export_offline_option'] = 'Tạo tệp CSV ngoại tuyến? Điều này nên được sử dụng cho các tập hợp kết quả lớn. Bạn sẽ được thông báo qua tin nhắn ResourceSpace khi tệp CSV có sẵn';
-$lang['csv_export_filename'] = 'xuất_metadata_[tìm kiếm]_[thời gian]';
+$lang['csv_export_filename'] = 'xuất_metadata_[search]_[time]';
 $lang['csv_export_file_ready'] = 'Xuất khẩu CSV của bạn đã sẵn sàng';
 $lang['offline_processing_disabled'] = 'Xử lý công việc ngoại tuyến chưa được cấu hình trên hệ thống này. Để kích hoạt điều này, vui lòng liên hệ với quản trị viên hệ thống của bạn.';
 $lang['csv_export_offline_only'] = 'Xử lý ngoại tuyến phải được sử dụng khi xuất dữ liệu cho hơn [resource_count] tài nguyên';

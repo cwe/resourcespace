@@ -942,7 +942,7 @@ $lang['can_see_all_fields'] = 'Kan se alle felter';
 $lang['can_see_field'] = 'Kan se felt';
 $lang['can_edit_all_fields'] = 'Kan redigere alle felter<br>(for redigerbart materiale)';
 $lang['can_edit_field'] = 'Kan redigere felt';
-$lang['can_see_resource_type'] = 'Kan se materialtype';
+$lang['can_see_resource_type'] = 'Kan se materialtype \'%TYPE\'';
 $lang['restricted_access_only_to_resource_type'] = 'Begrenset tilgang til materialtype';
 $lang['edit_access_to_workflow_state'] = 'Redigeringstilgang til arbeidsflytnivå';
 $lang['can_create_resources_and_upload_files-admins'] = 'Kan opprette materiale / laste opp filer<br>(admin brukere; materiale går direkte \'på lufta\')';
@@ -1049,7 +1049,7 @@ $lang['property-tab_name'] = 'Fanenavn';
 $lang['property-push_metadata'] = 'Legg til metadata';
 $lang['property-icon'] = 'Ikon';
 $lang['property-smart_theme_name'] = 'Smart samlingnavn med funksjoner';
-$lang['property-exiftool_field'] = 'Vennligst oversett: Exiftool-felt';
+$lang['property-exiftool_field'] = 'Exiftool-felt';
 $lang['property-fits_field'] = 'FITS-felt';
 $lang['property-read_only_field'] = 'Skrivebeskyttet metadatafelt (dvs. vil ikke skrives tilbake ved nedlasting)';
 $lang['information-fits_field'] = 'FITS (File Information Tool Set) feltet vil overskrive Exiftool verdier hvis en verdi kan bli funnet!';
@@ -1099,8 +1099,8 @@ $lang['myrequests'] = 'Mine forespørsler';
 $lang['changethemeto'] = 'Endre tema til';
 $lang['xlthumbstitle'] = 'Ekstra store miniatyrbilder';
 $lang['largethumbstitle'] = 'Store miniatyrbilder';
-$lang['strip'] = 'Avkledning';
-$lang['striptitle'] = 'Fjern visning';
+$lang['strip'] = 'Stripe';
+$lang['striptitle'] = 'Stripevisning';
 $lang['listtitle'] = 'Listevisning';
 $lang['on'] = 'På';
 $lang['off'] = 'Av';
@@ -1281,7 +1281,7 @@ $lang['selectloading'] = 'Velg...';
 $lang['treeobjecttype-group'] = 'Gruppe';
 $lang['groupsmart'] = 'Gruppe (Smart)';
 $lang['confirmaddgroupsmart'] = 'Er du sikker på at du vil inkludere medlemmer dynamisk i denne gruppen?';
-$lang['back_to'] = 'Tilbake til %område';
+$lang['back_to'] = 'Tilbake til %area';
 $lang['save-return'] = 'Lagre og returner';
 $lang['continue'] = 'Fortsett';
 $lang['default'] = 'Standardinnstilling';
@@ -1426,7 +1426,7 @@ $lang['setup-login_to'] = 'Logg inn på';
 $lang['setup-configuration_file_output'] = 'Konfigurasjonsfilutgang';
 $lang['more-information'] = 'Mer informasjon';
 $lang['setup-structuralplugins'] = 'System maler';
-$lang['collectionlogheader'] = 'Samling logg - %samling';
+$lang['collectionlogheader'] = 'Samling logg - %collection';
 $lang['collectionlog-b'] = 'Batch transformert';
 $lang['collectionlog-A'] = 'Endret tilgang til';
 $lang['collectionlog-Z'] = 'Samling lastet ned';
@@ -1536,7 +1536,7 @@ $lang['new_tags'] = 'Nye Exiftool-tagger (som vil bli lagt til ved nedlasting)';
 $lang['date_of_download'] = 'Dato for nedlasting';
 $lang['metadata-report-fits_section'] = 'FITS-tagger kartlagt';
 $lang['usagecomments'] = 'Bruk';
-$lang['dosavedsearch'] = 'Vennligst oversett: Lagret søk';
+$lang['dosavedsearch'] = 'Lagret søk';
 $lang['continuetoresults'] = 'Fortsett til resultater';
 $lang['subcategory'] = 'Underkategori';
 $lang['user_pref_autorotate'] = 'Automatisk rotering av bilder ved opplasting?';
@@ -1561,9 +1561,7 @@ $lang['writeaccess_sql_log'] = 'Skrives tilgang til SQL-logg:';
 $lang['nowriteaccesstohomeanim'] = 'Ikke skrivbar. Åpne tillatelser for å aktivere funksjonen for beskjæring av hjemmeanimasjon i transformtillegget.';
 $lang['php_extension_not_enabled'] = 'PHP-utvidelsen [extension] er ikke aktivert';
 $lang['execution_failed'] = 'Uventet utdata ved utførelse av kommandoen %command. Utdataen var \'%output\'.';
-$lang['exif_extension'] = 'Vennligst oversett: EXIF-utvidelse 
-
-EXIF-utvidelse: EXIF står for Exchangeable Image File Format, og refererer til metadata som er lagret i en digital bildefil. En EXIF-utvidelse kan legge til ekstra metadata til en bildefil, for eksempel informasjon om kameraet som ble brukt til å ta bildet, eksponeringsinnstillinger og dato og tid for når bildet ble tatt. På norsk kan dette også kalles en EXIF-tilleggsmodul.';
+$lang['exif_extension'] = 'EXIF-utvidelse';
 $lang['archiver_utility'] = 'Arkiveringsverktøy';
 $lang['zipcommand_deprecated'] = 'Bruk av $zipcommand er utdatert og erstattet av $collection_download og $collection_download_settings.';
 $lang['zipcommand_overridden'] = 'Men vær oppmerksom på at $zipcommand er definert og overskrevet.';
@@ -1623,9 +1621,7 @@ $lang['nopreviewresources'] = 'Ressurser uten forhåndsvisninger';
 $lang['action-delete_permanently'] = 'Slett permanent';
 $lang['horizontal'] = 'Horisontal';
 $lang['vertical'] = 'Vertikal';
-$lang['cc-emailaddress'] = 'Vennligst oversett: CC %emailaddress
-
-Kopi til: %emailaddress';
+$lang['cc-emailaddress'] = 'Kopi til: %emailaddress';
 $lang['list-recipients-label'] = 'Vis alle mottakere i e-posten?';
 $lang['list-recipients'] = 'Denne meldingen ble sendt til følgende e-postadresser:';
 $lang['sort'] = 'Sorter';
@@ -1760,7 +1756,7 @@ $lang['upload-options'] = 'Opplastingsalternativer';
 $lang['user-preferences'] = 'Innstillinger';
 $lang['allresources'] = 'Alle ressurser';
 $lang['smart_collection_result_limit'] = 'Smart samling: grense for antall resultater';
-$lang['untaggedresources'] = 'Ressurser uten %feltdata';
+$lang['untaggedresources'] = 'Ressurser uten %field-data';
 $lang['secureyouradminaccount'] = 'Velkommen! For å sikre serveren din, må du nå endre standardpassordet.';
 $lang['resources-all-types'] = 'Ressurser av alle typer';
 $lang['search-mode'] = 'Søk etter...';
@@ -2028,7 +2024,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Tillat
 $lang['share_using_permissions_from_user_group'] = 'Del med tillatelser fra brukergruppe';
 $lang['externalshare_using_permissions_from_user_group'] = 'Hvis du sender e-post til eksterne brukere, vennligst velg brukergruppen som skal brukes for tilgang';
 $lang['collection_download_too_large'] = 'Beklager, denne samlingen er for stor til å lastes ned som én fil. Prøv å redusere størrelsen på samlingen eller velge en mindre bildestørrelse.';
-$lang['all__passwordnewemailhtml'] = 'Vennligst klikk på lenken nedenfor for å sette en nytt passord for kontoen din.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Brukernavn: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Vennligst klikk på lenken nedenfor for å sette en nytt passord for kontoen din.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Brukernavn: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Opplasting midlertidig utilgjengelig';
 $lang['disk_size_no_upload_explain'] = 'På grunn av plassbegrensninger er opplasting midlertidig deaktivert. Vi beklager eventuelle ulemper.';
 $lang['savethissearchtodash'] = 'Lagre til dashbord-flis';
@@ -2634,9 +2630,10 @@ $lang['all__emailcollection'] = '<br />
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
 $lang['all__emailcollectionexternal'] = '<br />
-[fromusername] har delt en samling med deg <br /><br /> 
-Melding: [message]<br /><br /> 
-Klikk på lenken for å se samlingen: [list]';
+[fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
+[lang_message] : [message]<br /><br /> 
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
 [lang_userresourcesapproved]

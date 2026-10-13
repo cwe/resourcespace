@@ -738,14 +738,14 @@ $lang['property-enable_simple_search'] = 'Aktivér enkel søgning';
 $lang['property-iptc_equiv'] = 'IPTC ækvivalent';
 $lang['property-display_template'] = 'Visnings-skabelon';
 $lang['property-value_filter'] = 'Værdifilter';
-$lang['property-regexp_filter'] = 'Regexp filter kan oversættes til "Regulært udtryk filter"';
+$lang['property-regexp_filter'] = 'Filter med regulært udtryk';
 $lang['information-regexp_filter'] = 'Regulær udtryksfiltrering - f.eks. \'[A-Z]+\' vil sikre, at kun store bogstaver kan indtastes.';
 $lang['information-regexp_fail'] = 'Den indtastede værdi var ikke i det krævede format.';
 $lang['property-tab_name'] = 'Fanenavn';
 $lang['property-push_metadata'] = 'Indsæt metadata';
 $lang['property-icon'] = 'Ikon';
 $lang['property-smart_theme_name'] = 'Intelligent samlet navn';
-$lang['property-exiftool_field'] = 'Venligst oversæt: Exiftool felt';
+$lang['property-exiftool_field'] = 'Exiftool felt';
 $lang['property-fits_field'] = 'FITS felt';
 $lang['property-read_only_field'] = 'Skrivebeskyttet metadatafelt (dvs. vil ikke skrive tilbage ved download)';
 $lang['information-fits_field'] = 'FITS (File Information Tool Set) feltet vil overskrive Exiftool-værdier, hvis en værdi kan findes!';
@@ -1011,7 +1011,7 @@ $lang['selectloading'] = 'Vælg...';
 $lang['treeobjecttype-group'] = 'Gruppe';
 $lang['groupsmart'] = 'Gruppe (Smart)';
 $lang['confirmaddgroupsmart'] = 'Er du sikker på, at du vil inkludere medlemmer dynamisk i denne gruppe?';
-$lang['back_to'] = 'Tilbage til %område';
+$lang['back_to'] = 'Tilbage til %area';
 $lang['treeobjecttype-field'] = 'Felt';
 $lang['save-return'] = 'Gem og vend tilbage';
 $lang['revert'] = 'Tilbagefør';
@@ -1043,7 +1043,7 @@ $lang['status-fail'] = 'MISLYKKES';
 $lang['status-warning'] = 'ADVARSEL';
 $lang['status-notinstalled'] = 'Ikke installeret';
 $lang['status-never'] = 'Aldrig';
-$lang['softwareversion'] = 'Venligst oversæt: ? version';
+$lang['softwareversion'] = '? version';
 $lang['softwarenotfound'] = '\'?\' blev ikke fundet';
 $lang['client-encoding'] = '(klientkodning: %encoding)';
 $lang['db-default-encoding'] = '(database-kodning: %encoding)';
@@ -1381,9 +1381,7 @@ $lang['nometadatareport'] = 'Ingen metadata rapport';
 $lang['metadatawritewillbeattempted'] = 'Metadata vil blive forsøgt skrevet.';
 $lang['metadatatobewritten'] = 'Metadata som vil blive skrevet';
 $lang['embeddedvalue'] = 'Indlejret værdi';
-$lang['exiftooltag'] = 'Venligst oversæt: Exiftool tag
-
-Exiftool tag oversættes til "Exiftool tag" på dansk. Det er en betegnelse for de metadata-tags, der kan redigeres og manipuleres ved hjælp af Exiftool-softwaren i ResourceSpace.';
+$lang['exiftooltag'] = 'Exiftool tag';
 $lang['error'] = 'Fejl';
 $lang['success'] = 'Succes';
 $lang['exiftoolnotfound'] = 'Kunne ikke finde Exiftool';
@@ -1574,9 +1572,7 @@ $lang['nodownloadcollection'] = 'Du har ikke adgang til at downloade nogen af re
 $lang['progress'] = 'Fremgang';
 $lang['ticktodeletethisresearchrequest'] = 'Afkryds for at slette denne anmodning';
 $lang['done'] = 'Færdig.';
-$lang['latlong'] = 'Venligst oversæt: Lat / long
-
-Bredegrad / længdegrad';
+$lang['latlong'] = 'Breddegrad / længdegrad';
 $lang['geographicsearch'] = 'Geografisk søgning';
 $lang['geographicsearchresults'] = 'Geografiske søgeresultater';
 $lang['geographicsearchmissing'] = 'Geografiske søgekriterier mangler';
@@ -1607,9 +1603,7 @@ $lang['nopreviewresources'] = 'Ressourcer uden forhåndsvisninger';
 $lang['action-delete_permanently'] = 'Slet permanent';
 $lang['horizontal'] = 'Vandret';
 $lang['vertical'] = 'Vertikal';
-$lang['cc-emailaddress'] = 'Venligst oversæt: CC %emailaddress
-
-CC står for "Carbon Copy" og bruges til at sende en kopi af en email til en anden modtager udover den primære modtager. Så en mulig oversættelse kunne være: "Kopi til %emailaddress".';
+$lang['cc-emailaddress'] = 'Kopi til %emailaddress';
 $lang['list-recipients-label'] = 'Vis alle modtagere i e-mailen?';
 $lang['list-recipients'] = 'Denne besked blev sendt til følgende e-mailadresser:';
 $lang['sort'] = 'Sortér';
@@ -1631,7 +1625,7 @@ $lang['error-403-forbidden'] = '403 Forbudt.';
 $lang['error-plugin-not-activated'] = 'Plugin ikke aktiveret';
 $lang['error-failed-to-delete'] = 'Kunne ikke slette';
 $lang['error-failed-to-move'] = 'Kunne ikke flytte';
-$lang['error-type-mismatch'] = 'Venligst oversæt: Argumentet \'%arg\' skal være af typen %expected-type, %type blev angivet';
+$lang['error-type-mismatch'] = 'Argumentet \'%arg\' skal være af typen %expected-type, %type blev angivet';
 $lang['error-request-missing-key'] = 'Anmodning mangler parameteren \'%key\'.';
 $lang['error-collection-unreadable'] = 'Din bruger har ikke læseadgang til samling #%ref.';
 $lang['error-unable_to_register_filter'] = 'Kan ikke registrere stream filter \'%FILTER_NAME\'! Filtrering kan muligvis ikke fungere korrekt.';
@@ -1890,7 +1884,7 @@ $lang['admin_resource_type_field_reorder_select_enable_reordering'] = 'Vælg \'V
 $lang['admin_resource_type_fields'] = 'Metadata-felter';
 $lang['admin_resource_type_field_migrate_data_prompt'] = 'Vil du gerne migrere eksisterende data?';
 $lang['admin_resource_type_field_cannot_migrate_data_prompt'] = 'Ressourcedata kan ikke migreres fra et fast liste felt til et tekstfelt. Vil du fortsætte?';
-$lang['admin_resource_type_field_migrate_data'] = 'Oversæt venligst: Migrer fri tekstdata til faste listeindstillinger';
+$lang['admin_resource_type_field_migrate_data'] = 'Migrer fri tekstdata til faste listeindstillinger';
 $lang['admin_resource_type_field_migrate_delete_data'] = 'Slette overflødig data efter migration?';
 $lang['admin_resource_type_field_migrate_dry_run'] = 'Kør uden at ændre nogen data?';
 $lang['admin_resource_type_field_migrate_separator'] = 'Adskiller f.eks. , - ; :';
@@ -2009,7 +2003,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Tillad
 $lang['share_using_permissions_from_user_group'] = 'Del med tilladelser fra brugergruppe';
 $lang['externalshare_using_permissions_from_user_group'] = 'Hvis du sender e-mails til eksterne brugere, skal du vælge brugergruppen, der skal bruges til adgang';
 $lang['collection_download_too_large'] = 'Beklager, denne samling er for stor til at downloade som én fil. Prøv at reducere størrelsen på samlingen eller vælg en mindre billedstørrelse.';
-$lang['all__passwordnewemailhtml'] = 'Venligst klik på nedenstående link for at indstille en ny adgangskode til din konto.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Brugernavn: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Venligst klik på nedenstående link for at indstille en ny adgangskode til din konto.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Brugernavn: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Upload er midlertidigt utilgængelig';
 $lang['disk_size_no_upload_explain'] = 'På grund af pladsbegrænsninger er upload midlertidigt deaktiveret. Vi beklager eventuelle ulemper.';
 $lang['savethissearchtodash'] = 'Gem til dashboard-flise';
@@ -2206,7 +2200,7 @@ $lang['manage_metadata_field_options'] = 'Metadata feltindstillinger';
 $lang['manage_metadata_field_options_import_options'] = 'Importindstillinger';
 $lang['system_performance'] = 'Ydelse';
 $lang['mysql_throughput'] = 'MySQL gennemløb';
-$lang['cpu_benchmark'] = 'CPU benchmark oversættelse: CPU-ydelsestest';
+$lang['cpu_benchmark'] = 'CPU-ydelsestest';
 $lang['disk_write_speed'] = 'Disk skrivehastighed';
 $lang['manage_metadata_text'] = 'Brug denne side til at ændre de tilgængelige feltindstillinger. Dette vil automatisk opdatere eventuelle eksisterende valgte ressourceindstillinger';
 $lang['manage_slideshow'] = 'Billedserie';
@@ -2762,11 +2756,12 @@ $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 <a href="[url]">[url]</a><br /><br />
 [text_footer]';
 $lang['all__emailresource'] = '<br />
-[fromusername] har sendt dig en ressource<br /><br />
+[fromusername] [lang_hasemailedyouaresource]<br /><br />
 [message]<br /><br />
 <a href="[url]">[embed_thumbnail]</a><br /><br />
-Klik for at se ressourcen<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
-[text_footer]';
+[lang_clicktoviewresource]<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
+[text_footer]
+';
 $lang['notify_resource_change_email'] = 'En ressource, som du har downloadet inden for de sidste [days] dage, er blevet ændret. Klik på linket nedenfor for at se ressourcen.<br /><br /><a href=\'[url]\'>[url]</a>';
 $lang['notify_resource_change_notification'] = 'En ressource, som du har downloadet inden for de sidste [days] dage, er blevet ændret.';
 $lang['all__emailresourcerequest'] = '[lang_username] : [username] <br />
@@ -3210,13 +3205,13 @@ $lang['systemconfig_session_autologout'] = 'Log automatisk bruger ud ved session
 $lang['systemconfig_slideshow_photo_delay'] = 'Antal sekunder, slideshowet venter, før det skifter billede';
 $lang['config_integer_invalid_range'] = 'Ugyldigt værdi. Indtast et tal mellem %MIN% og %MAX%';
 $lang['alternative_file_replaced'] = 'Alternativ fil er blevet erstattet';
-$lang['jq_create_alt_previews_success_text'] = 'Forhåndsvisninger oprettet for alternativ fil #%ALTFILE% med succes';
-$lang['jq_create_alt_previews_failure_text'] = 'Mislykkedes i at oprette forhåndsvisninger for alternativ fil #%ALTFILE%';
+$lang['jq_create_alt_previews_success_text'] = 'Forhåndsvisninger oprettet for alternativ fil #%ALTFILE med succes';
+$lang['jq_create_alt_previews_failure_text'] = 'Mislykkedes i at oprette forhåndsvisninger for alternativ fil #%ALTFILE';
 $lang['error_report_execution'] = 'Der opstod en fejl under kørsel af rapporten, venligst tjek at forespørgslen er gyldig';
 $lang['error_save_not_allowed_dash_tile_set_public'] = 'Kan ikke gemme ændringen. Sørg for, at der ikke er dash-fliser sat for alle eller flere brugere, der er knyttet til denne samling';
 $lang['error_upload_replace_alternative_file_not_found'] = 'Mislykkedes i at opdatere alternativ fil. Ingen matchende alternativ fil med filnavn [filename] fundet';
 $lang['error_upload_replace_alternative_multiple_found'] = 'Mislykkedes i at opdatere alternativ fil. Flere matchende alternativ fil records fundet med filnavn [filename], begrænset til ressource-ID eller samling';
-$lang['oj-batch-replace-local-alternatives-success-text'] = 'Batch-udskiftning har med succes erstattet %TOTALFILES% alternative filer';
+$lang['oj-batch-replace-local-alternatives-success-text'] = 'Batch-udskiftning har med succes erstattet %TOTALFILES alternative filer';
 $lang['replacebatch_collection_alternatives'] = 'Indtast en samlings-ID, hvis du kun vil tilføje eller erstatte alternative filer til ressourcer inden for denne samling';
 $lang['replacebatch_resource_min_alternatives'] = 'Laveste ressource-ID for at erstatte alternative filer (ignoreres, hvis en samling er angivet)';
 $lang['replacebatch_resource_max_alternatives'] = 'Højeste ressource-ID for at erstatte alternative filer';

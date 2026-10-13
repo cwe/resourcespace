@@ -14,7 +14,7 @@ $lang['aboutus'] = 'Σχετικά με Εμάς';
 $lang['interface'] = 'Interface';
 $lang['simplesearch'] = 'Απλή Αναζήτηση';
 $lang['searchbutton'] = 'Αναζήτηση';
-$lang['clearbutton'] = 'Καθαρός';
+$lang['clearbutton'] = 'Εκκαθάριση';
 $lang['bycountry'] = 'Με Χώρα';
 $lang['bydate'] = 'Με Ημερομηνία';
 $lang['anyyear'] = 'Κάθε χρόνος';
@@ -320,7 +320,7 @@ $lang['view'] = 'Προβολή';
 $lang['type'] = 'Τύπος';
 $lang['text'] = 'Κείμενο';
 $lang['yes'] = 'Ναι';
-$lang['no'] = 'Δεν';
+$lang['no'] = 'Όχι';
 $lang['key'] = 'Κλειδί';
 $lang['languageselection'] = 'Επιλογή Γλώσσας';
 $lang['language'] = 'Γλώσσα';
@@ -774,10 +774,10 @@ $lang['collections'] = 'Συλλογές';
 $lang['changethemeto'] = 'Αλλαγή θέματος σε';
 $lang['xlthumbstitle'] = 'Πολύ μεγάλες μικρογραφίες (thumbnails)';
 $lang['largethumbstitle'] = 'Μεγάλες μικρογραφίες';
-$lang['strip'] = 'Αποστύλωση';
+$lang['strip'] = 'Λωρίδα';
 $lang['striptitle'] = 'Προβολή λωρίδας';
 $lang['listtitle'] = 'Προβολή λίστας';
-$lang['on'] = 'Ενεργός (Ενεργή for feminine objects)';
+$lang['on'] = 'Ενεργό';
 $lang['off'] = 'Απενεργοποίηση';
 $lang['seconds'] = 'δευτερόλεπτα';
 $lang['reload'] = 'Επαναφόρτωση';
@@ -1081,7 +1081,7 @@ $lang['generateexternalurl'] = 'Δημιουργία εξωτερικού URL';
 $lang['generateexternalurls'] = 'Δημιουργία εξωτερικών συνδέσμων (URLs)';
 $lang['generatethemeurlsexternal'] = 'Οι παρακάτω διευθύνσεις URL θα λειτουργούν για όλους και δεν απαιτούν σύνδεση στο σύστημα.';
 $lang['showexistingthemeshares'] = 'Εμφάνιση υπαρχόντων κοινοποιήσεων για τις επιλεγμένες συλλογές σε αυτήν την κατηγορία';
-$lang['externalusersharing-name'] = 'Κοινή χρήση με εξωτερικούς χρήστες - %όνομα συλλογής%';
+$lang['externalusersharing-name'] = 'Κοινή χρήση με εξωτερικούς χρήστες - %collectionname%';
 $lang['confirmdeleteaccessresource'] = 'Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το κλειδί πρόσβασης; Οι χρήστες που έχουν δοθεί πρόσβαση χρησιμοποιώντας αυτό το κλειδί δεν θα μπορούν πλέον να έχουν πρόσβαση σε αυτό το αντικείμενο.';
 $lang['confirmdeleteaccessmulticol'] = 'Είστε σίγουροι ότι θέλετε να διαγράψετε αυτά τα κλειδιά πρόσβασης; Οι χρήστες που έχουν δοθεί πρόσβαση χρησιμοποιώντας αυτά τα κλειδιά δεν θα μπορούν πλέον να έχουν πρόσβαση στις σχετικές συλλογές.';
 $lang['confirmdeleteaccessmultires'] = 'Είστε σίγουροι ότι θέλετε να διαγράψετε αυτά τα κλειδιά πρόσβασης; Οι χρήστες που έχουν δοθεί πρόσβαση χρησιμοποιώντας αυτά τα κλειδιά δεν θα μπορούν πλέον να έχουν πρόσβαση στους σχετικούς πόρους.';
@@ -1163,9 +1163,7 @@ $lang['setup-binpath'] = 'Διαδρομή %bin';
 $lang['setup-begin_installation'] = 'Ξεκινήστε την εγκατάσταση!';
 $lang['setup-smtp-settings'] = 'Ρυθμίσεις SMTP';
 $lang['setup-if-usesmtp'] = 'Χρησιμοποιήστε έναν εξωτερικό διακομιστή SMTP για την αποστολή εξερχόμενων email (π.χ. Gmail). Χρησιμοποιεί το PHPMailer';
-$lang['setup-if-smtpsecure'] = 'Παρακαλώ μεταφράστε: \'\', \'tls\' ή \'ssl\'. Για το Gmail, απαιτείται \'tls\' ή \'ssl\'.
-
-Για το Gmail, απαιτείται η χρήση \'tls\' ή \'ssl\'. Το TLS (Transport Layer Security) και το SSL (Secure Sockets Layer) είναι πρωτόκολλα κρυπτογράφησης που χρησιμοποιούνται για την ασφαλή αποστολή και λήψη email.';
+$lang['setup-if-smtpsecure'] = '\'\', \'tls\' ή \'ssl\'. Για το Gmail, απαιτείται \'tls\' ή \'ssl\'.';
 $lang['setup-if-smtphost'] = 'Όνομα κεντρικού υπολογιστή (Hostname), π.χ. \'smtp.gmail.com\'.';
 $lang['setup-if-smtpport'] = 'Αριθμός θύρας, π.χ. 465 για το Gmail με χρήση SSL.';
 $lang['setup-if-smtpauth'] = 'Αποστολή διαπιστευτηρίων στον διακομιστή SMTP (false για χρήση ανώνυμης πρόσβασης)';
@@ -1916,8 +1914,8 @@ $lang['download_progress__introtext'] = 'Η λήψη σας θα ξεκινήσ�
 $lang['downloadfile_nofile'] = 'Το αρχείο που ζητήθηκε δε βρέθηκε.';
 $lang['edit__multiple'] = 'Παρακαλώ επιλέξτε ποια πεδία θέλετε να αντικαταστήσετε. Τα πεδία που δεν θα επιλέξετε θα παραμείνουν ανέγγιχτα.';
 $lang['home__restrictedtext'] = 'Παρακαλώ κάντε κλικ στον σύνδεσμο που σας έχει αποσταλεί με email για να αποκτήσετε πρόσβαση στους πόρους που έχουν επιλεγεί για εσάς.';
-$lang['home__restrictedtitle'] = 'Καλώς ήρθατε στο ResourceSpace [έκδοση]';
-$lang['home__welcometitle'] = 'Καλώς ήρθατε στο ResourceSpace [έκδοση]';
+$lang['home__restrictedtitle'] = 'Καλώς ήρθατε στο ResourceSpace [ver]';
+$lang['home__welcometitle'] = 'Καλώς ήρθατε στο ResourceSpace [ver]';
 $lang['login__welcomelogin'] = 'Καλώς ήρθατε στο ResourceSpace. Παρακαλούμε συνδεθείτε.';
 $lang['local_tz'] = 'Τοπική ζώνη ώρας';
 $lang['resource_email__introtext'] = 'Μοιραστείτε γρήγορα αυτό το αντικείμενο με άλλους χρήστες μέσω email. Ένας σύνδεσμος αποστέλλεται αυτόματα. Μπορείτε επίσης να συμπεριλάβετε οποιοδήποτε μήνυμα ως μέρος του email.';
@@ -1939,8 +1937,8 @@ $lang['user_preferences__introtext_new'] = 'Παρακαλώ εισάγετε έ
 $lang['user_request__introtext'] = 'Παρακαλούμε συμπληρώστε την παρακάτω φόρμα για να ζητήσετε ένα λογαριασμό χρήστη.';
 $lang['view__storyextract'] = 'Απόσπασμα ιστορίας:';
 $lang['notify_resource_change_email_subject'] = 'Ένα αντικείμενο έχει τροποποιηθεί';
-$lang['notify_resource_change_email'] = 'Ένα αρχείο που κατεβάσατε τις προηγούμενες [ημέρες] ημέρες έχει τροποποιηθεί. Κάντε κλικ στον παρακάτω σύνδεσμο για να δείτε το αρχείο.<br /><br /><a href=\'[url]\'>[url]</a>';
-$lang['notify_resource_change_notification'] = 'Ένα αρχείο που κατεβάσατε τις προηγούμενες [ημέρες] ημέρες έχει τροποποιηθεί.';
+$lang['notify_resource_change_email'] = 'Ένα αρχείο που κατεβάσατε τις προηγούμενες [days] ημέρες έχει τροποποιηθεί. Κάντε κλικ στον παρακάτω σύνδεσμο για να δείτε το αρχείο.<br /><br /><a href=\'[url]\'>[url]</a>';
+$lang['notify_resource_change_notification'] = 'Ένα αρχείο που κατεβάσατε τις προηγούμενες [days] ημέρες έχει τροποποιηθεί.';
 $lang['passwordresetemail'] = 'Παρακαλώ κάντε κλικ στον παρακάτω σύνδεσμο για να επαναφέρετε τον κωδικό πρόσβασής σας.';
 $lang['password_reset_email_html'] = 'Όνομα χρήστη: [username]<br /><br />Παρακαλώ κάντε κλικ στον παρακάτω σύνδεσμο για επαναφορά του κωδικού πρόσβασής σας.<br /><br /><a href="[url]" target="_blank" >[url]</a>';
 $lang['passwordnewemail'] = 'Παρακαλώ κάντε κλικ στον παρακάτω σύνδεσμο για να ορίσετε ένα νέο κωδικό πρόσβασης για το λογαριασμό σας.';
@@ -1955,7 +1953,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Επι
 $lang['share_using_permissions_from_user_group'] = 'Διαμοιρασμός χρησιμοποιώντας άδειες από ομάδα χρηστών';
 $lang['externalshare_using_permissions_from_user_group'] = 'Εάν αποστέλλετε ηλεκτρονικό ταχυδρομείο σε εξωτερικούς χρήστες, παρακαλούμε επιλέξτε την ομάδα χρηστών που θα χρησιμοποιηθεί για την πρόσβαση';
 $lang['collection_download_too_large'] = 'Λυπούμαστε, αυτή η συλλογή είναι πολύ μεγάλη για να την κατεβάσετε ως ένα αρχείο. Δοκιμάστε να μειώσετε το μέγεθος της συλλογής ή να επιλέξετε μικρότερο μέγεθος εικόνας.';
-$lang['all__passwordnewemailhtml'] = 'Παρακαλώ κάντε κλικ στον παρακάτω σύνδεσμο για να ορίσετε ένα νέο κωδικό πρόσβασης για το λογαριασμό σας.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Όνομα χρήστη: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Παρακαλώ κάντε κλικ στον παρακάτω σύνδεσμο για να ορίσετε ένα νέο κωδικό πρόσβασης για το λογαριασμό σας.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />Όνομα χρήστη: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Η μεταφόρτωση δεν είναι προσωρινά διαθέσιμη';
 $lang['disk_size_no_upload_explain'] = 'Λόγω περιορισμένου χώρου, η μεταφόρτωση έχει απενεργοποιηθεί προσωρινά. Ζητούμε συγγνώμη για τυχόν αναστάτωση.';
 $lang['savethissearchtodash'] = 'Αποθήκευση στο πλακάκι του πίνακα ελέγχου';
@@ -2369,9 +2367,10 @@ $lang['useaspreviewimage'] = 'Χρησιμοποίηση ως εικόνα πρ�
 $lang['filechecksum'] = 'Έλεγχος ακεραιότητας αρχείου (File checksum)';
 $lang['system_notification'] = '[application_name] - ειδοποίηση συστήματος';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
-[μήνυμα]<br /><br /> 
+[message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[κείμενο_υποσέλιδου]';
+[text_footer]
+';
 $lang['error_edit_filter_invalid'] = 'Το φίλτρο επεξεργασίας δεν έχει ρυθμιστεί σωστά για αυτήν την ομάδα χρηστών. Παρακαλούμε επικοινωνήστε με το διαχειριστή σας';
 $lang['error_search_filter_invalid'] = 'Το φίλτρο αναζήτησης δεν έχει ρυθμιστεί σωστά για αυτήν την ομάδα χρηστών. Παρακαλούμε επικοινωνήστε με τον διαχειριστή σας';
 $lang['action_lock'] = 'Κλείδωμα';
@@ -2559,7 +2558,7 @@ $lang['at-resolution'] = '@';
 $lang['error-invalid_name'] = 'Μη έγκυρο όνομα';
 $lang['collectiondownloadinprogress'] = 'Παρακαλώ περιμένετε ενώ δημιουργούμε το αρχείο. Αυτό μπορεί να πάρει λίγο χρόνο, ανάλογα με το συνολικό μέγεθος των πόρων σας.<br /><br />Για να συνεχίσετε να εργάζεστε, μπορείτε να <a href=\\"home.php\\" target=\\"_blank\\">> Ανοίξετε ένα Νέο Παράθυρο Περιηγητή</a><br /><br />';
 $lang['inactive_entry_matched'] = 'Ανενεργή καταχώρηση που ταιριάζει για';
-$lang['resources-with-requeststatus0-2'] = '(%αριθμός σε εκκρεμότητα)';
+$lang['resources-with-requeststatus0-2'] = '(%number σε εκκρεμότητα)';
 $lang['kilobyte-symbol'] = 'KB';
 $lang['megabyte-symbol'] = 'MB';
 $lang['gigabyte-symbol'] = 'GB';
@@ -2581,23 +2580,26 @@ $lang['admin_delete_field_confirm'] = 'Υπάρχουν [affected_resources] π�
 $lang['admin_resource_type_tab_info'] = 'Ορίζοντας ένα όνομα καρτέλας σημαίνει ότι οι σχετικοί πόροι αυτού του τύπου θα εμφανίζονται σε αυτήν την καρτέλα μαζί με τα μεταδεδομένα. Ο τύπος πόρου θα είναι ουσιαστικά μέρος του πίνακα $related_type_show_with_data). Αυτή η ρύθμιση απαιτεί οι καρτέλες να έχουν οριστεί σωστά για όλα τα πεδία.';
 $lang['delete_user_group_checkbox_alert_message'] = 'Λάβετε υπόψη ότι αυτή η ενέργεια θα διαγράψει επίσης όλο το περιεχόμενο κειμένου που ήταν σχετικό με αυτήν την ομάδα χρηστών. Βρέθηκαν [recordscount] εγγραφές στη Διαχείριση Περιεχομένου.';
 $lang['all__emailbulk'] = '<br /><br />
-[κείμενο]<br /><br />
-[υποσέλιδο_κειμένου]';
+[text]<br /><br />
+[text_footer]
+';
 $lang['all__emailcollection'] = '<br />
-[απόχρήστη] [lang_emailcollectionmessage] <br /><br /> 
-[lang_μήνυμα] : [μήνυμα]<br /><br /> 
-[lang_κλικσύνδεσμοςπροβολήςσυλλογής] [λίστα]';
+[fromusername] [lang_emailcollectionmessage] <br /><br /> 
+[lang_message] : [message]<br /><br /> 
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailcollectionexternal'] = '<br />
 [fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[καλωσόρισμα]<br /><br /> 
-[νέες λεπτομέρειες σύνδεσης]<br /><br /> 
-[όνομα χρήστη] : [username] <br /><br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[υποσέλιδο κειμένου]';
+[text_footer]
+';
 $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
 [lang_nameofproject]:[name]<br /><br />
@@ -2612,25 +2614,29 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 [text_footer]';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
 [lang_userresourcesapproved]
-[λίστα] <br />
+[list] <br />
 [lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[κείμενο_υποσέλιδου]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcessubmitted'] = '<br />
 [lang_userresourcessubmitted]
-[λίστα] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[κείμενο_υποσέλιδου]';
+[text_footer]
+';
 $lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 [lang_userresourcesunsubmitted]
-[λίστα] <br />
+[list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[κείμενο_υποσέλιδου]';
+[text_footer]
+';
 $lang['all__emailresearchrequestassigned'] = '<br />
 [lang_researchrequestassignedmessage]<br /><br />
-[κείμενο_υποσέλιδου]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
@@ -2641,11 +2647,13 @@ $lang['all__emailresource'] = '<br />
 <a href="[url]">[embed_thumbnail]</a><br /><br />
 [lang_clicktoviewresource]<br /><a href="[url]">[resourcename] - [url]</a><br /><br />
 [text_footer]';
-$lang['all__emailresourcerequest'] = '[lang_username] : [username] <br />
-[λίστα] <br />
-[λεπτομέρειες]<br /><br />
+$lang['all__emailresourcerequest'] = '<br />
+[lang_username] : [username] <br />
+[list] <br />
+[details]<br /><br />
 [lang_clicktoviewresource] <br /><br />
-<a href="[url]">[url]</a>';
+<a href="[url]">[url]</a>
+';
 $lang['collection_edit__introtext'] = 'Οργανώστε και διαχειριστείτε τη δουλειά σας ομαδοποιώντας πόρους μαζί. Δημιουργήστε συλλογές που ταιριάζουν στον τρόπο εργασίας σας.
 
 <br />
@@ -2913,7 +2921,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Λογότυπο συγκεκριμένη
 $lang['fieldtitle-group_logo_dark_replace'] = 'Αντικαταστήστε το λογότυπο συγκεκριμένης ομάδας - Σκοτεινό';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Λογότυπο εφαρμογής - Σκοτεινό';
 $lang['user_pref_appearance'] = 'Εμφάνιση';
-$lang['user_pref_appearance_light'] = 'Φως';
+$lang['user_pref_appearance_light'] = 'Φωτεινό';
 $lang['user_pref_appearance_dark'] = 'Σκοτεινός';
 $lang['user_pref_appearance_device'] = 'Προεπιλογή συσκευής';
 $lang['collection_download_include_alternatives'] = 'Συμπεριλάβετε εναλλακτικά αρχεία;';

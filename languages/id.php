@@ -598,7 +598,7 @@ $lang['information-permissions'] = 'CATATAN: Izin global dari konfigurasi mungki
 $lang['information-if_you_enable_indexing_below_and_the_field_already_contains_data-you_will_need_to_reindex_this_field'] = 'Jika Anda mengaktifkan pengindeksan di bawah dan bidang tersebut sudah berisi data, Anda perlu <a target=_blank href=../tools/reindex_field.php?field=%ref>menyusun ulang indeks bidang ini</a>.';
 $lang['information_index_warning'] = 'Silakan merujuk ke <a href=\'https://www.resourcespace.com/knowledge-base/resourceadmin/indexing-metadata\' target=\'_blank\'>Basis Pengetahuan</a> untuk informasi terperinci tentang indeks bidang.';
 $lang['property-push_metadata'] = 'Mendorong metadata';
-$lang['strip'] = 'Menghapus';
+$lang['strip'] = 'Strip';
 $lang['pluginmanager'] = 'Plugin (soket program)';
 $lang['purgeanddelete'] = 'Menghapus secara permanen';
 $lang['log-o'] = 'Diubah oleh yang berkontribusi';
@@ -607,9 +607,9 @@ $lang['import_export'] = 'Impor/ Ekspor';
 $lang['list_file_extension'] = 'Perpanjangan';
 $lang['marker'] = 'Pena spidol';
 $lang['map_osmfrance'] = 'OSM Prancis';
-$lang['map_osmbzh'] = 'OSM Luxembourg dapat diterjemahkan sebagai OSM Luksemburg';
+$lang['map_osmbzh'] = 'OSM Luksemburg';
 $lang['enterantispamcode'] = 'Silakan masukkan kode berikut';
-$lang['back'] = 'Belakang';
+$lang['back'] = 'Kembali';
 $lang['resources-with-requeststatus0-2'] = '(%number tertunda)';
 $lang['report-send-all-users'] = 'Kirim laporan ke semua pengguna aktif?';
 $lang['upload-options'] = 'Opsi Unggah';
@@ -686,7 +686,7 @@ $lang['fieldtitle-story_extract'] = 'Ekstrak Cerita';
 $lang['fieldtitle-credit'] = 'Kredit';
 $lang['fieldtitle-date'] = 'Tanggal';
 $lang['fieldtitle-expiry_date'] = 'Tanggal kedaluwarsa';
-$lang['fieldtitle-caption'] = 'Terjemahan: Keterangan';
+$lang['fieldtitle-caption'] = 'Keterangan';
 $lang['fieldtitle-camera_make_and_model'] = 'Merk / Model Kamera';
 $lang['fieldtitle-original_filename'] = 'Nama file asli';
 $lang['fieldtitle-video_contents_list'] = 'Daftar isi video';
@@ -776,7 +776,7 @@ $lang['information-regexp_filter'] = 'Penyaringan Ekspresi Reguler - misalnya \'
 $lang['information-regexp_fail'] = 'Nilai yang dimasukkan tidak sesuai dengan format yang dibutuhkan.';
 $lang['property-icon'] = 'Ikon';
 $lang['property-smart_theme_name'] = 'Nama koleksi dengan fitur pintar';
-$lang['property-exiftool_field'] = 'Silakan diterjemahkan: Bidang Exiftool';
+$lang['property-exiftool_field'] = 'Bidang Exiftool';
 $lang['property-fits_field'] = 'Bidang FITS';
 $lang['property-read_only_field'] = 'Bidang metadata hanya untuk dibaca (yaitu tidak akan menulis kembali saat diunduh)';
 $lang['information-fits_field'] = 'Bidang FITS (File Information Tool Set) akan menimpa nilai Exiftool jika nilai dapat ditemukan!';
@@ -790,7 +790,7 @@ $lang['property-external_user_access'] = 'Akses pengguna eksternal';
 $lang['property-hide_when_uploading'] = 'Sembunyikan saat mengunggah';
 $lang['property-hide_when_restricted'] = 'Sembunyikan saat dibatasi';
 $lang['property-omit_when_copying'] = 'Mengabaikan saat menyalin';
-$lang['information-copy_field'] = 'Salin bidang';
+$lang['information-copy_field'] = '<a href=field_copy.php?ref=%ref>Salin bidang</a>';
 $lang['property-display_condition'] = 'Menampilkan kondisi';
 $lang['information-display_condition'] = 'Kondisi tampilan: bidang ini hanya akan ditampilkan jika kondisi-kondisi berikut terpenuhi. Bidang kondisional yang diperiksa harus salah satu jenis tetap: daftar dropdown, daftar kotak centang, tombol radio, kata kunci dinamis, atau pohon kategori. Menggunakan format yang sama dengan filter pencarian grup yaitu singkatan=nilai1|nilai2, singkatana=pilihanvalida;singkatanb=pilihanvalidb1|pilihanvalidb2.';
 $lang['property-onchange_macro'] = 'Pada perubahan makro';
@@ -803,7 +803,7 @@ $lang['property-width'] = 'Lebar';
 $lang['property-height'] = 'Tinggi';
 $lang['property-quality'] = 'Kualitas';
 $lang['property-pad_to_size'] = 'Mengubah ukuran ke ukuran yang diinginkan';
-$lang['property-internal'] = 'Internal dapat diterjemahkan sebagai "Internal" dalam Bahasa Indonesia';
+$lang['property-internal'] = 'Internal';
 $lang['property-allow_preview'] = 'Izinkan pratinjau';
 $lang['property-allow_restricted_download'] = 'Izinkan unduhan terbatas';
 $lang['property-total_resources'] = 'Total sumber daya';
@@ -827,7 +827,7 @@ $lang['xlthumbstitle'] = 'Gambar mini ekstra besar';
 $lang['largethumbstitle'] = 'Gambar kecil besar';
 $lang['striptitle'] = 'Tampilan Strip';
 $lang['listtitle'] = 'Tampilan daftar';
-$lang['on'] = 'Pada';
+$lang['on'] = 'Aktif';
 $lang['off'] = 'Matikan';
 $lang['seconds'] = 'detik';
 $lang['pause'] = 'Jeda';
@@ -891,7 +891,7 @@ $lang['nomessage'] = 'Tidak ada pesan';
 $lang['nomessages'] = 'Tidak ada pesan';
 $lang['emailcollectionmessageexternal'] = 'Telah mengirimkan koleksi sumber daya dari [applicationname] melalui surel kepada Anda.';
 $lang['archivesettings'] = 'Pengaturan Arsip';
-$lang['archive-zip'] = 'ZIP dapat diterjemahkan sebagai "kompresi ZIP" atau "arsip ZIP"';
+$lang['archive-zip'] = 'ZIP';
 $lang['archive-7z'] = '7Z (tujuh-zed)';
 $lang['download-of-collections-not-enabled'] = 'Unduhan koleksi tidak diaktifkan.';
 $lang['archiver-utility-not-found'] = 'Tidak dapat menemukan utilitas pengarsip.';
@@ -929,7 +929,7 @@ $lang['range_no_start_header'] = 'Kesalahan Rentang';
 $lang['range_no_start'] = 'Tidak dapat mengakhiri rentang tanpa awal. Harap lepaskan tombol shift.';
 $lang['treeobjecttype-resource_type'] = 'Jenis sumber daya';
 $lang['resources_selected-1'] = '1 sumber daya dipilih';
-$lang['resources_selected-2'] = '%jumlah sumber dipilih';
+$lang['resources_selected-2'] = '%number sumber dipilih';
 $lang['action-upload'] = 'Unggah';
 $lang['action-upload-to-collection'] = 'Unggah ke koleksi ini';
 $lang['replacefile'] = 'Mengganti berkas';
@@ -998,7 +998,7 @@ $lang['log_code_d'] = 'Berkas yang telah diunduh';
 $lang['log_code_e'] = 'Diedit';
 $lang['log_code_E'] = 'Dikirim melalui email';
 $lang['log_code_l'] = 'Masuk berhasil';
-$lang['log_code_m'] = 'Diedit oleh beberapa orang';
+$lang['log_code_m'] = 'Diedit secara massal';
 $lang['log_code_O'] = 'Pilihan pengguna untuk bergabung';
 $lang['log_code_p'] = 'Dibayar';
 $lang['log_code_r'] = 'Dikembalikan atau diunggah ulang';
@@ -1113,7 +1113,7 @@ $lang['stat-addedsmartcollection'] = 'Ditambahkan koleksi pintar';
 $lang['stat-removedresourcefromcollection'] = 'Menghapus sumber daya dari koleksi';
 $lang['stat-keywordusage-noresultsfound'] = 'Penggunaan kata kunci - tidak ditemukan hasil';
 $lang['share_selected'] = 'Bagikan yang dipilih';
-$lang['sharecollection-name'] = 'Bagikan koleksi - %nama_koleksi';
+$lang['sharecollection-name'] = 'Bagikan koleksi - %collectionname';
 $lang['share_theme_category'] = 'Bagikan kategori koleksi unggulan';
 $lang['share_theme_category_subcategories'] = 'Apakah termasuk koleksi unggulan dalam subkategori untuk pengguna eksternal?';
 $lang['email_theme_category'] = 'Kategori koleksi unggulan melalui e-mail';
@@ -1122,7 +1122,7 @@ $lang['generateexternalurl'] = 'Membuat URL eksternal';
 $lang['generateexternalurls'] = 'Membuat tautan URL eksternal';
 $lang['generatethemeurlsexternal'] = 'URL di bawah ini akan berfungsi untuk semua orang dan tidak memerlukan login.';
 $lang['showexistingthemeshares'] = 'Tampilkan berbagi yang sudah ada untuk koleksi unggulan dalam kategori ini';
-$lang['externalusersharing-name'] = 'Berbagi pengguna eksternal - %nama_koleksi%';
+$lang['externalusersharing-name'] = 'Berbagi pengguna eksternal - %collectionname%';
 $lang['confirmdeleteaccessresource'] = 'Apakah Anda yakin ingin menghapus kunci akses ini? Pengguna yang telah diberikan akses menggunakan kunci ini tidak akan lagi dapat mengakses sumber daya ini.';
 $lang['confirmdeleteaccessmulticol'] = 'Apakah Anda yakin ingin menghapus kunci akses ini? Pengguna yang telah diberikan akses menggunakan kunci ini tidak akan lagi dapat mengakses koleksi yang relevan.';
 $lang['confirmdeleteaccessmultires'] = 'Apakah Anda yakin ingin menghapus kunci akses ini? Pengguna yang telah diberikan akses menggunakan kunci ini tidak akan lagi dapat mengakses sumber daya yang relevan.';
@@ -1219,7 +1219,7 @@ $lang['setup-login_to'] = 'Masuk ke dalam sistem';
 $lang['setup-configuration_file_output'] = 'Keluaran berkas konfigurasi';
 $lang['more-information'] = 'Informasi lebih lanjut';
 $lang['setup-structuralplugins'] = 'Template sistem';
-$lang['collectionlogheader'] = 'Catatan koleksi - %koleksi';
+$lang['collectionlogheader'] = 'Catatan koleksi - %collection';
 $lang['collectionlog-d'] = 'Sumber daya yang dihapus';
 $lang['collectionlog-S'] = 'Koleksi yang Dibagikan dengan';
 $lang['collectionlog-E'] = 'Kirim koleksi melalui email ke';
@@ -1240,7 +1240,7 @@ $lang['idecline'] = 'Saya menolak';
 $lang['mycollection_notpublic'] = 'Anda tidak dapat mengubah \'Koleksi Default\' Anda menjadi koleksi unggulan atau publik. Silakan buat koleksi baru untuk tujuan ini.';
 $lang['expires'] = 'Kadaluarsa';
 $lang['columnheader-expires'] = 'Kadaluarsa';
-$lang['expires-date'] = 'Kadaluarsa: %tanggal%';
+$lang['expires-date'] = 'Kadaluarsa: %date%';
 $lang['never'] = 'Tidak pernah';
 $lang['approved'] = 'Disetujui';
 $lang['notapproved'] = 'Tidak disetujui';
@@ -1248,7 +1248,7 @@ $lang['disabled'] = 'Tidak Aktif';
 $lang['userrequestnotification3'] = 'Jika permintaan ini valid, klik tautan untuk meninjau detail dan menyetujui akun pengguna.';
 $lang['ticktoapproveuser'] = 'Anda harus mengatur status menjadi disetujui jika ingin mengaktifkan akun ini';
 $lang['managerequestsorders'] = 'Permintaan';
-$lang['requestorderid'] = 'Mohon diterjemahkan: ID Permintaan / Pesanan';
+$lang['requestorderid'] = 'ID Permintaan / Pesanan';
 $lang['viewrequesturl'] = 'Untuk melihat permintaan ini, klik tautan di bawah ini:';
 $lang['requestreason'] = 'Alasan permintaan';
 $lang['resourcerequeststatus0'] = 'Menunggu';
@@ -1327,7 +1327,7 @@ $lang['mapadd-introtext'] = 'Perbesar dan perkecil tampilan peta untuk sumber da
 $lang['location-noneselected'] = 'Tidak ada data lokasi';
 $lang['location'] = 'Lokasi';
 $lang['mapzoom'] = 'Perbesar peta';
-$lang['openstreetmap'] = 'OpenStreetMap dapat diterjemahkan menjadi Peta Jalan Terbuka';
+$lang['openstreetmap'] = 'OpenStreetMap';
 $lang['google_terrain'] = 'Peta Google Terrain';
 $lang['google_default_map'] = 'Peta default Google';
 $lang['google_satellite'] = 'Satelit Google';
@@ -1349,7 +1349,7 @@ $lang['map_download'] = 'Unduh peta sebagai file PNG, pilih ukuran di sebelah ka
 $lang['map_osm_group'] = 'Peta Jalan Terbuka (OpenStreetMap atau OSM)';
 $lang['map_osm'] = 'Bawaan (Default)';
 $lang['map_osmde'] = 'Gaya Jerman';
-$lang['map_osmch'] = 'OSM Switzerland dapat diterjemahkan menjadi OSM Swiss';
+$lang['map_osmch'] = 'OSM Swiss';
 $lang['map_osmhot'] = 'Kemanusiaan';
 $lang['map_osmmtb'] = 'Peta Sepeda Gunung Eropa';
 $lang['map_osmhikebike'] = 'Peta Hiking & Bersepeda';
@@ -1358,7 +1358,7 @@ $lang['map_tf_group'] = 'Hutan Petir';
 $lang['map_tfapi'] = 'Kode API';
 $lang['map_tfocm'] = 'Peta Siklus Terbuka (OCM)';
 $lang['map_tftransport'] = 'Mengangkut';
-$lang['map_tflandscape'] = 'Landscape dapat diterjemahkan sebagai "Lanskap" atau "Pemandangan"';
+$lang['map_tflandscape'] = 'Lanskap';
 $lang['map_tfoutdoors'] = 'Luar ruangan';
 $lang['map_tfpioneer'] = 'Pelopor';
 $lang['map_tfneighbourhood'] = 'Lingkungan';
@@ -1484,12 +1484,10 @@ $lang['columnheader-title'] = 'Judul';
 $lang['columnheader-downloads'] = 'Unduhan';
 $lang['columnheader-group_name'] = 'Nama grup';
 $lang['columnheader-resource_downloads'] = 'Unduhan sumber daya';
-$lang['columnheader-views'] = 'Silakan diterjemahkan: Tampilan';
+$lang['columnheader-views'] = 'Tampilan';
 $lang['columnheader-added'] = 'Ditambahkan';
 $lang['columnheader-creation_date'] = 'Tanggal pembuatan';
-$lang['columnheader-sent'] = 'Mohon diterjemahkan: Sent
-
-Terjemahan: Terkirim.';
+$lang['columnheader-sent'] = 'Terkirim';
 $lang['columnheader-last_seen'] = 'Terakhir dilihat';
 $lang['period'] = 'Periode';
 $lang['lastndays'] = 'Terakhir ? hari';
@@ -1536,7 +1534,7 @@ $lang['stars'] = 'Bintang-bintang';
 $lang['permissions'] = 'Izin';
 $lang['file_too_large'] = 'Berkas terlalu besar';
 $lang['field_updated'] = 'Bidang diperbarui';
-$lang['zoom'] = 'Zoom (tidak perlu diterjemahkan ke dalam Bahasa Indonesia karena ini adalah merek dagang dan nama layanan yang sudah dikenal secara internasional)';
+$lang['zoom'] = 'Perbesar';
 $lang['deletion_instruction'] = 'Biarkan kosong dan simpan untuk menghapus berkas';
 $lang['upload_file'] = 'Unggah berkas';
 $lang['item_deleted'] = 'Item dihapus';
@@ -1603,9 +1601,7 @@ $lang['nodownloadcollection'] = 'Anda tidak memiliki akses untuk mengunduh sumbe
 $lang['progress'] = 'Kemajuan';
 $lang['ticktodeletethisresearchrequest'] = 'Centang untuk menghapus permintaan ini';
 $lang['done'] = 'Selesai.';
-$lang['latlong'] = 'Silakan diterjemahkan: Lat / long
-
-Garis Lintang / Garis Bujur';
+$lang['latlong'] = 'Garis Lintang / Garis Bujur';
 $lang['geographicsearch'] = 'Pencarian Geografis';
 $lang['geographicsearchresults'] = 'Hasil pencarian geografis';
 $lang['geographicsearchmissing'] = 'Kriteria pencarian geografis tidak ada';
@@ -1634,7 +1630,7 @@ $lang['deletedresource'] = 'Sumber daya yang dihapus';
 $lang['deletedresources'] = 'Sumber daya yang dihapus';
 $lang['nopreviewresources'] = 'Sumber daya tanpa pratinjau';
 $lang['action-delete_permanently'] = 'Hapus secara permanen';
-$lang['horizontal'] = 'Horizontal dapat diterjemahkan sebagai "Horizontal" dalam Bahasa Indonesia';
+$lang['horizontal'] = 'Horizontal';
 $lang['vertical'] = 'Vertikal';
 $lang['cc-emailaddress'] = 'Silakan salin %emailaddress';
 $lang['list-recipients-label'] = 'Daftar semua penerima dalam surel?';
@@ -1823,7 +1819,7 @@ $lang['expire_day'] = 'hari';
 $lang['collection_order_description'] = 'Urutan Koleksi';
 $lang['view_shared_collections'] = 'Melihat koleksi yang dibagikan';
 $lang['shared_collections'] = 'Koleksi yang Dibagikan';
-$lang['internal'] = 'Internal dapat diterjemahkan sebagai "Internal" dalam Bahasa Indonesia';
+$lang['internal'] = 'Internal';
 $lang['managecollectionslink'] = 'Mengelola koleksi';
 $lang['showcollectionindropdown'] = 'Tampilkan di bilah koleksi';
 $lang['embedded_metadata'] = 'Metadata yang disematkan';
@@ -1921,7 +1917,7 @@ $lang['fieldhelp-no_config_override_help'] = 'Tidak ada bantuan untuk item konfi
 $lang['fieldhelp-tick_to_delete_group'] = 'Anda tidak diizinkan untuk menghapus grup pengguna yang memiliki pengguna aktif atau menjadi induk dari grup lain';
 $lang['fieldtitle-add_to_config_override'] = 'Tambahkan ke pengesahan konfigurasi';
 $lang['fieldtitle-advanced_options'] = 'Opsi Lanjutan';
-$lang['fieldtitle-derestrict_filter'] = 'Mohon diterjemahkan: Filter Batasi';
+$lang['fieldtitle-derestrict_filter'] = 'Filter penghapusan pembatasan';
 $lang['fieldtitle-group_logo'] = 'Logo khusus grup';
 $lang['fieldtitle-group_logo_replace'] = 'Mengganti logo khusus grup';
 $lang['fieldtitle-tick_to_delete_group'] = 'Centang untuk menghapus grup ini';
@@ -2024,7 +2020,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Izinka
 $lang['share_using_permissions_from_user_group'] = 'Berbagi menggunakan izin dari grup pengguna';
 $lang['externalshare_using_permissions_from_user_group'] = 'Jika Anda mengirim email kepada pengguna eksternal, silakan pilih grup pengguna yang akan digunakan untuk akses';
 $lang['collection_download_too_large'] = 'Maaf, koleksi ini terlalu besar untuk diunduh sebagai satu file. Coba kurangi ukuran koleksi atau pilih ukuran gambar yang lebih kecil.';
-$lang['all__passwordnewemailhtml'] = 'Silakan klik tautan di bawah ini untuk menetapkan kata sandi baru untuk akun Anda.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nama pengguna: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Silakan klik tautan di bawah ini untuk menetapkan kata sandi baru untuk akun Anda.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nama pengguna: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Mengunggah sementara tidak tersedia';
 $lang['disk_size_no_upload_explain'] = 'Karena keterbatasan ruang, pengunggahan sementara dinonaktifkan. Kami mohon maaf atas ketidaknyamanannya.';
 $lang['savethissearchtodash'] = 'Simpan ke ubin dasbor';
@@ -2035,7 +2031,7 @@ $lang['existingdashtilefound-2'] = 'Judul yang ditentukan sudah ada. Silakan kun
 $lang['createdashtilefreetext'] = 'Buat ubin tanda hubung hanya dengan teks';
 $lang['enterdefaultorderby'] = 'Masukkan nomor posisi default';
 $lang['dashtiletitle'] = 'Judul';
-$lang['dashtiletext'] = 'Silahkan diterjemahkan: Teks';
+$lang['dashtiletext'] = 'Teks';
 $lang['dashtilelink'] = 'Tautan target ubin';
 $lang['nodashtilefound'] = 'Tidak ditemukan ubin dash yang cocok';
 $lang['existingdashtilefound'] = 'Judul yang ditentukan sudah ada di Dash Anda.';
@@ -2085,7 +2081,7 @@ $lang['createdashtilemycollections'] = 'Koleksi Saya (khusus pengguna)';
 $lang['createdashtileadvancedsearch'] = 'Tautan pencarian lanjutan';
 $lang['createdashtilemycontributions'] = 'Kontribusi saya (khusus pengguna)';
 $lang['createdashtilehelpandadvice'] = 'Tautan bantuan dan saran';
-$lang['createdashtileuserupload'] = 'Mohon diterjemahkan: Unggah judul (khusus pengguna)';
+$lang['createdashtileuserupload'] = 'Ubin unggahan (khusus pengguna)';
 $lang['tile_thmbs'] = 'Tunggal';
 $lang['tile_blank'] = 'Kosong';
 $lang['tile_analytics'] = 'Analitika';
@@ -2136,7 +2132,7 @@ $lang['systemconfig_customfont_label'] = 'File font kustom';
 $lang['systemconfig_invalid_extension'] = 'Jenis file tidak valid untuk pilihan ini. Silakan pilih dari: [extensions]';
 $lang['systemconfig_linkedheaderimgsrc_label'] = 'Logo aplikasi';
 $lang['systemconfig_header_favicon_label'] = 'Favicon aplikasi';
-$lang['systemconfig_multilingual'] = 'Multilingual dapat diterjemahkan sebagai "multibahasa" atau "banyak bahasa"';
+$lang['systemconfig_multilingual'] = 'Multibahasa';
 $lang['systemconfig_default_language_label'] = 'Bahasa Indonesia: Bahasa default';
 $lang['systemconfig_browser_language_label'] = 'Deteksi bahasa browser';
 $lang['systemconfig_display_resource_id_in_thumbnail_label'] = 'Menampilkan ID sumber daya pada gambar miniatur';
@@ -2406,9 +2402,7 @@ $lang['filter_criteria_all'] = 'Semua aturan harus dipenuhi';
 $lang['filter_criteria_none'] = 'TIDAK ADA aturan yang harus dipenuhi';
 $lang['filter_criteria_any'] = 'Harus memenuhi SALAH SATU dari aturan tersebut';
 $lang['filter_is_not_in'] = 'BUKAN';
-$lang['filter_or'] = 'Silakan diterjemahkan: OR
-
-ATAU';
+$lang['filter_or'] = 'ATAU';
 $lang['filter_and'] = 'dan';
 $lang['error-sessionexpired'] = 'Sesi Anda telah kedaluwarsa atau tidak valid';
 $lang['userresources_status_change'] = 'Sumber daya yang telah Anda kontribusikan telah dipindahkan ke status:';
@@ -2567,7 +2561,7 @@ $lang['sortorder-desc'] = 'Deskripsi';
 $lang['title'] = 'Judul';
 $lang['fileoftype'] = 'File?';
 $lang['log-rtchange'] = 'Jenis sumber daya yang diedit';
-$lang['log-missinglang'] = 'Jenis (bahasa hilang)';
+$lang['log-missinglang'] = '[type] (bahasa hilang)';
 $lang['log-NOFIL'] = 'Ditandai sebagai tidak memiliki file';
 $lang['log-FIL'] = 'Ditandai sebagai memiliki file';
 $lang['log-EDT'] = 'Sumber daya yang diedit';
@@ -2589,7 +2583,7 @@ $lang['unrelateallresources_confirmation'] = 'Tidak ada sumber daya dalam koleks
 $lang['setup-download_filename_format'] = 'Format nama file unduhan';
 $lang['editrequestorder'] = 'Edit permintaan';
 $lang['ppi'] = 'PPI';
-$lang['addremove'] = 'Tidak dapat diterjemahkan.';
+$lang['addremove'] = 'Pilih';
 $lang['map_stamentoner'] = 'Tinta toner';
 $lang['map_esri_group'] = 'ESRI';
 $lang['map_esridelorme'] = 'DeLorme';
@@ -2616,11 +2610,13 @@ $lang['all__emailcollection'] = '[fromusername] [lang_emailcollectionmessage] <b
 [lang_message] : [message]<br /><br /> 
 [lang_clicklinkviewcollection] [list]';
 $lang['all__emailcontactadmin'] = '[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
-$lang['all__emaillogindetails'] = 'Selamat datang <br /><br />
-Detail login baru <br /><br />
-Nama pengguna : [username] <br /><br />
+$lang['all__emaillogindetails'] = '<br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [useremail])
 [lang_haspostedresearchrequest]<br /><br />
 [lang_nameofproject]: [name]<br /><br />
@@ -2640,32 +2636,24 @@ $lang['all__emailnotifyresourcesapproved'] = '[lang_userresourcesapproved]
 <a href="[url]">[url]</a>
 
 [text_footer]';
-$lang['all__emailnotifyresourcessubmitted'] = '[lang_userresourcessubmitted]
-[list] <br />
-[lang_viewalluserpending] <br /><br /> 
-<a href="[url]">[url]</a><br /><br />
-[text_footer] 
-
+$lang['all__emailnotifyresourcessubmitted'] = '<br />
 [lang_userresourcessubmitted]
 [list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
-$lang['all__emailnotifyresourcesunsubmitted'] = '[lang_userresourcesunsubmitted]
-[list] <br />
-[lang_viewalluserpending] <br /><br /> 
-<a href="[url]">[url]</a><br /><br />
-[text_footer] 
-
+[text_footer]
+';
+$lang['all__emailnotifyresourcesunsubmitted'] = '<br />
 [lang_userresourcesunsubmitted]
 [list] <br />
 [lang_viewalluserpending] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
-$lang['all__emailresearchrequestassigned'] = '[lang_researchrequestassignedmessage]
-Permintaan penelitian telah ditugaskan kepada Anda.
-
-[text_footer]';
+[text_footer]
+';
+$lang['all__emailresearchrequestassigned'] = '<br />
+[lang_researchrequestassignedmessage]<br /><br />
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage]
 Permintaan penelitian telah selesai. Silakan klik tautan di bawah ini untuk melihat koleksi.
 

@@ -14,7 +14,7 @@ $lang['aboutus'] = 'O nama';
 $lang['interface'] = 'Interface';
 $lang['simplesearch'] = 'Jednostavna Pretraga';
 $lang['searchbutton'] = 'Pretraživanje';
-$lang['clearbutton'] = 'Jasno';
+$lang['clearbutton'] = 'Očisti';
 $lang['bycountry'] = 'Po zemlji';
 $lang['bydate'] = 'Po datumu';
 $lang['anyyear'] = 'Bilo koju godinu';
@@ -132,7 +132,7 @@ $lang['uploadafile'] = 'Učitaj datoteku';
 $lang['imagecorrection'] = 'Image Ispravka';
 $lang['previewthumbonly'] = '(preview / sličicama only)';
 $lang['rotateclockwise'] = 'Zakretanje u smjeru kazaljke na satu';
-$lang['rotateanticlockwise'] = 'Zakreni anti-u smjeru kazaljke na satu';
+$lang['rotateanticlockwise'] = 'Zakreni suprotno od smjera kazaljke na satu';
 $lang['increasegamma'] = 'Povećajte gama (svjetliju)';
 $lang['decreasegamma'] = 'Smanjenje gama (tamnija)';
 $lang['restoreoriginal'] = 'Vrati izvorne';
@@ -312,7 +312,7 @@ $lang['user'] = 'Korisnik';
 $lang['owner'] = 'Vlasnik';
 $lang['message'] = 'Poruka';
 $lang['name'] = 'Ime';
-$lang['action'] = 'Akcioni';
+$lang['action'] = 'Radnja';
 $lang['field'] = 'Polje';
 $lang['save'] = 'Spremiti';
 $lang['cancel'] = 'Odustani';
@@ -784,7 +784,7 @@ $lang['xlthumbstitle'] = 'Dodatno veliki pregledi';
 $lang['largethumbstitle'] = 'Velike sličice';
 $lang['striptitle'] = 'Prikaz trake';
 $lang['listtitle'] = 'Prikaz u obliku liste';
-$lang['on'] = 'Na';
+$lang['on'] = 'Uključeno';
 $lang['seconds'] = 'sekunde';
 $lang['reload'] = 'Ponovno učitaj';
 $lang['pause'] = 'Pauza';
@@ -825,7 +825,7 @@ $lang['system_tabs'] = 'Kartice';
 $lang['manage_tabs_instructions'] = 'Koristite ovaj odjeljak za upravljanje karticama. One se mogu odabrati za polja metapodataka i vrste resursa.';
 $lang['tabs_create_new'] = 'Stvorite karticu nazvanu...';
 $lang['tabs_migration_log_note'] = 'Prijelaz na karticu sustava: %s';
-$lang['view_my_contributions_ws'] = 'Pregledaj moje doprinose - %naziv_stanja_tijeka_rada';
+$lang['view_my_contributions_ws'] = 'Pregledaj moje doprinose - %workflow_state_name';
 $lang['contributedps'] = 'Moji doprinosi - čekaju na predaju';
 $lang['contributedpr'] = 'Moji doprinosi - čekaju pregled';
 $lang['contributedsubittedl'] = 'Moji doprinosi - aktivni';
@@ -900,7 +900,7 @@ $lang['createpreviews'] = 'Kreiraj pregled';
 $lang['recreatepreviews'] = 'Ponovno stvori pregled';
 $lang['recreatepreviews_pending'] = 'Resurs(i) su označeni za ponovno stvaranje pregleda.';
 $lang['retrypreviews'] = 'Ponovno pokušaj stvaranje pregleda';
-$lang['relatedresources-filename_extension'] = 'Povezani resursi - %EXTENZIJA';
+$lang['relatedresources-filename_extension'] = 'Povezani resursi - %EXTENSION';
 $lang['relatedresources-id'] = 'Povezani resursi za %id%';
 $lang['relatedresources-restype'] = 'Povezani resursi - [restype]';
 $lang['relatedresources_onupload'] = 'Poveži sve resurse prilikom prijenosa';
@@ -1034,8 +1034,8 @@ $lang['status-notinstalled'] = 'Nije instalirano';
 $lang['status-never'] = 'Nikada';
 $lang['softwareversion'] = 'Verzija?';
 $lang['softwarenotfound'] = '\'?\' nije pronađeno';
-$lang['client-encoding'] = '(klijent-kodiranje: %kodiranje)';
-$lang['db-default-encoding'] = '(baza podataka-kodiranje:% encoding)';
+$lang['client-encoding'] = '(klijent-kodiranje: %encoding)';
+$lang['db-default-encoding'] = '(baza podataka-kodiranje:%encoding)';
 $lang['browseruseragent'] = 'Korisnički agent preglednika';
 $lang['serverplatform'] = 'Platforma poslužitelja';
 $lang['are_available-0'] = 'dostupni su';
@@ -1666,7 +1666,7 @@ $lang['can_assign_resource_requests'] = 'Može dodijeliti zahtjeve za resursima 
 $lang['can_be_assigned_resource_requests'] = 'Može im se dodijeliti zahtjeve za resursima (također; mogu vidjeti samo zahtjeve za resursima dodijeljene njima u području Upravljanje zahtjevima za resursima).';
 $lang['declinereason'] = 'Razlog odbijanja';
 $lang['approvalreason'] = 'Razlog odobrenja';
-$lang['requestnotassignedtoyou'] = 'Žao nam je, ovaj zahtjev više nije dodijeljen vama. Sada je dodijeljen korisniku %s.';
+$lang['requestnotassignedtoyou'] = 'Žao nam je, ovaj zahtjev više nije dodijeljen vama. Sada je dodijeljen korisniku %.';
 $lang['requestassignedtoyou'] = 'Zahtjev za resurs dodijeljen vama';
 $lang['requestassignedtoyoumail'] = 'Zahtjev za resurs dodijeljen Vam je na odobrenje. Molimo koristite donju poveznicu za odobrenje ili odbijanje zahtjeva za resursom.';
 $lang['manageresources-overquota'] = 'Upravljanje resursima onemogućeno - prekoračili ste kvotu upotrebe diska';
@@ -1993,7 +1993,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Dozvol
 $lang['share_using_permissions_from_user_group'] = 'Podijeli korištenjem dozvola iz grupe korisnika';
 $lang['externalshare_using_permissions_from_user_group'] = 'Ako šaljete e-poštu vanjskim korisnicima, odaberite korisničku grupu za pristup';
 $lang['collection_download_too_large'] = 'Žao nam je, ova kolekcija je prevelika za preuzimanje kao jedna datoteka. Pokušajte smanjiti veličinu kolekcije ili odabrati manju veličinu slike.';
-$lang['all__passwordnewemailhtml'] = 'Molimo kliknite na donju poveznicu kako biste postavili novu lozinku za svoj račun.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />korisničko ime: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Molimo kliknite na donju poveznicu kako biste postavili novu lozinku za svoj račun.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />korisničko ime: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'Prijenos privremeno nedostupan';
 $lang['disk_size_no_upload_explain'] = 'Zbog ograničenja prostora, privremeno je onemogućeno učitavanje. Ispričavamo se zbog eventualnih neugodnosti.';
 $lang['savethissearchtodash'] = 'Spremi na pločicu sažetka';
@@ -2384,9 +2384,7 @@ $lang['filter_criteria_none'] = 'Nijedno od pravila se ne smije ispuniti';
 $lang['filter_criteria_any'] = 'MORA se zadovoljiti BILO KOJE pravilo';
 $lang['filter_is_not_in'] = 'NIJE';
 $lang['filter_or'] = 'ILI';
-$lang['filter_and'] = 'I: I
-
-AND: I';
+$lang['filter_and'] = 'I';
 $lang['error-sessionexpired'] = 'Vaša sesija je istekla ili je na drugi način nevažeća';
 $lang['userresources_status_change'] = 'Resursi koje ste doprinijeli su premješteni u stanje:';
 $lang['collection_description'] = 'Opis';
@@ -2527,7 +2525,7 @@ $lang['information-display_condition'] = 'Uvjet prikaza: ovo polje će se prikaz
 $lang['information_field_restype_deselect_cleanup'] = 'Da biste uklonili postojeće podatke polja iz neodabranih vrsta resursa, kliknite na sljedeću poveznicu [cleanup_link]';
 $lang['property-id'] = 'Id';
 $lang['mainmenu'] = 'Glavni izbornik';
-$lang['strip'] = 'Ukloni';
+$lang['strip'] = 'Traka';
 $lang['perpage_option'] = '? po stranici';
 $lang['off'] = 'Isključeno';
 $lang['collectionidprefix'] = 'ID_kolekcije';
@@ -2610,9 +2608,10 @@ $lang['collectiontypes_separator'] = ',';
 $lang['user_group'] = 'korisnička grupa';
 $lang['fieldtitle-tick_to_delete_size'] = 'Označite za brisanje ove veličine';
 $lang['all__emailcollectionexternal'] = '<br />
-[fromusername] vam je poslao poruku o zbirci <br /><br /> 
-Poruka: [message]<br /><br /> 
-Kliknite na poveznicu za pregled zbirke: [list]';
+[fromusername] [lang_emailcollectionmessageexternal] <br /><br /> 
+[lang_message] : [message]<br /><br /> 
+[lang_clicklinkviewcollection] [list]
+';
 $lang['all__emailcontactadmin'] = '<br />[fromusername] ([emailfrom])[lang_contactadminemailtext]<br /><br />[message]<br /><br /><a href="[url]">[embed_thumbnail]</a><br /><br />[text_footer]';
 $lang['all__emailnotifyresourcessubmitted'] = '<br />
 [lang_userresourcessubmitted]
@@ -2701,9 +2700,10 @@ $lang['upload_share_email_template'] = '<br />
 $lang['all__emailnotifyuploadsharenew'] = '<br />
 [lang_notify_upload_share_new]
 <br />
-Kliknite na poveznicu za pregled kolekcije <br /><br /> 
+[lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['share_expired_icon_title'] = 'Isteklo';
 $lang['error_invalid_date_format'] = '"[value]" nije valjan datum. Sve vrijednosti u ovom polju moraju biti u formatu YYYY-MM-DD';
 $lang['related_resource_create'] = 'Kreiraj novi povezani resurs';
@@ -2774,11 +2774,12 @@ $lang['all__emailnotifyresourcesapproved'] = '<br />
 <a href="[url]">[url]</a><br /><br />
 [text_footer]';
 $lang['all__emaillogindetails'] = '<br />
-[dobrodošli]<br /><br /> 
-[lang_noviprijavničkidetalji]<br /><br /> 
-[korisničko ime] : [username] <br /><br />
+[welcome]<br /> 
+[lang_newlogindetails]<br /><br /> 
+[lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['system_notification_email'] = '[img_headerlogo]<br />
 [message]<br /><br /> 
 <a href="[url]">[url]</a><br /><br />

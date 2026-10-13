@@ -128,7 +128,7 @@ $lang['uploadafile'] = 'Upload de arquivo';
 $lang['imagecorrection'] = 'Correção de Imagem';
 $lang['previewthumbonly'] = '(preview / somente thumbnail)';
 $lang['rotateclockwise'] = 'Rotacionar sentido horário';
-$lang['rotateanticlockwise'] = 'Rotacionar sentido horário';
+$lang['rotateanticlockwise'] = 'Rodar no sentido contrário ao dos ponteiros do relógio';
 $lang['increasegamma'] = 'Aumentar brilho';
 $lang['decreasegamma'] = 'Diminuir brilho';
 $lang['restoreoriginal'] = 'Voltar ao original';
@@ -305,7 +305,7 @@ $lang['user'] = 'Usários';
 $lang['owner'] = 'Proprietário';
 $lang['message'] = 'Mensagem';
 $lang['name'] = 'Nome';
-$lang['action'] = 'Action';
+$lang['action'] = 'Ação';
 $lang['field'] = 'Campo';
 $lang['save'] = 'Salvar';
 $lang['cancel'] = 'Cancelar';
@@ -577,7 +577,7 @@ $lang['largethumbstitle'] = 'Miniaturas grandes';
 $lang['striptitle'] = 'Visualização de Tira';
 $lang['listtitle'] = 'Visualização em lista';
 $lang['perpage_option'] = '? por página';
-$lang['off'] = 'Fora';
+$lang['off'] = 'Desligado';
 $lang['seconds'] = 'segundos';
 $lang['reload'] = 'Recarregar';
 $lang['pause'] = 'Pausa';
@@ -797,7 +797,7 @@ $lang['selectloading'] = 'Selecionar...';
 $lang['treeobjecttype-group'] = 'Grupo';
 $lang['groupsmart'] = 'Grupo (Inteligente)';
 $lang['confirmaddgroupsmart'] = 'Você tem certeza de que deseja incluir dinamicamente membros neste grupo?';
-$lang['back_to'] = 'Voltar para %área';
+$lang['back_to'] = 'Voltar para %area';
 $lang['itemstitle'] = 'Itens';
 $lang['treeobjecttype-field'] = 'Campo';
 $lang['save-return'] = 'Salvar e Retornar';
@@ -1456,9 +1456,7 @@ $lang['columnheader-downloaded_by_user'] = 'Baixado por usuário';
 $lang['columnheader-user_group'] = 'Grupo de usuários';
 $lang['columnheader-resource_title'] = 'Título do recurso';
 $lang['columnheader-title'] = 'Título';
-$lang['columnheader-downloads'] = 'Downloads
-
-(Tradução: Downloads)';
+$lang['columnheader-downloads'] = 'Downloads';
 $lang['columnheader-group_name'] = 'Nome do grupo';
 $lang['columnheader-resource_downloads'] = 'Downloads de recursos';
 $lang['columnheader-views'] = 'Visualizações';
@@ -1706,7 +1704,7 @@ $lang['resources-with-requeststatus0-0'] = '(0 pendentes)';
 $lang['resources-with-requeststatus0-1'] = '(1 pendente)';
 $lang['researches-with-requeststatus0-0'] = '(0 não atribuído)';
 $lang['researches-with-requeststatus0-1'] = '(1 não atribuído)';
-$lang['researches-with-requeststatus0-2'] = '(%número não atribuído)';
+$lang['researches-with-requeststatus0-2'] = '(%number não atribuído)';
 $lang['upload_files'] = 'Carregar arquivos';
 $lang['upload_files-to_collection'] = 'Carregar arquivos (para a coleção \'%collection\')';
 $lang['ascending'] = 'Crescente';
@@ -2009,7 +2007,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'Permit
 $lang['share_using_permissions_from_user_group'] = 'Compartilhar usando permissões de grupo de usuários';
 $lang['externalshare_using_permissions_from_user_group'] = 'Se você estiver enviando e-mails para usuários externos, por favor selecione o grupo de usuários a ser utilizado para acesso';
 $lang['collection_download_too_large'] = 'Desculpe, esta coleção é muito grande para ser baixada como um único arquivo. Tente reduzir o tamanho da coleção ou selecionar um tamanho de imagem menor.';
-$lang['all__passwordnewemailhtml'] = 'Por favor, clique no link abaixo para definir uma nova senha para sua conta.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nome de usuário: [username]<br />[text_footer]';
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />Por favor, clique no link abaixo para definir uma nova senha para sua conta.<br /><br />URL: <a href="[url]" target="_blank" >[url]</a><br />nome de usuário: [username]<br />[text_footer]';
 $lang['disk_size_no_upload_heading'] = 'O envio não está disponível temporariamente';
 $lang['disk_size_no_upload_explain'] = 'Devido a restrições de espaço, o envio foi temporariamente desativado. Pedimos desculpas por qualquer inconveniente.';
 $lang['savethissearchtodash'] = 'Salvar no bloco de painel';
@@ -2537,8 +2535,8 @@ $lang['information_field_restype_deselect_cleanup'] = 'Para remover os dados de 
 $lang['property-id'] = 'Id';
 $lang['mainmenu'] = 'Menu principal';
 $lang['xlthumbs'] = 'Extra-grande';
-$lang['strip'] = 'Remover';
-$lang['on'] = 'Em';
+$lang['strip'] = 'Tira';
+$lang['on'] = 'Ligado';
 $lang['collectionidprefix'] = 'Col_ID';
 $lang['_dupe'] = '_duplicado';
 $lang['archive-7z'] = '7Z';
@@ -2605,7 +2603,7 @@ $lang['megapixel-short'] = 'MP';
 $lang['cc-emailaddress'] = 'CC %emailaddress';
 $lang['error-invalid_name'] = 'Nome inválido';
 $lang['inactive_entry_matched'] = 'Entrada inativa correspondente para';
-$lang['resources-with-requeststatus0-2'] = '(%número pendente)';
+$lang['resources-with-requeststatus0-2'] = '(%number pendente)';
 $lang['kilobyte-symbol'] = 'KB';
 $lang['megabyte-symbol'] = 'MB';
 $lang['gigabyte-symbol'] = 'GB';
@@ -2614,7 +2612,7 @@ $lang['kilobyte-symbol-binary'] = 'KiB';
 $lang['megabyte-symbol-binary'] = 'MiB';
 $lang['gigabyte-symbol-binary'] = 'GiB';
 $lang['terabyte-symbol-binary'] = 'TiB';
-$lang['ref-title'] = '%ref - %título';
+$lang['ref-title'] = '%ref - %title';
 $lang['comments_flag-this-comment'] = 'Sinalizar';
 $lang['user_group'] = 'grupo de usuários';
 $lang['all__emailbulk'] = '<br /><br />
@@ -2781,11 +2779,12 @@ $lang['all__emailresourcerequest'] = '<br />
 [lang_clicktoviewresource] <br /><br />
 <a href="[url]">[url]</a>';
 $lang['all__emaillogindetails'] = '<br />
-[bem-vindo]<br /><br /> 
+[welcome]<br /> 
 [lang_newlogindetails]<br /><br /> 
 [lang_username] : [username] <br /><br />
 <a href="[url]">[url]</a><br /><br />
-[text_footer]';
+[text_footer]
+';
 $lang['all__emailresource'] = '<br />
 [fromusername] [lang_hasemailedyouaresource]<br /><br />
 [message]<br /><br />
@@ -2922,7 +2921,7 @@ $lang['fieldtitle-group_logo_dark'] = 'Logotipo específico do grupo - Escuro';
 $lang['fieldtitle-group_logo_dark_replace'] = 'Substituir logo específico do grupo - Escuro';
 $lang['systemconfig_linkedheaderimgsrc_dark_label'] = 'Logotipo do aplicativo - Escuro';
 $lang['user_pref_appearance'] = 'Aparência';
-$lang['user_pref_appearance_light'] = 'Luz';
+$lang['user_pref_appearance_light'] = 'Claro';
 $lang['user_pref_appearance_dark'] = 'Escuro';
 $lang['user_pref_appearance_device'] = 'Padrão do dispositivo';
 $lang['collection_download_include_alternatives'] = 'Incluir arquivos alternativos?';

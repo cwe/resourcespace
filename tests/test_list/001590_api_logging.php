@@ -208,7 +208,8 @@ try {
         $api_username,
         $api_key,
         "do_search",
-        ["search" => (string) $resource_ref]
+        // Explicit ID lookup avoids dependence on the HTTP process's numeric-search configuration.
+        ["search" => '!resource' . $resource_ref]
     );
 
     if ($request["response"] === false || $request["status"] !== 200) {

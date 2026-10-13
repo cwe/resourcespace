@@ -521,7 +521,7 @@ $lang['originalfileoftype'] = 'मूल %EXTENSION फ़ाइल';
 $lang['fileoftype'] = '? फ़ाइल';
 $lang['cell-fileoftype'] = '%EXTENSION फ़ाइल';
 $lang['fileextension-inside-brackets'] = '[%EXTENSION]';
-$lang['fileextension'] = '%एक्सटेंशन';
+$lang['fileextension'] = '%EXTENSION';
 $lang['mp3_preview_file'] = 'एमपी3 पूर्वावलोकन फ़ाइल';
 $lang['log'] = 'लॉग';
 $lang['resourcedetails'] = 'संसाधन विवरण';
@@ -2021,10 +2021,11 @@ $lang['all__emailnewresearchrequestwaiting'] = '[username] ([userfullname] - [us
 [text_footer]';
 $lang['all__emailnotifyresourcesapproved'] = '<br />
 [lang_userresourcesapproved]
-[सूची] <br />
+[list] <br />
 [lang_viewcontributedsubittedl] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
-[पाठ_फुटर]';
+[text_footer]
+';
 $lang['all__emailresearchrequestcomplete'] = '[lang_researchrequestcompletemessage] <br /><br /> 
 [lang_clicklinkviewcollection] <br /><br /> 
 <a href="[url]">[url]</a><br /><br />
@@ -2109,7 +2110,7 @@ $lang['allow_user_group_selection_for_access_when_sharing_externally'] = 'बा
 $lang['share_using_permissions_from_user_group'] = 'उपयोगकर्ता समूह से अनुमतियों का उपयोग करके साझा करें';
 $lang['externalshare_using_permissions_from_user_group'] = 'यदि आप बाहरी उपयोगकर्ताओं को ई-मेल कर रहे हैं, तो कृपया पहुँच के लिए उपयोगकर्ता समूह का चयन करें';
 $lang['collection_download_too_large'] = 'क्षमा करें, यह संग्रह एक फ़ाइल के रूप में डाउनलोड करने के लिए बहुत बड़ा है। कृपया संग्रह का आकार कम करें या एक छोटा चित्र आकार चुनें।';
-$lang['all__passwordnewemailhtml'] = 'कृपया अपने खाते के लिए नया पासवर्ड सेट करने के लिए नीचे दिए गए लिंक पर क्लिक करें।
+$lang['all__passwordnewemailhtml'] = '[img_headerlogo][welcome]<br /><br />कृपया अपने खाते के लिए नया पासवर्ड सेट करने के लिए नीचे दिए गए लिंक पर क्लिक करें।
 
 URL: <a href="[url]" target="_blank" >[url]</a>
 उपयोगकर्ता नाम: [username]

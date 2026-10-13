@@ -476,6 +476,11 @@ if (!$disable_geocoding) {
 ?>
 
 <script>
+    document.querySelector('.skip-to-main-content').addEventListener("click", function (e) {
+        e.preventDefault();
+        document.getElementById('UICenter').focus({preventScroll: true});
+    });
+
     // Set some vars for this page to enable/disable functionality
     linkreload = <?php echo ($k != "" || $internal_share_access) ? "false" : "true"; ?>;
     b_progressmsgs = <?php echo $noauth_page ? "false" : "true"; ?>;
