@@ -90,6 +90,7 @@ return (static function () {
             'get_related_resources' => [[$resource], $array],
             'get_field_options' => [[$list_field], $array],
             'get_nodes' => [[$list_field], $array],
+            'update_resource_lock' => [[$resource, 0], $true],
             'get_user_collections' => [[], $array],
             'add_resource_to_collection' => [[$resource, $collection], $bool],
             'collection_add_resources' => [[$collection, (string) $other], $bool],
@@ -176,6 +177,52 @@ return (static function () {
                 return false;
             }
         }
+        $current = 'update_resource_lock';
+        $lock_resource = create_resource(1, 0);
+        $resources[] = $lock_resource;
+        $admin = get_user($GLOBALS['userref']);
+        $lock_user = new_user('api_lock_user_' . $id, 2);
+        $users[] = $lock_user;
+        setup_user(get_user($lock_user));
+        $GLOBALS['userpermissions'] = ['e0'];
+
+        // Check both the return value and the stored owner after every operation.
+        $check_lock = static function ($arguments, $expected, $owner) use ($lock_resource) {
+            // Each API call normally runs in a separate request with a fresh resource cache.
+            unset($GLOBALS['get_resource_data_cache'][$lock_resource]);
+            $result = api_update_resource_lock(...$arguments);
+            $actual_owner = ps_value('SELECT lock_user AS value FROM resource WHERE ref = ?', ['i', $lock_resource], -1);
+            if ($result !== $expected || (int) $actual_owner !== (int) $owner) {
+                throw new RuntimeException('Unexpected lock result or owner for ' . json_encode($arguments));
+            }
+        };
+        $check_lock([$lock_resource, 1], true, $lock_user);
+        $check_lock([$lock_resource, 0], true, 0);
+        $check_lock([$lock_resource, 1, null], true, $lock_user);
+        $check_lock([$lock_resource, 0], true, 0);
+
+        $GLOBALS['userpermissions'][] = 'nolock';
+        $check_lock([$lock_resource, 1], false, 0);
+        $GLOBALS['userpermissions'] = [];
+        $check_lock([$lock_resource, 1], false, 0);
+        $GLOBALS['userpermissions'] = ['e0'];
+        $check_lock([$lock_resource, 1, (int) $admin['ref']], true, $admin['ref']);
+        $check_lock([$lock_resource, 0], false, $admin['ref']);
+        $check_lock([$lock_resource, 1, $lock_user], false, $admin['ref']);
+
+        setup_user($admin);
+        $check_lock([$lock_resource, 0], true, 0);
+        $check_lock([(string) $lock_resource, '1', (string) $lock_user], true, $lock_user);
+        // Administrators can unlock another user's resource.
+        $check_lock([$lock_resource, 0], true, 0);
+        foreach (['username', '', '1.5', [], new stdClass(), true, 1.5] as $invalid) {
+            $check_lock([$invalid, 1], false, 0);
+            $check_lock([$lock_resource, $invalid], false, 0);
+            $check_lock([$lock_resource, 1, $invalid], false, 0);
+        }
+        $check_lock([0, 1], false, 0);
+        $check_lock([-1, 1], false, 0);
+        $check_lock([$lock_resource, 2], false, 0);
         return true;
     } catch (Throwable $error) {
         echo "API {$current}: {$error->getMessage()} - ";

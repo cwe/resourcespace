@@ -626,6 +626,30 @@ function api_get_nodes($ref, $parent = null, $recursive = false, $offset = null,
     return get_nodes($ref, $parent, $recursive, $offset, $rows, $name, $use_count, $order_by_translated_name);
 }
 
+/**
+ * Expose {@see update_resource_lock} with access checking always enabled.
+ *
+ * @param int $ref Resource ID
+ * @param int $lockaction Lock (1) or unlock (0)
+ * @param int|null $newlockuser Lock owner; defaults to the API user
+ * @return bool|array Success/failure, or the POST request assertion response
+ */
+function api_update_resource_lock($ref, $lockaction, $newlockuser = null)
+{
+    $assert_post = assert_post_request(defined('API_AUTHMODE_NATIVE'));
+    if (!empty($assert_post)) {
+        return $assert_post;
+    }
+
+    foreach ([$ref, $lockaction, ...($newlockuser === null ? [] : [$newlockuser])] as $value) {
+        if ((!is_int($value) && !is_string($value)) || !is_int_loose($value)) {
+            return false;
+        }
+    }
+
+    return update_resource_lock((int) $ref, (int) $lockaction, $newlockuser === null ? null : (int) $newlockuser);
+}
+
 function api_get_user_collections()
 {
     global $userref;
