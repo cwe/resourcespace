@@ -56,6 +56,12 @@ function HookRse_workflowViewPageevaluation()
                     // Prevent workflow state change if required metadata fields are empty.
                     $result = update_archive_required_fields_check($ref, $workflowaction["statusto"]);
                     if (is_array($result) && count($result) > 0) {
+                        foreach ($result as $field) {
+                            if (!metadata_field_view_access($field['ref'])) {
+                                echo "<div class=\"PageInformal\">" . escape(str_replace('%%ARCHIVE%%', $lang["status" . $workflowaction["statusto"]],$lang["rse_workflow_state_change_failed_permissions"])) . "</div>";
+                                return; 
+                            }
+                        }
                         echo "<div class=\"PageInformal\">" . escape(str_replace(array('%%ARCHIVE%%', '%%FIELDS%%'), array($lang["status" . $workflowaction["statusto"]], implode(', ', array_column($result, 'title'))), $lang['rse_workflow_state_change_failed_required_fields'])) . "</div>";
                         return;
                     }

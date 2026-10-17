@@ -17,70 +17,99 @@ $search_count = (getval('count', '', false, 'is_positive_or_zero_int_loose'));
 
 if ($submitted) {
 
-    $do_search_result = do_search($search, $restypes, $order_by, $archive, 1, $sort, false, DEPRECATED_STARSEARCH, false, false, '', false, false, false, false, false, $access);
-
-    $resources_found = 0;
-
-    if (is_array($do_search_result)) {
-        $resources_found = count($do_search_result);
-    }
-
-    $resources_to_process = array();
-
-    if ($resources_found > 0) {
-        $search_chunk_size = 100000;
-        $chunk_offset = 0; // Return data in batches. Required for particularly large csv export where there is a risk of PHP memory_limit being exceeded by search returning too many results.
-
-        while ($chunk_offset < $resources_found) {
-            $search_results = do_search($search, $restypes, $order_by, $archive, array($chunk_offset, $search_chunk_size), $sort, false, DEPRECATED_STARSEARCH, false, false, '', false, false, true, false, false, $access, null);
-            $resources_to_process = array_merge($resources_to_process, array_column($search_results["data"], "ref"));
-            $chunk_offset = $chunk_offset + $search_chunk_size;
-        }
-    }
-
-    $resultcount = count($resources_to_process);
-
-    if ($resultcount == 0) {
-        $error = $lang["noresourcesfound"];
-    }
-
-    if ($resultcount > 0) {
+    if ($offline || (($search_count > $metadata_export_offline_limit) && $offline_job_queue)) {
         $findstrings = array("[search]","[time]");
         $replacestrings = array(mb_substr(safe_file_name($search), 0, 150), date("Ymd-H:i", time()));
         $csv_filename = str_replace($findstrings, $replacestrings, $lang["csv_export_filename"]);
 
         $csv_filename_noext = strip_extension($csv_filename);
+        // Generate offline job
+        $job_data = array();
+        $job_data["personaldata"]   = $personaldata;
+        $job_data["allavailable"]   = $allavailable;
+        $job_data["exportresources"] = null;
+        $job_data["search"]         = $search;
+        $job_data["restypes"]       = $restypes;
+        $job_data["archive"]        = $archive;
+        $job_data["access"]         = $access;
+        $job_data["sort"]           = $sort;
+        $job_data["order_by"]       = $order_by;
 
-        if ($offline || (($resultcount > $metadata_export_offline_limit) && $offline_job_queue)) {
-            // Generate offline job
-            $job_data = array();
-            $job_data["personaldata"]   = $personaldata;
-            $job_data["allavailable"]   = $allavailable;
-            $job_data["exportresources"] = $resources_to_process;
-            $job_data["search"]         = $search;
-            $job_data["restypes"]       = $restypes;
-            $job_data["archive"]        = $archive;
-            $job_data["access"]         = $access;
-            $job_data["sort"]           = $sort;
-
-            $job_code = "csv_metadata_export_" . md5($userref . json_encode($job_data)); // unique code for this job, used to prevent duplicate job creation.
-            $jobadded = job_queue_add("csv_metadata_export", $job_data, $userref, '', $lang["csv_export_file_ready"] . " : " . $csv_filename, $lang["download_file_creation_failed"], $job_code);
-            if ((string)(int)$jobadded !== (string)$jobadded) {
-                $message = $lang["oj-creation-failure-text"];
-            } else {
-                $message = str_replace('[jobnumber]', $jobadded, $lang['oj-creation-success']);
-            }
+        $job_code = "csv_metadata_export_" . md5($userref . json_encode($job_data)); // unique code for this job, used to prevent duplicate job creation.
+        $jobadded = job_queue_add("csv_metadata_export", $job_data, $userref, '', $lang["csv_export_file_ready"] . " : " . $csv_filename, $lang["download_file_creation_failed"], $job_code);
+        if ((string)(int)$jobadded !== (string)$jobadded) {
+            $message = $lang["oj-creation-failure-text"];
         } else {
-            log_activity($lang['csvExportResultsMetadata'], LOG_CODE_DOWNLOADED, $search . ($restypes == '' ? '' : ' (' . $restypes . ')'));
-            debug("csv_export_metadata created zip download file {$csv_filename}");
+            $message = str_replace('[jobnumber]', $jobadded, $lang['oj-creation-success']);
+        }
+    } else {
+        
+        $do_search_result = do_search($search, $restypes, $order_by, $archive, 1, $sort, false, DEPRECATED_STARSEARCH, false, false, '', false, false, false, false, false, $access);
 
-            if (!hook('csvreplaceheader')) {
-                header("Content-type: application/octet-stream");
-                header("Content-disposition: attachment; filename=" . $csv_filename_noext  . ".csv");
+        $resources_found = 0;
+
+        if (is_array($do_search_result)) {
+            $resources_found = count($do_search_result);
+        }
+
+        $resources_to_process = array();
+
+        if ($resources_found > 0) {
+            $search_chunk_size = 100000;
+            $chunk_offset = 0; // Return data in batches. Required for particularly large csv export where there is a risk of PHP memory_limit being exceeded by search returning too many results.
+
+            while ($chunk_offset < $resources_found) {
+                $search_results = do_search($search, $restypes, $order_by, $archive, array($chunk_offset, $search_chunk_size), $sort, false, DEPRECATED_STARSEARCH, false, false, '', false, false, true, false, false, $access, null);
+                $resources_to_process = array_merge($resources_to_process, array_column($search_results["data"], "ref"));
+                $chunk_offset = $chunk_offset + $search_chunk_size;
             }
+        }
 
-            generateResourcesMetadataCSV($resources_to_process, $personaldata, $allavailable);
-            exit();
+        $resultcount = count($resources_to_process);
+
+        if ($resultcount == 0) {
+            $error = $lang["noresourcesfound"];
+        }
+
+        if ($resultcount > 0) {
+            $findstrings = array("[search]","[time]");
+            $replacestrings = array(mb_substr(safe_file_name($search), 0, 150), date("Ymd-H:i", time()));
+            $csv_filename = str_replace($findstrings, $replacestrings, $lang["csv_export_filename"]);
+
+            $csv_filename_noext = strip_extension($csv_filename);
+
+            if ($offline || (($resultcount > $metadata_export_offline_limit) && $offline_job_queue)) {
+                // Generate offline job
+                $job_data = array();
+                $job_data["personaldata"]   = $personaldata;
+                $job_data["allavailable"]   = $allavailable;
+                $job_data["exportresources"] = $resources_to_process;
+                $job_data["search"]         = $search;
+                $job_data["restypes"]       = $restypes;
+                $job_data["archive"]        = $archive;
+                $job_data["access"]         = $access;
+                $job_data["sort"]           = $sort;
+                $job_data["order_by"]       = $order_by;
+
+                $job_code = "csv_metadata_export_" . md5($userref . json_encode($job_data)); // unique code for this job, used to prevent duplicate job creation.
+                $jobadded = job_queue_add("csv_metadata_export", $job_data, $userref, '', $lang["csv_export_file_ready"] . " : " . $csv_filename, $lang["download_file_creation_failed"], $job_code);
+                if ((string)(int)$jobadded !== (string)$jobadded) {
+                    $message = $lang["oj-creation-failure-text"];
+                } else {
+                    $message = str_replace('[jobnumber]', $jobadded, $lang['oj-creation-success']);
+                }
+            } else {
+                log_activity($lang['csvExportResultsMetadata'], LOG_CODE_DOWNLOADED, $search . ($restypes == '' ? '' : ' (' . $restypes . ')'));
+                debug("csv_export_metadata created zip download file {$csv_filename}");
+
+                if (!hook('csvreplaceheader')) {
+                    header("Content-type: application/octet-stream");
+                    header("Content-disposition: attachment; filename=" . $csv_filename_noext  . ".csv");
+                }
+
+                generateResourcesMetadataCSV($resources_to_process, $personaldata, $allavailable);
+                exit();
+            }
         }
     }
 }

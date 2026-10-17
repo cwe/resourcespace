@@ -75,3 +75,5 @@ $lang["page-title_rse_workflow_edit_workflow_actions"]  = "Edit Workflow Actions
 $lang["page-title_rse_workflow_edit_workflow_states"]   = "Edit Workflow States";
 $lang["page-title_rse_workflow_edit_workflow"]          = "Edit Workflow";
 $lang["page-title_rse_workflow_setup"]                  = "Setup Workflow Plugin";
+
+$lang["rse_workflow_state_change_failed_permissions"] = "Unable to change archive state to %%ARCHIVE%%. Missing access to empty required fields.";

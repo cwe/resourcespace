@@ -22,6 +22,7 @@ $restypes           = $job_data["restypes"];
 $archive            = $job_data["archive"];
 $access             = $job_data["access"];
 $sort               = $job_data["sort"];
+$order_by           = $job_data["order_by"] ?? 'relevance';
 
 // Set up the user who requested the metadata download as it needs to be processed with their access
 $user_select_sql = new PreparedStatementQuery();
@@ -34,6 +35,29 @@ if (count($user_data) > 0) {
 } else {
     job_queue_update($jobref, $job_data, STATUS_ERROR);
     return;
+}
+
+if (!$exportresources) {
+    $do_search_result = do_search($search, $restypes, $order_by, $archive, 1, $sort, false, DEPRECATED_STARSEARCH, false, false, '', false, false, false, false, false, $access);
+
+    $resources_found = 0;
+
+    if (is_array($do_search_result)) {
+        $resources_found = count($do_search_result);
+    }
+
+    $exportresources = array();
+
+    if ($resources_found > 0) {
+        $search_chunk_size = 100000;
+        $chunk_offset = 0; // Return data in batches. Required for particularly large csv export where there is a risk of PHP memory_limit being exceeded by search returning too many results.
+
+        while ($chunk_offset < $resources_found) {
+            $search_results = do_search($search, $restypes, $order_by, $archive, array($chunk_offset, $search_chunk_size), $sort, false, DEPRECATED_STARSEARCH, false, false, '', false, false, true, false, false, $access, null);
+            $exportresources = array_merge($exportresources, array_column($search_results["data"], "ref"));
+            $chunk_offset = $chunk_offset + $search_chunk_size;
+        }
+    }
 }
 
 $randstring = md5(json_encode($job_data));
