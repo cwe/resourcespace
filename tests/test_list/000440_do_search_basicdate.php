@@ -12,8 +12,9 @@ $resourceb  = create_resource(1, 0);
 $resourcec  = create_resource(1, 0);
 
 // create new date range field and use as date field
-$newdatefield   = create_resource_type_field("Basic date test", 0, FIELD_TYPE_DATE, "testbasicdate");
-$date_field     = $newdatefield;
+$newdatefield       = create_resource_type_field("Basic date test", 0, FIELD_TYPE_DATE, "testbasicdate");
+$newdatefield_data  = get_field($newdatefield);
+$date_field         = $newdatefield;
 
 update_field($resourcea, $newdatefield, "2017-07-15");
 update_field($resourceb, $newdatefield, "2017-07-02");
@@ -96,7 +97,7 @@ foreach ($test_cases as $test_name => $test_case) {
     $_POST["basicmonth"]    = $test_case['month'] ?? "";
     $_POST["basicday"]      = $test_case['day'] ?? "";
 
-    $search = update_search_from_request($search);
+    $search = search_form_to_search_query([$newdatefield_data]);
     if (!$test_case['search']) {
         if ($search !== $test_case['result']) {
             echo 'ERROR - ' . $test_name . "\n";

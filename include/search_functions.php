@@ -2793,122 +2793,6 @@ function copy_filter($filter)
 }
 
 /**
-* Add POST/GET parameters into search string. Moved from pages/search.php
-*
-* @param string $search        Existing search string without params added
-*
-* @return string               Updated string with params added
-*/
-function update_search_from_request($search)
-{
-    global $config_separators,$resource_field_verbatim_keyword_regex;
-    reset($_POST);
-    reset($_GET);
-
-    $simple_search_fields = get_simple_search_fields();
-    $find_simple_search_field = static fn(string $name) => array_filter(
-        $simple_search_fields,
-        static fn($V) => str_starts_with($name, "field_{$V['name']}")
-    );
-
-    /** @var array<int, bool> List of submitted form fields. Helps to avoid processing the same field multiple times
-     * when the information is broken in multiple data points (e.g. a date range is broken in field_X_start-d,
-     * field_X_start-m and field_X_start-y and its field_X_end-* counterparts) */
-    $processed_fields = [];
-
-    foreach (array_merge($_GET, $_POST) as $key => $value) {
-        if (is_string($value)) {
-            $value = trim($value);
-        }
-
-        if ($value != "") {
-            $field = $find_simple_search_field($key);
-            $field = reset($field);
-
-            if ($field) {
-                if (isset($processed_fields[$field['ref']])) {
-                    continue;
-                } elseif (in_array($field['type'], $GLOBALS['DATE_FIELD_TYPES'])) {
-                    $search = ($search == '' ? '' : join(', ', split_keywords($search, false, false, false, false, true)) . ', ')
-                        . convert_search_form_date_to_search_query(
-                            $field,
-                            ['html_field_name' => "field_{$field['name']}"]
-                        );
-                    $processed_fields[$field['ref']] = true;
-                } elseif (strpos($key, "_drop_") !== false) {
-                    # Dropdown field
-                    # Add keyword exactly as it is as the full value is indexed as a single keyword for dropdown boxes.
-                    $search = (($search == "") ? "" : join(", ", split_keywords($search, false, false, false, false, true)) . ", ") . substr($key, 11) . ":" . $value;
-                } elseif (strpos($key, "_cat_") !== false) {
-                    # Category tree field
-                    # Add keyword exactly as it is as the full value is indexed as a single keyword for dropdown boxes.
-                    $value = str_replace(",", ";", $value);
-                    if (substr($value, 0, 1) == ";") {
-                        $value = substr($value, 1);
-                    }
-
-                    $search = (($search == "") ? "" : join(", ", split_keywords($search, false, false, false, false, true)) . ", ") . substr($key, 10) . ":" . $value;
-                } else {
-                    # Standard field
-                    if (
-                        isset($resource_field_verbatim_keyword_regex[substr($key, 6)])
-                        && preg_match($resource_field_verbatim_keyword_regex[substr($key, 6)], str_replace('*', '', $value))
-                    ) {
-                        $values =  explode(' ', mb_strtolower(trim_spaces(str_replace($config_separators, ' ', $value)), 'UTF-8'));
-                    } else {
-                        $values = [$value];
-                    }
-
-                    foreach ($values as $value) {
-                        # Standard field
-                        $search = (($search == "") ? "" : join(", ", split_keywords($search, false, false, false, false, true)) . ", ") . substr($key, 6) . ":" . $value;
-                    }
-                }
-            } elseif ('' != $value && is_iterable($value) && substr($key, 0, 14) == 'nodes_searched') {
-                // Nodes can be searched directly when displayed on simple search bar
-                // Note: intially they come grouped by field as we need to know whether if
-                // there is a OR case involved (ie. @@101@@102)
-                $node_ref = '';
-
-                foreach ($value as $searched_field_nodes) {
-                    // Fields that are displayed as a dropdown will only pass one node ID
-                    if (!is_array($searched_field_nodes) && '' == $searched_field_nodes) {
-                        continue;
-                    } elseif (!is_array($searched_field_nodes)) {
-                        $node_ref .= ', ' . NODE_TOKEN_PREFIX . $searched_field_nodes;
-                        continue;
-                    }
-
-                    $node_ref .= ', ';
-                    foreach ($searched_field_nodes as $searched_node_ref) {
-                        $node_ref .= NODE_TOKEN_PREFIX . $searched_node_ref;
-                    }
-                }
-                $node_ref = trim($node_ref, ', ');
-                if ($node_ref !== '') {
-                    $search .= ", " . $node_ref;
-                }
-            }
-        }
-    }
-
-    $year = getval("basicyear", "");
-    if ($year != "") {
-        $search = (($search == "") ? "" : join(", ", split_keywords($search, false, false, false, false, true)) . ", ") . "basicyear:" . $year;
-    }
-    $month = getval("basicmonth", "");
-    if ($month != "") {
-        $search = (($search == "") ? "" : join(", ", split_keywords($search, false, false, false, false, true)) . ", ") . "basicmonth:" . $month;
-    }
-    $day = getval("basicday", "");
-    if ($day != "") {
-        $search = (($search == "") ? "" : join(", ", split_keywords($search, false, false, false, false, true)) . ", ") . "basicday:" . $day;
-    }
-
-    return $search;
-}
-
-/**
  * Retrieves the default resource types for search functionality.
  *
  * This function determines which resource types to include in the search based on the global
@@ -2949,14 +2833,14 @@ function get_selectedtypes()
 {
     global $search_includes_resources, $default_advanced_search_mode;
     $restypes = getval("restypes", "");
-    $advanced_search_section = getval("advanced_search_section", "");
+    $advanced_search_section = getval("advanced_search_section", null);
 
     # If advanced_search_section is absent then load it from restypes
     if (
         getval("submitted", "") == ""
         && !isset($advanced_search_section)
     ) {
-            $advanced_search_section = $restypes;
+        $advanced_search_section = $restypes;
     }
 
     # If clearbutton pressed then the selected types are reset based on configuration settings
