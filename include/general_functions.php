@@ -6526,3 +6526,72 @@ function build_range_where_condition(string $input, string $field, int $max_val 
     ];
 
 }
+
+/**
+ * Determine the URL-relative web root of ResourceSpace when you can't use the $baseurl configuration option.
+ *
+ * Supports installations where the application is accessed directly, through a document root symlink or through a
+ * symlinked subdirectory.
+ *
+ * @throws RuntimeException If the web root cannot be determined.
+ *
+ * @return string URL-relative web root (e.g. '' or '/dam').
+ */
+function getUrlRelativeWebRoot(): string
+{
+    if (PHP_SAPI === 'cli') {
+        throw new RuntimeException(
+            'Cannot determine ResourceSpace web root in CLI mode: no HTTP request context available',
+        );
+    }
+
+    $base_path = realpath(RESOURCESPACE_BASE_PATH);
+
+    if ($base_path === false) {
+        throw new RuntimeException('No canonicalised ResourceSpace application root: ' . RESOURCESPACE_BASE_PATH);
+    }
+
+    $script_filename = $_SERVER['SCRIPT_FILENAME'] ?? '';
+
+    if ($script_filename === '') {
+        throw new RuntimeException('Cannot determine ResourceSpace web root: SCRIPT_FILENAME is missing');
+    }
+
+    $script_path = realpath($script_filename);
+
+    if ($script_path === false) {
+        throw new RuntimeException(
+            "Cannot determine ResourceSpace web root: script does not exist: {$script_filename}",
+        );
+    }
+
+    // Ensure the executed script belongs to ResourceSpace
+    if (!str_starts_with($script_path, $base_path . DIRECTORY_SEPARATOR)) {
+        throw new RuntimeException(
+            "Cannot determine ResourceSpace web root: script is outside the application root: {$script_path}",
+        );
+    }
+
+    // Determine the scripts' location relative to the application root
+    $script_name = $_SERVER['SCRIPT_NAME'] ?? '';
+
+    if ($script_name === '') {
+        throw new RuntimeException('Cannot determine ResourceSpace web root: SCRIPT_NAME is missing');
+    }
+
+    $relative_script = substr($script_path, strlen($base_path));
+
+    // Ensure the URL path corresponds to the executed script
+    if (!str_ends_with($script_name, $relative_script)) {
+        throw new RuntimeException(
+            sprintf(
+                'Cannot determine ResourceSpace web root: script URL "%s" does not match relative filesystem path "%s"',
+                $script_name,
+                $relative_script,
+            ),
+        );
+    }
+
+    // Remove the scripts' relative path to obtain the URL web root
+    return substr($script_name, 0, -strlen($relative_script));
+}

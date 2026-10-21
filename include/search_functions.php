@@ -2833,12 +2833,12 @@ function get_selectedtypes()
 {
     global $search_includes_resources, $default_advanced_search_mode;
     $restypes = getval("restypes", "");
-    $advanced_search_section = getval("advanced_search_section", null);
+    $advanced_search_section = getval("advanced_search_section", "");
 
     # If advanced_search_section is absent then load it from restypes
     if (
         getval("submitted", "") == ""
-        && !isset($advanced_search_section)
+        && $advanced_search_section == ""
     ) {
         $advanced_search_section = $restypes;
     }
