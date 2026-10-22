@@ -227,19 +227,23 @@ include "../../include/header.php"; ?>
     <h2><?php echo escape(!$searching ? $lang['plugins-installedheader'] : $lang['plugins-search-results-header']); ?></h2>
     <?php
     if ($searching) {
-        $all_plugins = array_merge($inst_plugins, $plugins_avail);
-
-        foreach ($all_plugins as $plugin) {
-            if (!findPluginFromSearch($plugin, $find)) {
-                continue;
-            }
-            RenderPlugin($plugin, isset($plugin["inst_version"]));
-        }
         ?>
-        <form id="anc-post" method="post" action="<?php echo $baseurl_short; ?>pages/team/team_plugins.php">
-            <?php generateFormToken("anc_post"); ?>
-            <input type="hidden" id="anc-input" name="" value="" />
-        </form>
+        <div class="plugins-container">
+            <?php
+            $all_plugins = array_merge($inst_plugins, $plugins_avail);
+
+            foreach ($all_plugins as $plugin) {
+                if (!findPluginFromSearch($plugin, $find)) {
+                    continue;
+                }
+                RenderPlugin($plugin, isset($plugin["inst_version"]));
+            }
+            ?>
+            <form id="anc-post" method="post" action="<?php echo $baseurl_short; ?>pages/team/team_plugins.php">
+                <?php generateFormToken("anc_post"); ?>
+                <input type="hidden" id="anc-input" name="" value="" />
+            </form>
+        </div>
         </div> <!-- end of BasicBox -->
         <?php
         include "../../include/footer.php";
@@ -247,12 +251,18 @@ include "../../include/header.php"; ?>
     }
 
     if (count($inst_plugins) > 0) {
-        foreach ($inst_plugins as $p) {
-            if ($searching && !findPluginFromSearch($p, $find)) {
-                continue;
+        ?>
+        <div class="plugins-container">
+            <?php
+            foreach ($inst_plugins as $p) {
+                if ($searching && !findPluginFromSearch($p, $find)) {
+                    continue;
+                }
+                RenderPlugin($p);
             }
-            RenderPlugin($p);
-        }
+            ?>
+        </div>
+        <?php
     } else {
         echo "<p>" . escape($lang['plugins-noneinstalled']) . "</p>";
     } ?>
@@ -297,9 +307,11 @@ include "../../include/header.php"; ?>
                 <?php $category_name = isset($lang["plugin_category_{$category}"]) ? $lang["plugin_category_{$category}"] : $category; ?>
                 <h3 class="CollapsiblePluginListHead collapsed clearerleft"><?php echo escape($category_name); ?></h3>
                 <div class="CollapsiblePluginList" style="display: none;">
-                    <?php foreach ($plugins as $plugin) {
-                        RenderPlugin($plugin, isset($plugin["inst_version"]));
-                    } ?>
+                    <div class="plugins-container">
+                        <?php foreach ($plugins as $plugin) {
+                            RenderPlugin($plugin, isset($plugin["inst_version"]));
+                        } ?>
+                    </div>
                 </div>
             </div>
             <?php
