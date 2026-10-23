@@ -61,7 +61,8 @@ function typesense_search_schema_field_patterns(): array
 }
 
 /**
- * Metadata every generation carries; the rebuild adds the plugin version, the installation identity and timings.
+ * Metadata every generation carries; typesense_search_tenancy_definitions() adds the installation identity and the
+ * plugin version, the rebuild its timings.
  *
  * @param int $generation Generation number
  *

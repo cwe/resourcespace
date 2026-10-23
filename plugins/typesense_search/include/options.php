@@ -272,18 +272,22 @@ function typesense_search_option_page_def(): array
         '<div class="Question">' . typesense_search_option_help_html($lang['typesense_search_excluded_fields_help'])
         . '<div class="clearerleft"></div></div>'
     );
+    $prefix = typesense_search_tenancy_prefix();
     if (typesense_search_option_locked('prefix')) {
         $page_def[] = config_add_fixed_input(
             $lang['typesense_search_prefix'],
-            typesense_search_option_locked_text('prefix')
+            typesense_search_option_locked_text('prefix'),
+            $prefix === '' ? $lang['typesense_search_prefix_invalid'] : ''
         );
     } else {
-        $prefix = typesense_search_tenancy_prefix();
         $page_def[] = config_add_fixed_input(
             $lang['typesense_search_prefix'],
             $prefix === '' ? $lang['typesense_search_prefix_unset'] : $prefix,
             $lang['typesense_search_prefix_help']
         );
+        if ($prefix !== '') {
+            $page_def[] = config_add_html(typesense_search_tenancy_regenerate_html());
+        }
     }
 
     // The read-only health block arrives with G1.

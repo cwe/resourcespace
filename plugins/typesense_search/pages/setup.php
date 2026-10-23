@@ -2,7 +2,8 @@
 
 // typesense_search setup page: the Q9.1 shell. Each option draws editable, or locked when config.php sets
 // $typesense_search_<option>_override; the keys are password fields shown as set or not set and never echoed; the
-// prefix is read-only and generated on the first save (Q9.12); the health block arrives with G1.
+// prefix is read-only, generated on the first save and replaced by "regenerate prefix" (Q9.12); the health block
+// arrives with G1.
 include '../../../include/boot.php';
 include '../../../include/authenticate.php';
 
@@ -13,6 +14,19 @@ if (!checkperm('a')) {
 $plugin_name = 'typesense_search';
 if (!in_array($plugin_name, $plugins)) {
     plugin_activate_for_setup($plugin_name);
+}
+
+// Regenerate prefix: a POST of its own form, carrying its form token, from an administrator; refused when locked.
+$regenerated = null;
+if (getval('regenerate_prefix', '') !== '' && enforcePostRequest(false)) {
+    $config = typesense_search_tenancy_regenerate(get_plugin_config($plugin_name) ?? array());
+    $regenerated = $config !== null;
+    if ($config !== null) {
+        set_plugin_config($plugin_name, $config);
+        foreach ($config as $option => $value) {
+            $GLOBALS[$option] = $value;
+        }
+    }
 }
 
 // Save: a POST carrying the form token (checked for every POST by authenticate.php) from an administrator.
@@ -34,5 +48,18 @@ if ((getval('save', '') !== '' || getval('submit', '') !== '') && enforcePostReq
 }
 
 include '../../../include/header.php';
+if ($regenerated !== null) {
+    toast_notification(
+        $regenerated ? ToastNotificationType::Success : ToastNotificationType::Error,
+        $lang[$regenerated ? 'typesense_search_prefix_regenerated' : 'typesense_search_prefix_regenerate_locked']
+    );
+}
 config_gen_setup_html(typesense_search_option_page_def(), $plugin_name, null, $lang['typesense_search_configuration']);
+if (!typesense_search_option_locked('prefix')) {
+    ?>
+    <form id="typesense_search_regenerate" method="post" action="<?php echo escape($_SERVER['PHP_SELF']); ?>">
+        <?php generateFormToken('typesense_search_regenerate'); ?>
+    </form>
+    <?php
+}
 include '../../../include/footer.php';
