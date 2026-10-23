@@ -19,14 +19,18 @@ The plan, the catalogue of search forms and the coverage map are in the planning
 | `ab/state_writer.php` | The second writer of the A6 two-process case: boots on the shared file database named by `HARNESS_DB` and increments a counter when told to. |
 | `ab/expected/` | Hand-written snapshots the batteries compare against (the version-1 schema from the register). |
 | `run_all.sh`, `summarise.php` | Run every battery into `results/ab/`, then condense them into `results/summary.md` and `results/verdicts.json`. `results/` is never committed. |
-| `typesense.sh` | Status, start or stop of the private Typesense. |
+| `typesense.sh` | Status, start or stop of the private Typesense (native hosts). |
+| `run.ps1`, `battery.ps1`, `check.ps1`, `run.sh` | The Docker entry points (see [Running through Docker](#running-through-docker)): every battery, one battery, the code checks; `run.sh` does all three on a POSIX host. |
+| `docker/` | The compose file (`php`, `typesense`, and `mysql` under the `mysql` profile), the `php` image's Dockerfile, and `common.ps1` shared by the three scripts. |
+| `.gitattributes` | Keeps the `*.sh` files LF on Windows checkouts, so that the containers can run them. |
 | `live/` | The live runners: the A/B through the API as two users (`run.php`), the catalogue run (`catalogue_run.php`), a value survey and a read-only database survey. Credentials come from the environment only. |
 | `catalogue_table.php` | Writes the catalogue table (`../docs/core-search-catalogue.md`) from `live/catalogue.php` and a catalogue run's results. |
 | `../tests/000010_typesense_smoke.php` | The one file core's test runner finds: runs the smoke battery when this directory exists and a local Typesense is available, passes quietly otherwise. |
 
 ## Running
 
-Needs PHP with `sqlite3` (3.35 or later) and `curl`, and `typesense-server` (30.x) on the PATH.
+Either through Docker (the next section: nothing to install but Docker) or natively. Natively it needs PHP with
+`sqlite3` (3.35 or later) and `curl`, and `typesense-server` (30.x) on the PATH.
 
 ```bash
 ./run_all.sh
@@ -47,6 +51,72 @@ php ab/A3_schema.php
 
 **Never point it at a Typesense that holds real data.** Every run drops and recreates the `harness_*` collections
 and aliases: the harness is its own tenant (prefix `harness`) on the shared local server.
+
+## Running through Docker
+
+For a host with no PHP or Typesense of its own (the Windows PC). Needs Docker Desktop running, with the checkout
+on a drive it can share (it is on `C:` by default), and nothing else: the `php` image (`docker/Dockerfile`, PHP 8.3
+CLI with the extensions core's `composer.json` lists plus `sqlite3`, Composer and phpcs) is built on first use, and
+the private Typesense (`typesense/typesense:30.2`) runs as the `typesense` service, reachable only inside the compose
+network. The checkout is mounted at `/app`, so results land in `results/` exactly as a native run leaves them.
+
+From the checkout root, in PowerShell:
+
+```powershell
+.\plugins\typesense_search\harness\run.ps1
+```
+
+Every battery: builds the image if missing, starts `typesense` and waits for its health check, runs `run_all.sh`
+inside `php`; the output and the exit code are `run_all.sh`'s (0 green, 1 a failure, 2 nothing ran). One battery:
+
+```powershell
+.\plugins\typesense_search\harness\battery.ps1 A3_schema
+```
+
+The code checks the plan's rule 12 requires: `composer install` once (again with `-Reinstall`), then
+`phpcs --standard=phpcs.xml.dist plugins/typesense_search` and the repository-wide `composer dev:phpstan` with a 2G
+memory limit, both printed in full with a two-line summary at the end. `vendor/` lives on the `vendor` volume,
+mounted over `/app/vendor`, not in the checkout: unpacking one package onto the bind mount took over five minutes.
+Docker leaves an empty `vendor/` in the checkout as the mount point; git does not see it.
+
+```powershell
+.\plugins\typesense_search\harness\check.ps1
+```
+
+On a POSIX host with Docker, `./run.sh` (every battery), `./run.sh A3_schema` (one) and `./run.sh --check` do the
+same. Each script takes `-Rebuild` (`--rebuild`) to build the image again after a Dockerfile change.
+
+Inside the containers the environment is fixed by `docker/compose.yaml`: `HARNESS_ROOT=/app`,
+`HARNESS_TS_HOST=127.0.0.1`, `HARNESS_TS_PORT=8108`, `HARNESS_TS_KEY=local-harness-key`. The `php` service shares
+the `typesense` container's network namespace (`network_mode: service:typesense`), so the server is a loopback
+address to it: the plugin's client takes plain http from a loopback host only (Q12.2), and the A2 battery sends the
+plugin's own client to the harness server. `boot.php` finds the server healthy and starts nothing (there is no
+`typesense-server` in the image); the compose health check makes sure it answers before `php` runs. The scratch directory is the container's `/tmp`, kept on the `php-tmp` volume
+between runs together with phpstan's result cache; Composer's download cache is on `composer-cache`; Typesense's
+data on `typesense-data`. Nothing else is written outside the checkout. The `*.sh` files must be LF for the
+containers and the plugin's `*.php` files for phpcs (and for the move into SVN): `.gitattributes` here and in the
+plugin root make git write them so, and the scripts convert a file that is still CRLF from an older checkout (git
+sees no change). phpcs's warnings (line length, side effects in the entry files) are printed but do not fail
+`check.ps1`; its errors do.
+
+The containers are started per run (`docker compose run --rm`) and the `typesense` service is left running. To stop
+or reset, from the harness directory:
+
+```powershell
+docker compose -f docker/compose.yaml down        # stop the containers, keep the volumes
+docker compose -f docker/compose.yaml down -v     # also drop Typesense's data, the scratch, vendor/ and the Composer cache
+.\run.ps1 -Rebuild                                # rebuild the php image
+```
+
+The `mysql` service (`mysql:8`, database `rs_harness`, user and password `rs_harness`, root password `rs_harness`,
+host port 13306, data on `mysql-data`) is for the H9 MySQL mode and starts only when asked:
+
+```powershell
+docker compose -f docker/compose.yaml --profile mysql up -d mysql
+```
+
+The keys and passwords in the compose file are throwaway defaults for containers that only listen inside the
+compose network (and `mysql` on the loopback port above); none of them is a secret.
 
 ## Reading the output
 

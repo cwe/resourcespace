@@ -1,0 +1,62 @@
+# The harness in Docker: php runs the batteries and the code checks on the checkout mounted at /app, typesense is
+# the private Typesense (no host port), mysql (profile "mysql") is for the H9 MySQL mode. php shares typesense's
+# network namespace so that the server is 127.0.0.1:8108 to it: the plugin's client takes plain http from a
+# loopback host only (Q12.2), and boot.php starts nothing for a host it cannot start a server on anyway.
+# Driven by ../run.ps1, ../battery.ps1, ../check.ps1 and ../run.sh; the keys and passwords here are throwaway
+# defaults for containers that only listen inside the compose network (mysql publishes 13306 on the host).
+name: rs_typesense_harness
+
+services:
+  php:
+    build: .
+    image: rs_typesense_harness/php
+    volumes:
+      - ../../../..:/app
+      - php-tmp:/tmp
+      - composer-cache:/composer-cache
+      - vendor:/app/vendor
+    working_dir: /app/plugins/typesense_search/harness
+    environment:
+      HARNESS_ROOT: /app
+      HARNESS_TS_HOST: 127.0.0.1
+      HARNESS_TS_PORT: 8108
+      HARNESS_TS_KEY: local-harness-key
+      COMPOSER_PROCESS_TIMEOUT: 0 # the repository-wide phpstan on a bind mount outlives Composer's 300s default
+    network_mode: service:typesense
+    depends_on:
+      typesense:
+        condition: service_healthy
+
+  typesense:
+    image: typesense/typesense:30.2
+    command: --data-dir /data --api-key local-harness-key
+    volumes:
+      - typesense-data:/data
+    healthcheck:
+      # The image has bash but no curl: ask /health over /dev/tcp.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8108 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"ok\":true' <&3"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: rs_harness
+      MYSQL_USER: rs_harness
+      MYSQL_PASSWORD: rs_harness
+      MYSQL_ROOT_PASSWORD: rs_harness
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    profiles: [mysql]
+
+# vendor/ is a volume, not the checkout: unpacking Composer's packages onto a Windows bind mount took over five
+# minutes for one of them, and phpstan reads vendor/ on every run.
+volumes:
+  typesense-data:
+  mysql-data:
+  php-tmp:
+  composer-cache:
+  vendor:

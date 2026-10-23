@@ -124,8 +124,8 @@ function harness_typesense_start(): bool
 }
 
 if (!harness_typesense_start()) {
-    echo 'SKIPPED: no local Typesense on ' . $HARNESS['ts']['host'] . ':' . $HARNESS['ts']['port']
-        . " and typesense-server is not on the PATH\n";
+    echo 'SKIPPED: no Typesense on ' . $HARNESS['ts']['host'] . ':' . $HARNESS['ts']['port']
+        . ($HARNESS['ts']['host'] === '127.0.0.1' ? ' and typesense-server is not on the PATH' : '') . "\n";
     exit(2);
 }
 
