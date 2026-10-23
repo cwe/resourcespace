@@ -1,0 +1,84 @@
+<?php
+
+// Cases for live/run.php, written for the test system used in the October 2026 review (about 100,000 visible
+// resources, $stemming on). Field names, option names and refs belong to that system; change them for another.
+// References such as B3 are to ../../docs/typesense-search-review.md.
+
+return array(
+    array('heading' => 'baselines'),
+    array('label' => 'L1 empty search', 'search' => '', 'order_by' => 'resourceid'),
+    array('label' => 'L2 one keyword', 'search' => 'sculpture'),
+    array('label' => 'L3 two keywords', 'search' => 'sculpture landscape'),
+    array('label' => 'L4 node search', 'search' => '@@425', 'note' => 'usagerights = Social media'),
+    array('label' => 'L5 a sort the plugin declines', 'search' => 'sculpture', 'order_by' => 'popularity', 'note' => 'an empty plugin result here means Typesense-only mode is on'),
+
+    array('heading' => 'date dropdowns and date fields'),
+    array('label' => 'L10 simple-search year dropdown', 'search' => 'basicyear:2024', 'note' => 'B1'),
+    array('label' => 'L11 year and month dropdowns', 'search' => 'basicyear:2023, basicmonth:05', 'note' => 'B1'),
+    array('label' => 'L12 date field by year', 'search' => 'date:2024'),
+    array('label' => 'L13 date range, full dates', 'search' => 'date:rangestart2024-01-01end2024-02-29'),
+    array('label' => 'L14 date range, end month without a day', 'search' => 'date:rangestart2024-01-01end2024-02-31', 'note' => 'B4'),
+    array('label' => 'L15 date field not flagged for indexing', 'search' => 'datephototaken:2024', 'note' => 'E3'),
+    array('label' => 'L16 date-range field, exact year', 'search' => 'daterangetest:2020', 'note' => 'Core 2'),
+    array('label' => 'L17 date-range field, range', 'search' => 'daterangetest:rangestart2020-06-01end2020-12-31'),
+    array('label' => 'L18 legacy date syntax: any year, May', 'search' => 'date:nnnn|05', 'note' => 'B9'),
+
+    array('heading' => 'last word as a prefix, wildcards'),
+    array('label' => 'L20 plain word that begins longer words', 'search' => 'land', 'note' => 'C1'),
+    array('label' => 'L21 plain word that begins longer words', 'search' => 'sculpt', 'note' => 'C1'),
+    array('label' => 'L22 wildcard', 'search' => 'sculpt*', 'note' => 'C2'),
+    array('label' => 'L23 wildcard', 'search' => 'land*', 'note' => 'C2'),
+    array('label' => 'L24 wildcard', 'search' => 'photo*', 'note' => 'C2'),
+    array('label' => 'L25 wildcard in a field', 'search' => 'title:sculpt*', 'note' => 'C2'),
+    array('label' => 'L26 leading wildcard', 'search' => '*scape', 'note' => 'B10'),
+    array('label' => 'L27 wildcard with many different completions', 'search' => 'con*', 'note' => 'C2'),
+    array('label' => 'L28 wildcard with many different completions', 'search' => 'gar*', 'note' => 'C2'),
+    array('label' => 'L29 the same in a field', 'search' => 'title:con*', 'note' => 'C2'),
+
+    array('heading' => 'fixed-list fields'),
+    array('label' => 'L30 option by exact name', 'search' => 'orientation:landscape'),
+    array('label' => 'L31 one word of an option', 'search' => 'usagerights:social', 'note' => 'B3'),
+    array('label' => 'L32 quoted field search, as the search bar rebuilds it', 'search' => '"usagerights:Social media"', 'note' => 'B2'),
+    array('label' => 'L33 the same plus a typed word', 'search' => '"usagerights:Social media" sculpture', 'note' => 'B2'),
+    array('label' => 'L34 option wildcard', 'search' => 'usagerights:soc*', 'note' => 'B3'),
+
+    array('heading' => 'stop words, phrases, punctuation'),
+    array('label' => 'L40 stop word plus keyword', 'search' => 'the sculpture'),
+    array('label' => 'L41 only a stop word', 'search' => 'the', 'note' => 'B5'),
+    array('label' => 'L42 stop word as a field value', 'search' => 'title:the', 'note' => 'B5'),
+    array('label' => 'L43 phrase', 'search' => '"black and white"', 'note' => 'B6'),
+    array('label' => 'L44 phrase with a word the stemmer changes', 'search' => '"sculpture park"', 'note' => '$stemming is on'),
+    array('label' => 'L47 quoted single word the stemmer changes', 'search' => '"sculpture"', 'note' => '$stemming is on'),
+    array('label' => 'L48 the phrase words unquoted', 'search' => 'sculpture park'),
+    array('label' => 'L45 hyphenated single word', 'search' => 'black-and-white', 'note' => 'B7'),
+    array('label' => 'L46 resource type name', 'search' => 'document'),
+
+    array('heading' => 'words that only match joined or split'),
+    array('label' => 'L50', 'search' => 'land scape', 'note' => 'C3'),
+    array('label' => 'L51', 'search' => 'sun set', 'note' => 'C3'),
+    array('label' => 'L52', 'search' => 'water fall', 'note' => 'C3'),
+
+    array('heading' => 'numeric field'),
+    array('label' => 'L60 numrange', 'search' => 'numberfield:numrangeneg60|neg40'),
+    array('label' => 'L61 numrange, one bound (exact)', 'search' => 'numberfield:numrangeneg50|'),
+
+    array('heading' => 'combinations of terms that agree on their own'),
+    array('label' => 'L80 keyword and node', 'search' => 'sculpture, @@389', 'note' => 'orientation = Landscape'),
+    array('label' => 'L81 keyword and fixed-list field', 'search' => 'sculpture, orientation:landscape'),
+    array('label' => 'L82 text field term', 'search' => 'title:sculpture'),
+    array('label' => 'L83 text field term and node', 'search' => 'title:sculpture, @@389'),
+    array('label' => 'L84 keyword and two nodes', 'search' => 'sculpture, @@425, @@389'),
+    array('label' => 'L85 field wildcard and node', 'search' => 'title:sculpt*, @@389'),
+    array('label' => 'L86 node and NOT node', 'search' => '@@425, @@!389'),
+    array('label' => 'L87 keyword and date', 'search' => 'sculpture, date:2024'),
+    array('label' => 'L88 keyword, node and date, sorted by date', 'search' => 'sculpture, @@389, date:2024', 'order_by' => 'date', 'rows' => 5),
+    array('label' => 'L89 keyword with a resource type, sorted by resource ID', 'search' => 'sculpture', 'restypes' => '5', 'order_by' => 'resourceid', 'sort' => 'asc', 'rows' => 5),
+    array('label' => 'L90 keyword, node, resource type and two workflow states', 'search' => 'sculpture, @@389', 'restypes' => '5', 'archive' => '0,2'),
+    array('label' => 'L91 collection and keyword, collection order', 'search' => '!collection3808, sculpture', 'order_by' => 'collection', 'sort' => 'asc', 'rows' => 5),
+    array('label' => 'L92 last 100 and keyword', 'search' => '!last100, sculpture', 'rows' => 5),
+    array('label' => 'L93 node and negative keyword', 'search' => '@@425, -sculpture'),
+
+    array('heading' => 'collections'),
+    array('label' => 'L70 public collection, collection order', 'search' => '!collection3808', 'order_by' => 'collection', 'sort' => 'asc', 'rows' => 5),
+    array('label' => 'L71 public collection, default (relevance) order as the API sends it', 'search' => '!collection3808', 'rows' => 5),
+);

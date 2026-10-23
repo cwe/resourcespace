@@ -1,0 +1,58 @@
+{
+  "_comment": "Schema version 1 as the schema register (typesense_plan tasks/B-schema-register.md) states it, for the harness prefix and generation 1 with $stemming off. Written by hand; A3_schema.php compares the module's output with it.",
+  "resources": {
+    "name": "harness_resources_g1",
+    "fields": [
+      {"name": "ref", "type": "int32", "sort": true},
+      {"name": "ref_s", "type": "string"},
+      {"name": "title", "type": "string", "stem": false},
+      {"name": "resource_type", "type": "int32", "facet": true},
+      {"name": "archive", "type": "int32", "facet": true, "sort": true},
+      {"name": "access", "type": "int32"},
+      {"name": "created_by", "type": "int32", "optional": true},
+      {"name": "creation_date", "type": "int64"},
+      {"name": "modified_date", "type": "int64", "sort": true},
+      {"name": "date_field_sort", "type": "string", "sort": true},
+      {"name": "nodes", "type": "int32[]", "facet": true},
+      {"name": "populated_field_ids", "type": "int32[]"},
+      {"name": "hit_count", "type": "int32", "sort": true},
+      {"name": "user_rating", "type": "int32", "optional": true},
+      {"name": "rating", "type": "int32", "optional": true},
+      {"name": "ur_hits", "type": "int64", "sort": true},
+      {"name": "hits_ur", "type": "int64", "sort": true},
+      {"name": "date_ref", "type": "int64", "sort": true},
+      {"name": "rating_ur", "type": "int64", "sort": true},
+      {"name": "field_.*_s", "type": "string", "optional": true, "stem": false},
+      {"name": "field_.*_text", "type": "string", "optional": true, "stem": false},
+      {"name": "field_.*_ss", "type": "string[]", "optional": true, "facet": true, "stem": false},
+      {"name": "field_.*_q", "type": "string[]", "optional": true},
+      {"name": "field_.*_f", "type": "float", "optional": true},
+      {"name": "field_.*_k", "type": "int64[]", "optional": true},
+      {"name": "field_.*_p", "type": "string[]", "optional": true}
+    ],
+    "token_separators": ["/", "_", ".", ";", "-", "(", ")", "'", "\"", "\\", "?", ",", ":"],
+    "metadata": {"generation": 1, "schema_version": 1}
+  },
+  "memberships": {
+    "name": "harness_memberships_g1",
+    "fields": [
+      {"name": "resource_id", "type": "string", "reference": "harness_resources_g1.id", "async_reference": true, "cascade_delete": true},
+      {"name": "collection_ref", "type": "int64"},
+      {"name": "sortorder", "type": "int32"},
+      {"name": "date_added", "type": "int64", "sort": true},
+      {"name": "collection_type", "type": "int32"}
+    ],
+    "metadata": {"generation": 1, "schema_version": 1}
+  },
+  "grants": {
+    "name": "harness_grants_g1",
+    "fields": [
+      {"name": "resource_id", "type": "string", "reference": "harness_resources_g1.id", "async_reference": true, "cascade_delete": true},
+      {"name": "user", "type": "int32", "facet": true},
+      {"name": "usergroup", "type": "int32", "facet": true},
+      {"name": "access", "type": "int32"},
+      {"name": "expires", "type": "int64", "range_index": true}
+    ],
+    "metadata": {"generation": 1, "schema_version": 1}
+  }
+}

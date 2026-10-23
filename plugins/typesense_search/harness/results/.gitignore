@@ -1,0 +1,3 @@
+# Battery output is never committed.
+*
+!.gitignore
