@@ -12,6 +12,9 @@ $typesense_search_protocol = 'http';
 $typesense_search_search_key = '';
 // The write key: documents, collections and aliases on the prefix; loaded by the rebuild and the worker only (Q12.1).
 $typesense_search_admin_key = '';
+// The server-side ids of the two keys, recorded by the provisioning action so that rotation can revoke them (X1).
+$typesense_search_search_key_id = 0;
+$typesense_search_admin_key_id = 0;
 // The master toggle. A group configuration override of $typesense_search_enabled is the A/B switch per group (P13).
 $typesense_search_enabled = false;
 // The search-title badge: served / fallback / index stale / bulk pending (G3).

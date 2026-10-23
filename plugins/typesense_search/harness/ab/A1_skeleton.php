@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // A1 battery: the plugin skeleton. The yaml as core parses it, the option accessor's precedence (override, stored,
 // default) through core's own loader, the lock and what the page draws for it (a key is never drawn), the save rules
 // (a locked option keeps its stored value, a blank key keeps the stored key, the prefix is generated once), the setup

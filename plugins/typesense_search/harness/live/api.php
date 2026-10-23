@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // Call one API function on the live system and print the response. For looking up field names, options and
 // collections before writing cases.
 // Usage: php live/api.php <ts|core> <function> [name=value ...] [--max=<characters to print, default 4000>]

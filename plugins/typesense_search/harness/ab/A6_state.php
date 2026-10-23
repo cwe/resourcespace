@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // A6 battery: the plugin state store. The table as core's dbstruct creates it, set and get with their types, the JSON
 // round trip, one row per entry per tenant, prefix isolation, ready false on a fresh table, the in-place counter from
 // two processes sharing one database and from interleaved writers, the build lock, the per-process cache serving

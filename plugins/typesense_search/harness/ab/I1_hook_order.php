@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // I1 battery: the core change for the external_search hook. The hook fires before search_special() and the
 // standard query, with the filter, join and select already built; whatever a provider returns other than false is
 // core's answer (an empty set included) and false leaves the search to core; the access checks that run a search

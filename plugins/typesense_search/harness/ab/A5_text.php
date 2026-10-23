@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // A5 battery: the text module. The invisible characters and multi-byte punctuation core's cleanse_string() handles
 // and the tokenizer does not (a BOM, a non-breaking space, a word joiner, the soft hyphen, curly quotes), the two
 // markup sites with the cap between them (<p>hello, a link whose URL words core indexes), every translation of a

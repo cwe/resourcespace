@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // A2 battery: the Typesense client. The endpoint rule (plain http for a loopback host only, refused before any
 // network call otherwise), the status calls and the version check, the collection and alias calls, imports with
 // every result line read and chunked by the options, the GET-or-POST choice by the query string's size against

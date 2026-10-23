@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // The second writer of the A6 battery's two-process case. Boots the harness on the file database named by
 // HARNESS_DB (the tables are already there), says READY, waits for a line on stdin, then increments the counter
 // named in the first argument as many times as the second says and reports how many SQL errors it met.

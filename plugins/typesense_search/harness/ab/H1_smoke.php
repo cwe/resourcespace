@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // H1 smoke battery: the harness boots, the fixture loads the way core writes it, core answers the fixture as
 // derived by hand, the private Typesense is up and the schema module creates the collections on it. This is the
 // battery the tests/ bridge runs; every session runs it before handing over.

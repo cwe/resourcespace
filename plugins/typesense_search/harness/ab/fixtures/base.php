@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 /**
  * The base fixture for the A/B harness: a small catalogue chosen to separate behaviours. Kept small (Q10.13);
  * a package that needs more registers its own file in this directory and loads it with fx_load().

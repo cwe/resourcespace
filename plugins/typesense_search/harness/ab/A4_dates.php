@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // A4 battery: the dates module. A unit table of every stored form (year, year-month, full date, a time after a full
 // date, 00 for an unknown part, a BCE year, non-real dates, junk), the key's integer order against core's string
 // order over a grid of values and bounds, the bounds of every catalogue range form (the form's -31, EDTF's -00 and

@@ -149,7 +149,7 @@ foreach (array($A8_A, $A8_B, array('prefix' => 'harness') + $A8_A, array('prefix
 harness_check('A8.6 every generated name matches <prefix>_<kind>[_g<N>]', $names_ok, implode(', ', $bad_names));
 harness_check('A8.7 every generated name parses back to its prefix, kind and generation', $parsed_ok, implode(', ', $bad_names));
 a8_as($A8_A);
-harness_check('A8.8 the key pattern is "<prefix>_*"', typesense_search_tenancy_key_pattern() === $A8_A['prefix'] . '_*');
+harness_check('A8.8 the key pattern is the regular expression "<prefix>_.*" (X1: Typesense reads it as a regex)', typesense_search_tenancy_key_pattern() === $A8_A['prefix'] . '_.*');
 harness_check('A8.8 names the plugin does not make do not parse', typesense_search_tenancy_name_parse('a_things') === null && typesense_search_tenancy_name_parse('a_related_g1') === null && typesense_search_tenancy_name_parse('a_resources_g0') === null && typesense_search_tenancy_name_parse('resources') === null);
 harness_check('A8.9 the overlap rule: equal, one a prefix of the other at an underscore; not "site" and "site2"', typesense_search_tenancy_prefixes_overlap('site', 'site') && typesense_search_tenancy_prefixes_overlap('site', 'site_a') && typesense_search_tenancy_prefixes_overlap('site_a', 'site') && !typesense_search_tenancy_prefixes_overlap('site', 'site2') && !typesense_search_tenancy_prefixes_overlap('site_a', 'site_b'));
 

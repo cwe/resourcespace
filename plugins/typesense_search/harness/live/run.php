@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // Live A/B: send each search in cases.php through the ResourceSpace API as two users, one whose group has the
 // typesense_search plugin ("plugin") and one whose group does not ("core"), and compare the totals.
 //

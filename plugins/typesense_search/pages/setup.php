@@ -2,8 +2,8 @@
 
 // typesense_search setup page: the Q9.1 shell. Each option draws editable, or locked when config.php sets
 // $typesense_search_<option>_override; the keys are password fields shown as set or not set and never echoed; the
-// prefix is read-only, generated on the first save and replaced by "regenerate prefix" (Q9.12); the health block
-// arrives with G1.
+// prefix is read-only, generated on the first save and replaced by "regenerate prefix" (Q9.12); the keys are provisioned
+// from the server's bootstrap key (X1); the health block arrives with G1.
 include '../../../include/boot.php';
 include '../../../include/authenticate.php';
 
@@ -16,20 +16,19 @@ if (!in_array($plugin_name, $plugins)) {
     plugin_activate_for_setup($plugin_name);
 }
 
-// Regenerate prefix: a POST of its own form, carrying its form token, from an administrator; refused when locked.
+// Every action is a POST carrying the form token (checked for every POST by authenticate.php) from an administrator;
+// the configuration is stored through typesense_search_option_store(), which keeps the keys out of the logs (X1).
+// Regenerate prefix: a POST of its own form; refused when locked.
 $regenerated = null;
 if (getval('regenerate_prefix', '') !== '' && enforcePostRequest(false)) {
     $config = typesense_search_tenancy_regenerate(get_plugin_config($plugin_name) ?? array());
     $regenerated = $config !== null;
     if ($config !== null) {
-        set_plugin_config($plugin_name, $config);
-        foreach ($config as $option => $value) {
-            $GLOBALS[$option] = $value;
-        }
+        typesense_search_option_store($config);
     }
 }
 
-// Save: a POST carrying the form token (checked for every POST by authenticate.php) from an administrator.
+// Save.
 if ((getval('save', '') !== '' || getval('submit', '') !== '') && enforcePostRequest(false)) {
     $posted = array();
     foreach (typesense_search_option_editable() as $option => $type) {
@@ -37,14 +36,18 @@ if ((getval('save', '') !== '' || getval('submit', '') !== '') && enforcePostReq
             ? getval('typesense_search_' . $option, array(), false, 'is_array')
             : getval('typesense_search_' . $option, '');
     }
-    $config = typesense_search_option_save(get_plugin_config($plugin_name) ?? array(), $posted);
-    set_plugin_config($plugin_name, $config);
-    foreach ($config as $option => $value) {
-        $GLOBALS[$option] = $value;
-    }
+    typesense_search_option_store(typesense_search_option_save(get_plugin_config($plugin_name) ?? array(), $posted));
     if (getval('submit', '') !== '') {
         redirect('pages/team/team_plugins.php');
     }
+}
+
+// Provision or rotate the keys: the bootstrap key is read once and dropped from the request (X1).
+$typesense_search_keys_notice = '';
+if (getval('typesense_search_keys_provision', '') !== '' && enforcePostRequest(false)) {
+    $outcome = typesense_search_keys_provision(getval('typesense_search_bootstrap_key', ''));
+    unset($_POST['typesense_search_bootstrap_key'], $_REQUEST['typesense_search_bootstrap_key']);
+    $typesense_search_keys_notice = typesense_search_keys_notice($outcome);
 }
 
 include '../../../include/header.php';

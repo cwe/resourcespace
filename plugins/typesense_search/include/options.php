@@ -154,6 +154,51 @@ function typesense_search_option_save(array $stored, array $posted): array
 }
 
 /**
+ * Store the plugin configuration and make it the running one. Core's set_plugin_config() is not used: it copies the
+ * whole configuration, keys included, into activity_log and, through log_diff(), into the debug log (Q12.7); this
+ * writes the same two columns, logs the configuration with the keys redacted, and holds the debug log off for the one
+ * statement whose parameters carry the keys (ps_query() logs every statement with its parameters).
+ *
+ * @param array $config The configuration to store, keyed by global name
+ *
+ * @return void
+ */
+function typesense_search_option_store(array $config): void
+{
+    global $mysql_charset, $debug_log, $debug_log_override;
+
+    $config = config_clean($config);
+    $redacted = $config;
+    foreach (typesense_search_option_editable() as $name => $type) {
+        if ($type === 'secret' && isset($redacted['typesense_search_' . $name])) {
+            $redacted['typesense_search_' . $name] = '[redacted]';
+        }
+    }
+    $json = config_json_encode($config);
+    $logged = config_json_encode($redacted);
+    if (!isset($mysql_charset)) {
+        $json = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $json);
+        $logged = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $logged);
+    }
+    log_activity(null, LOG_CODE_EDITED, $logged, 'plugins', 'config_json', 'typesense_search', 'name', '');
+    $debugging = array($debug_log ?? false, $debug_log_override ?? false);
+    $debug_log = false;
+    $debug_log_override = false;
+    try {
+        ps_query(
+            'UPDATE plugins SET config = ?, config_json = ? WHERE name = ?',
+            array('s', base64_encode(serialize($config)), 's', $json, 's', 'typesense_search')
+        );
+    } finally {
+        list($debug_log, $debug_log_override) = $debugging;
+    }
+    clear_query_cache('plugins');
+    foreach ($config as $name => $value) {
+        $GLOBALS[$name] = $value;
+    }
+}
+
+/**
  * An option's row on the setup page: the editable control, or the locked read-only row when config.php fixes it.
  *
  * @param string $name     Option name without the typesense_search_ prefix
@@ -243,6 +288,9 @@ function typesense_search_option_page_def(): array
             $key,
             config_add_html(typesense_search_option_key_html($key, $lang['typesense_search_' . $key]))
         );
+    }
+    foreach (typesense_search_keys_page_rows((string)($GLOBALS['typesense_search_keys_notice'] ?? '')) as $row) {
+        $page_def[] = $row;
     }
 
     $page_def[] = config_add_section_header($lang['typesense_search_searching']);

@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // Send the catalogue (live/catalogue.php) through the ResourceSpace API and record the totals, as the core user and,
 // when RS_USER_TS is set, as the plugin user too. Results go to results/live/catalogue.json (merged with earlier
 // runs, so partial runs are fine) and ../catalogue_table.php puts them in the markdown table.

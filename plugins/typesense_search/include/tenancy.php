@@ -88,18 +88,19 @@ function typesense_search_tenancy_name(string $kind, ?int $generation = null): s
 }
 
 /**
- * The collection pattern a scoped key is granted on (X1, Q12.8): "<prefix>_*".
+ * The collection pattern a scoped key is granted on (X1, Q12.8): "<prefix>_.*". Typesense reads the pattern as a
+ * regular expression (verified on 30.2: "<prefix>_*" matches the prefix followed by underscores only).
  *
  * @return string
  */
 function typesense_search_tenancy_key_pattern(): string
 {
     $prefix = typesense_search_tenancy_prefix();
-    if ($prefix === '') {
+    if (!typesense_search_tenancy_prefix_valid($prefix)) {
         throw new InvalidArgumentException('typesense_search: the collection prefix is not set or not valid');
     }
 
-    return $prefix . '_*';
+    return $prefix . '_.*';
 }
 
 /**
@@ -124,7 +125,7 @@ function typesense_search_tenancy_name_parse(string $name): ?array
 }
 
 /**
- * Do two prefixes overlap? A key pattern "<a>_*" reaches "<b>_..." when one, followed by an underscore, starts
+ * Do two prefixes overlap? A key pattern "<a>_.*" reaches "<b>_..." when one, followed by an underscore, starts
  * the other: equal prefixes overlap, "site" and "site_a" overlap, "site" and "site2" do not.
  *
  * @param string $a A prefix
@@ -365,8 +366,9 @@ function typesense_search_tenancy_verify_alias(): bool
 
 /**
  * The configuration to store after "regenerate prefix" (the clone-of-production case, Q9.12): a new random prefix,
- * and every stored key cleared, as those are scoped to the old prefix and, in a clone, are production's. The old
- * collections are left alone. Null when the config.php override locks the prefix.
+ * and every stored key cleared with its recorded id, as those are scoped to the old prefix and, in a clone, are
+ * production's (a later rotation must not revoke them). The old collections are left alone. Null when the config.php
+ * override locks the prefix.
  *
  * @param array $stored The plugin configuration as stored, keyed by global name
  *
@@ -384,6 +386,7 @@ function typesense_search_tenancy_regenerate(array $stored): ?array
     foreach (array_keys(typesense_search_option_editable()) as $name) {
         if (typesense_search_option_secret($name) && !typesense_search_option_locked($name)) {
             $stored['typesense_search_' . $name] = '';
+            $stored['typesense_search_' . $name . '_id'] = 0;
         }
     }
 

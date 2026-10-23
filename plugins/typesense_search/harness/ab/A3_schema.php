@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 // A3 battery: the schema module. The version, the separators, the names, a snapshot of the three definitions
 // against the schema register (expected/A3_schema_v1.json), the collections created from scratch on the local
 // Typesense, a sample document for every field pattern, and the server facts the design rests on, verified on 30.x.
