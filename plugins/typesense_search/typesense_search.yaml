@@ -1,10 +1,10 @@
 name: typesense_search
 title: Typesense Search
 author: Montala Limited
-version: 0.1
-desc: Optional external search provider using Typesense (experimental)
+version: 1.0
+desc: Searches served from a Typesense index of the metadata, with ResourceSpace's own search as the fallback for anything not served.
 icon: zap
-config_url: /plugins/typesense_search/pages/setup.php
 category: search
-info_url: https://www.resourcespace.com/knowledge-base/plugins/typesense_search
 config_url: /plugins/typesense_search/pages/setup.php
+info_url: https://www.resourcespace.com/knowledge-base/plugins/typesense_search
+disable_group_select: 1

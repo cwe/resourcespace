@@ -14,7 +14,7 @@ The plan, the catalogue of search forms and the coverage map are in the planning
 | `ab/boot.php` | Boots core's real search code on an in-memory SQLite database built from `dbstruct/`, the plugin's real code against a private local Typesense (started on demand), and defines the A/B runner `ab()` and the check helper `harness_check()`. |
 | `ab/fixture_lib.php`, `ab/fixtures/` | Fixture helpers that write rows the way core writes them (core's own keyword indexing), the base fixture, and per-package additions loaded with `fx_load()`. `fx_index()` builds the plugin's index through the generation rebuild once B8 exists. |
 | `ab/accepted_divergences.php` | The accepted-divergence list the runner reads: one entry per case, with the kind, the reason and the decision row. Empty to start. |
-| `ab/<ID>_<slug>.php` | One battery per task or package. `H1_smoke.php` is the smoke battery every session runs before handing over; `A3_schema.php` proves the schema module. |
+| `ab/<ID>_<slug>.php` | One battery per task or package. `H1_smoke.php` is the smoke battery every session runs before handing over; `A1_skeleton.php` proves the skeleton (the option accessor, the lock, the setup page, the Q8.3 group override); `A3_schema.php` proves the schema module. |
 | `ab/expected/` | Hand-written snapshots the batteries compare against (the version-1 schema from the register). |
 | `run_all.sh`, `summarise.php` | Run every battery into `results/ab/`, then condense them into `results/summary.md` and `results/verdicts.json`. `results/` is never committed. |
 | `typesense.sh` | Status, start or stop of the private Typesense. |
