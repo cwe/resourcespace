@@ -12,8 +12,8 @@ harness_check('H1.2 Typesense is 30.x', isset($debug['version']) && strpos((stri
 harness_check('H1.3 harness prefix', typesense_search_tenancy_prefix() === 'harness');
 
 $tables = (int)$DB->querySingle("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name <> 'sqlite_sequence'");
-$dbstruct = count(glob($ROOT . '/dbstruct/table_*.txt'));
-harness_check('H1.4 one SQLite table per dbstruct file', $tables === $dbstruct, $tables . ' tables');
+$dbstruct = count(glob($ROOT . '/dbstruct/table_*.txt')) + count(glob($ROOT . '/plugins/typesense_search/dbstruct/table_*.txt'));
+harness_check('H1.4 one SQLite table per dbstruct file, core and plugin', $tables === $dbstruct, $tables . ' tables');
 harness_check('H1.5 fixture resources', (int)$DB->querySingle('SELECT COUNT(*) FROM resource') === 34);
 harness_check('H1.6 fixture fields', (int)$DB->querySingle('SELECT COUNT(*) FROM resource_type_field') === 14);
 $keywords = (int)$DB->querySingle('SELECT COUNT(*) FROM keyword');

@@ -1,0 +1,4 @@
+prefix,varchar(32),NO,PRI,,
+name,varchar(100),NO,PRI,,
+value,mediumtext,NO,,,
+updated,datetime,NO,,CURRENT_TIMESTAMP,

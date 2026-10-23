@@ -11,11 +11,12 @@ The plan, the catalogue of search forms and the coverage map are in the planning
 
 | Path | What it is |
 |---|---|
-| `ab/boot.php` | Boots core's real search code on an in-memory SQLite database built from `dbstruct/`, the plugin's real code against a private local Typesense (started on demand), and defines the A/B runner `ab()` and the check helper `harness_check()`. |
+| `ab/boot.php` | Boots core's real search code on an in-memory SQLite database built from core's `dbstruct/` and the plugin's, the plugin's real code against a private local Typesense (started on demand), and defines the A/B runner `ab()` and the check helper `harness_check()`. |
 | `ab/fixture_lib.php`, `ab/fixtures/` | Fixture helpers that write rows the way core writes them (core's own keyword indexing), the base fixture, and per-package additions loaded with `fx_load()`. `fx_index()` builds the plugin's index through the generation rebuild once B8 exists. |
 | `ab/accepted_divergences.php` | The accepted-divergence list the runner reads: one entry per case, with the kind, the reason and the decision row. Empty to start. |
-| `ab/<ID>_<slug>.php` | One battery per task or package. `H1_smoke.php` is the smoke battery every session runs before handing over; `A1_skeleton.php` proves the skeleton (the option accessor, the lock, the setup page, the Q8.3 group override); `A2_client.php` proves the client against the private Typesense and against `stub_typesense.php`; `A3_schema.php` proves the schema module; `A4_dates.php` proves the dates module; `A5_text.php` proves the text module. |
+| `ab/<ID>_<slug>.php` | One battery per task or package. `H1_smoke.php` is the smoke battery every session runs before handing over; `A1_skeleton.php` proves the skeleton (the option accessor, the lock, the setup page, the Q8.3 group override); `A2_client.php` proves the client against the private Typesense and against `stub_typesense.php`; `A3_schema.php` proves the schema module; `A4_dates.php` proves the dates module; `A5_text.php` proves the text module; `A6_state.php` proves the state store, with two processes sharing a file database for the counter. |
 | `ab/stub_typesense.php` | A canned Typesense the A2 battery runs under PHP's built-in server on a free port: it records every request (the key header, the URI, the body) and answers 5xx, 503 or slowly to order, for the key, redaction, back-off, breaker and timeout cases a healthy server cannot produce. |
+| `ab/state_writer.php` | The second writer of the A6 two-process case: boots on the shared file database named by `HARNESS_DB` and increments a counter when told to. |
 | `ab/expected/` | Hand-written snapshots the batteries compare against (the version-1 schema from the register). |
 | `run_all.sh`, `summarise.php` | Run every battery into `results/ab/`, then condense them into `results/summary.md` and `results/verdicts.json`. `results/` is never committed. |
 | `typesense.sh` | Status, start or stop of the private Typesense. |
@@ -25,7 +26,7 @@ The plan, the catalogue of search forms and the coverage map are in the planning
 
 ## Running
 
-Needs PHP with `sqlite3` and `curl`, and `typesense-server` (30.x) on the PATH.
+Needs PHP with `sqlite3` (3.35 or later) and `curl`, and `typesense-server` (30.x) on the PATH.
 
 ```bash
 ./run_all.sh
@@ -42,6 +43,7 @@ php ab/A3_schema.php
 | `HARNESS_ROOT` | this checkout | The code tree under test. |
 | `HARNESS_SCRATCH` | `<system temp>/rs_typesense_search_harness` | Generated files: the debug log, Typesense's data directory and log. |
 | `HARNESS_TS_HOST`, `HARNESS_TS_PORT`, `HARNESS_TS_KEY` | `127.0.0.1`, `18208`, `local-harness-key` | The private Typesense. Started by `boot.php` when nothing answers on a loopback host. |
+| `HARNESS_DB` | `:memory:` | A file for the SQLite database, so that another process can share it (the A6 battery sets it for its writers). |
 
 **Never point it at a Typesense that holds real data.** Every run drops and recreates the `harness_*` collections
 and aliases: the harness is its own tenant (prefix `harness`) on the shared local server.

@@ -13,7 +13,8 @@
  * them says so.
  *
  * Environment: HARNESS_ROOT (the checkout under test, default this one), HARNESS_SCRATCH (generated files),
- * HARNESS_TS_HOST / HARNESS_TS_PORT / HARNESS_TS_KEY (the private Typesense).
+ * HARNESS_TS_HOST / HARNESS_TS_PORT / HARNESS_TS_KEY (the private Typesense), HARNESS_DB (a file for the SQLite
+ * database instead of memory, so that a second process can share it).
  *
  * Exit codes of a battery: 0 green, 1 a failed case, 2 skipped because no local Typesense could be reached.
  */
@@ -175,8 +176,11 @@ require $SCRATCH . '/db_real_parts.php';
 // ---------------------------------------------------------------------------------------------
 // SQLite standing in for MySQL
 // ---------------------------------------------------------------------------------------------
-$DB = new SQLite3(':memory:');
+// In memory unless HARNESS_DB names a file: a second process then boots on the same file (A6's two-writer case)
+// and finds the tables there, so every CREATE is IF NOT EXISTS and a locked file is waited for.
+$DB = new SQLite3(getenv('HARNESS_DB') ?: ':memory:');
 $DB->enableExceptions(true);
+$DB->busyTimeout(5000);
 $DB->exec("ATTACH DATABASE ':memory:' AS INFORMATION_SCHEMA");
 $DB->exec("CREATE TABLE INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD (value TEXT)");
 foreach (array('a','about','an','are','as','at','be','by','com','de','en','for','from','how','i','in','is','it','la','of','on','or','that','the','this','to','was','what','when','where','who','will','with','und','the','www') as $w) {
@@ -290,10 +294,17 @@ function harness_ft_match($text, $expr)
 }
 $DB->createFunction('ft_match', 'harness_ft_match', 2);
 
-// Tables from dbstruct/
-foreach (glob($ROOT . '/dbstruct/table_*.txt') as $file) {
+// Tables from core's dbstruct/ and the plugin's, as CheckDBStruct() creates them: the PRI columns form the primary
+// key (an auto_increment column alone, else the composite key of a link or state table), defaults are kept.
+$table_files = array_merge(
+    glob($ROOT . '/dbstruct/table_*.txt') ?: array(),
+    glob($ROOT . '/plugins/typesense_search/dbstruct/table_*.txt') ?: array()
+);
+foreach ($table_files as $file) {
     $table = substr(basename($file, '.txt'), 6);
     $cols = array();
+    $primary = array();
+    $auto_increment = false;
     foreach (explode("\n", trim(file_get_contents($file))) as $line) {
         $c = str_getcsv($line, ',', '"', '\\');
         if (count($c) < 2 || $c[0] === '') {
@@ -305,10 +316,20 @@ foreach (glob($ROOT . '/dbstruct/table_*.txt') as $file) {
         $def = '`' . $c[0] . '` ' . $type;
         if (($c[3] ?? '') === 'PRI' && stripos($c[5] ?? '', 'auto_increment') !== false) {
             $def .= ' PRIMARY KEY AUTOINCREMENT';
-        } elseif (isset($c[4]) && $c[4] !== '' && strtoupper($c[4]) !== 'NULL') {
-            $def .= ' DEFAULT ' . (is_numeric($c[4]) ? $c[4] : "'" . SQLite3::escapeString($c[4]) . "'");
+            $auto_increment = true;
+        } else {
+            if (($c[3] ?? '') === 'PRI') {
+                $primary[] = '`' . $c[0] . '`';
+            }
+            if (isset($c[4]) && $c[4] !== '' && strtoupper($c[4]) !== 'NULL') {
+                $def .= ' DEFAULT ' . (is_numeric($c[4]) || strtoupper($c[4]) === 'CURRENT_TIMESTAMP'
+                    ? $c[4] : "'" . SQLite3::escapeString($c[4]) . "'");
+            }
         }
         $cols[] = $def;
+    }
+    if (count($primary) > 0 && !$auto_increment) {
+        $cols[] = 'PRIMARY KEY (' . implode(', ', $primary) . ')';
     }
     if ($table === 'resource') {
         // The field<n> copy columns core adds for the title, date and sort fields.
@@ -316,7 +337,7 @@ foreach (glob($ROOT . '/dbstruct/table_*.txt') as $file) {
             $cols[] = '`field' . $f . '` TEXT';
         }
     }
-    $DB->exec('CREATE TABLE `' . $table . '` (' . implode(', ', $cols) . ')');
+    $DB->exec('CREATE TABLE IF NOT EXISTS `' . $table . '` (' . implode(', ', $cols) . ')');
 }
 
 /** Strip the parentheses MySQL allows around a UNIONed SELECT. */
@@ -368,6 +389,14 @@ function harness_translate(string $sql): string
     if (stripos($sql, 'FROM resource_type rt') !== false) {
         $sql = preg_replace('/ORDER BY\s+order_by\s*,/i', 'ORDER BY rt.order_by,', $sql);
     }
+    // MySQL's insert-or-update (the plugin's state table, A6): SQLite's target-less ON CONFLICT (3.35 or later)
+    // fires on the primary key; VALUES(col) in the update list is excluded.col there.
+    $upsert = stripos($sql, 'ON DUPLICATE KEY UPDATE');
+    if ($upsert !== false) {
+        $sql = substr($sql, 0, $upsert) . 'ON CONFLICT DO UPDATE SET'
+            . preg_replace('/\bVALUES\((\w+)\)/i', 'excluded.$1', substr($sql, $upsert + 23));
+    }
+    $sql = preg_replace('/^(\s*)INSERT\s+IGNORE\s+INTO\b/i', '$1INSERT OR IGNORE INTO', $sql);
     return $sql;
 }
 
