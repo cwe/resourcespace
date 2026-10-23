@@ -5212,7 +5212,7 @@ function get_resource_access($resource)
         # Apply filters by searching for the resource, utilising the existing filter matching in do_search to avoid duplication of logic.
         $search_all_workflow_states_cache = $search_all_workflow_states;
         $search_all_workflow_states = true;
-        $results = do_search("!resource" . $ref);
+        $results = do_search_access_check("!resource" . $ref);
         $search_all_workflow_states = $search_all_workflow_states_cache;
         if (count($results) > 0) {
             $usersearchfilter_isvalid = true;

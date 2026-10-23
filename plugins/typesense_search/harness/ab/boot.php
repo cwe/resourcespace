@@ -583,13 +583,19 @@ function harness_search_log_line(): array
 
 function GlobalHookExternal_search(...$args)
 {
-    global $USE_PLUGIN, $PLUGIN_STATE, $debug_log_location;
+    global $USE_PLUGIN, $PLUGIN_STATE, $HARNESS, $debug_log_location;
 
     if (!$USE_PLUGIN) {
         return false;
     }
     $PLUGIN_STATE['hook_reached'] = true;
     $PLUGIN_STATE['keywords'] = $args[1];
+    $PLUGIN_STATE['args'] = $args;
+    // A canned answer in place of the plugin, for the batteries that prove core's handling of the hook (I1).
+    if (array_key_exists('hook_stub', $HARNESS)) {
+        $PLUGIN_STATE['served'] = $HARNESS['hook_stub'] !== false;
+        return $HARNESS['hook_stub'];
+    }
     if (!function_exists('HookTypesense_searchAllExternal_search')) {
         $PLUGIN_STATE['no_hook'] = true;
         return false;

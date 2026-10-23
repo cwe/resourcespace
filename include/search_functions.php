@@ -1884,6 +1884,26 @@ function rebuild_specific_field_search_from_node(array $node)
     return (strpos($node['name'], " ") === false) ? $field_shortname . ":" . i18n_get_translated($node['name']) : "\"" . $field_shortname . ":" . i18n_get_translated($node['name']) . "\"";
 }
 
+/**
+ * Run do_search() for an access decision, such as whether the user can see a resource or can edit, share or request
+ * a collection. The answer always comes from the database: the external_search hook is not offered the search.
+ *
+ * @param mixed ...$args  The do_search() arguments
+ *
+ * @return mixed          As do_search()
+ */
+function do_search_access_check(...$args)
+{
+    global $search_access_check;
+
+    $search_access_check_cache = $search_access_check;
+    $search_access_check = true;
+    $results = do_search(...$args);
+    $search_access_check = $search_access_check_cache;
+
+    return $results;
+}
+
 function search_get_previews($search, $restypes = "", $order_by = "relevance", $archive = 0, $fetchrows = -1, $sort = "DESC", $access_override = false, $ignore_filters = false, $return_disk_usage = false, $recent_search_daylimit = "", $go = false, $stats_logging = true, $return_refs_only = false, $editable_only = false, $returnsql = false, $getsizes = array(), $previewextension = "jpg")
 {
     global $access;

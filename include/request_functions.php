@@ -289,7 +289,7 @@ function email_collection_request($ref, $details, $external_email): bool
     // Make sure a collection does not include resources that may have been hidden from the user due
     // to archive state, resource type or access changes and that they are not aware they are requesting.
     // Without this a full copy can confuse the request administrator
-    $col_visible = do_search("!collection" . $ref, '', '', '', -1, 'desc', false, 0, false, false, '', false, false, true);
+    $col_visible = do_search_access_check("!collection" . $ref, '', '', '', -1, 'desc', false, 0, false, false, '', false, false, true);
     $colresources = get_collection_resources($ref);
     foreach ($colresources as $colresource) {
         if (!in_array($colresource, array_column($col_visible, "ref"))) {
@@ -485,7 +485,7 @@ function managed_collection_request($ref, $details, $ref_is_resource = false)
         // Make sure a collection does not include resources that may have been hidden from the user due
         // to archive state, resource type or access changes and that they are not aware they are requesting.
         // Without this a full copy can confuse the request administrator
-        $col_visible = do_search("!collection" . $ref, '', '', '', -1, 'desc', false, 0, false, false, '', false, false, true);
+        $col_visible = do_search_access_check("!collection" . $ref, '', '', '', -1, 'desc', false, 0, false, false, '', false, false, true);
         $colresources = get_collection_resources($ref);
 
         foreach ($colresources as $colresource) {

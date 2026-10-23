@@ -2627,14 +2627,14 @@ function allow_multi_edit($collection, $collectionid = 0)
             // Need the collection resources so need to run the search
             $collectionid = $collection;
             # Editable_only=false (so returns resources whether editable or not)
-            $collection = do_search("!collection{$collectionid}", '', '', 0, -1, '', false, 0, false, false, '', false, false, true, false);
+            $collection = do_search_access_check("!collection{$collectionid}", '', '', 0, -1, '', false, 0, false, false, '', false, false, true, false);
         }
         if (is_array($collection)) {
             $resultcount = count($collection);
         }
         $editcount = 0;
         # Editable_only=true (so returns editable resources only)
-        $editresults =  do_search("!collection{$collectionid}", '', '', 0, -1, '', false, 0, false, false, '', false, false, true, true);
+        $editresults =  do_search_access_check("!collection{$collectionid}", '', '', 0, -1, '', false, 0, false, false, '', false, false, true, true);
         if (is_array($editresults)) {
             $editcount = count($editresults);
         }
@@ -3503,7 +3503,7 @@ function get_collection_log($collection, $fetchrows = -1)
 function collection_max_access($collection)
 {
     $maxaccess = 2;
-    $result = do_search("!collection" . $collection);
+    $result = do_search_access_check("!collection" . $collection);
     if (!is_array($result)) {
         $result = array();
     }
@@ -3534,7 +3534,7 @@ function collection_min_access($collection)
     if (is_array($collection)) {
         $result = $collection;
     } else {
-        $result = do_search("!collection{$collection}", '', 'relevance', 0, -1, 'desc', false, '', false, '', '', false, false, true);
+        $result = do_search_access_check("!collection{$collection}", '', 'relevance', 0, -1, 'desc', false, '', false, '', '', false, false, true);
     }
     if (!is_array($result) || empty($result)) {
         return 2;
@@ -3655,7 +3655,7 @@ function is_collection_approved($collection)
     if (is_array($collection)) {
         $result = $collection;
     } else {
-        $result = do_search("!collection" . $collection, "", "relevance", 0, -1, "desc", false, "", false, "");
+        $result = do_search_access_check("!collection" . $collection, "", "relevance", 0, -1, "desc", false, "", false, "");
     }
     if (!is_array($result) || count($result) == 0) {
         return true;

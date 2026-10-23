@@ -3612,9 +3612,9 @@ function render_edit_selected_btn()
 
     $search = "!collection{$USER_SELECTION_COLLECTION}";
     # Editable_only=true (so returns editable resources only)
-    $editable_resources = do_search($search, $restypes, "resourceid", $archive, -1, "desc", false, 0, false, false, "", false, false, true, true);
+    $editable_resources = do_search_access_check($search, $restypes, "resourceid", $archive, -1, "desc", false, 0, false, false, "", false, false, true, true);
     # Editable_only=false (so returns resources whether editable or not)
-    $all_resources = do_search($search, $restypes, "resourceid", $archive, -1, "desc", false, 0, false, false, "", false, false, true, false);
+    $all_resources = do_search_access_check($search, $restypes, "resourceid", $archive, -1, "desc", false, 0, false, false, "", false, false, true, false);
 
     # If there are no editable resources then don't render the edit selected button
 

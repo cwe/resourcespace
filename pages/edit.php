@@ -306,7 +306,7 @@ if($editsearch)
     # Check all resources are editable
     
     # Editable_only=false (so returns resources whether editable or not)
-    $searchitems = do_search($search, $restypes, 'resourceid', $archive, -1, $sort, false, 0, false, false, '', false, false, true, false, false, $search_access);
+    $searchitems = do_search_access_check($search, $restypes, 'resourceid', $archive, -1, $sort, false, 0, false, false, '', false, false, true, false, false, $search_access);
     if (!is_array($searchitems) || count($searchitems) == 0)
         {
         $error = $lang['searchnomatches'];
@@ -317,7 +317,7 @@ if($editsearch)
     $all_resource_refs=array_column($searchitems,"ref");
 
     # Editable_only=true (so returns editable resources only)
-    $edititems   = do_search($search, $restypes, 'resourceid', $archive, -1, $sort, false, 0, false, false, '', false, false, true, true, false, $search_access);
+    $edititems   = do_search_access_check($search, $restypes, 'resourceid', $archive, -1, $sort, false, 0, false, false, '', false, false, true, true, false, $search_access);
     if (!is_array($edititems)){$edititems = array();}
     $editable_resources_count = count($edititems);
     $editable_resource_refs=array_column($edititems,"ref");

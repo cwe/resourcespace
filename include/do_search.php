@@ -67,7 +67,8 @@ function do_search(
         $userref,$k, $DATE_FIELD_TYPES,$stemming, $usersearchfilter, $userpermissions, $usereditfilter, $userdata,
         $lang, $baseurl, $internal_share_access, $config_separators, $date_field, $noadd, $wildcard_always_applied,
         $index_contributed_by, $max_results, $config_search_for_number,
-        $category_tree_search_use_and_logic, $date_field, $FIXED_LIST_FIELD_TYPES, $userderestrictfilter;
+        $category_tree_search_use_and_logic, $date_field, $FIXED_LIST_FIELD_TYPES, $userderestrictfilter,
+        $search_access_check;
 
     if (!is_a($select, "PreparedStatementQuery")) {
             $select = new PreparedStatementQuery($select ?? '', array());
@@ -332,6 +333,46 @@ function do_search(
     }
 
     # --------------------------------------------------------------------------------
+    # External search providers
+    # --------------------------------------------------------------------------------
+    # A provider is offered the search before the special and standard searches, with the filter, join and select
+    # built above, and returns the results to use (an empty set included) or false to leave the search to the code
+    # below. An access check (do_search_access_check()) is never offered: that answer must come from the database.
+    if (!$search_access_check) {
+        $external_search_results = hook(
+            'external_search',
+            '',
+            [
+                $search,
+                $keywords,
+                $node_bucket,
+                $node_bucket_not,
+                $restypes,
+                $order_by,
+                $archive,
+                $fetchrows,
+                $sort,
+                $access_override,
+                $ignore_filters,
+                $return_disk_usage,
+                $recent_search_daylimit,
+                $return_refs_only,
+                $editable_only,
+                $returnsql,
+                $access,
+                $smartsearch,
+                $sql_filter,
+                $sql_join,
+                $select,
+            ]
+        );
+        if ($external_search_results !== false) {
+            log_keyword_usage($keywords_used, $external_search_results);
+            return $external_search_results;
+        }
+    }
+
+    # --------------------------------------------------------------------------------
     # Special Searches (start with an exclamation mark)
     # --------------------------------------------------------------------------------
     $sql_select = clone $select;
@@ -344,43 +385,9 @@ function do_search(
     # -------------------------------------------------------------------------------------
     # Standard Searches
     # -------------------------------------------------------------------------------------
- 
+
     # We've reached this far without returning.
     # This must be a standard (non-special) search.
-
-    # Support external search providers.
-    $external_search_results = hook(
-        'external_search',
-        '',
-        [
-            $search,
-            $keywords,
-            $node_bucket,
-            $node_bucket_not,
-            $restypes,
-            $order_by,
-            $archive,
-            $fetchrows,
-            $sort,
-            $access_override,
-            $ignore_filters,
-            $return_disk_usage,
-            $recent_search_daylimit,
-            $return_refs_only,
-            $editable_only,
-            $returnsql,
-            $access,
-            $smartsearch,
-            $sql_filter,
-            $sql_join,
-            $select,
-        ]
-        );
-
-    if ($external_search_results !== false) {
-        log_keyword_usage($keywords_used, $external_search_results);
-        return $external_search_results;
-    }
 
     # Construct and perform the standard search query.
     $sql = new PreparedStatementQuery();
