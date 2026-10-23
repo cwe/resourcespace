@@ -25,6 +25,21 @@ dedicated section below.
 ## Status (23 Sep 2026)
 
 The pipeline below is built and serving searches. Changes since this plan was written:
+- **Inactive fields were searchable** — core treats a field as hidden when it is inactive or the user
+  cannot view it (`get_hidden_indexed_fields()`) and never matches on it; the plugin only checked the
+  view permission, so `aiartworkdetected:landscape` on an inactive field returned 308 where core
+  returns 0 (A/B run, 2026-09-30). A field-scoped search on an inactive field now vetoes, and the
+  indexer no longer indexes the text of inactive fields. Takes effect on the next reindex. **[FIXED]**
+- **Known differences left after the 2026-09-30 A/B run** (none fixed, all core behaviours):
+  - *Wildcards* — core answers `word*` with a MySQL full-text match over the text of **every** node in
+    any field the user may see, whether or not the field is flagged for indexing
+    (`do_search_keywords.php`); the plugin searches indexed fields only. `sculpt*`: 49,610 vs 51,007,
+    the difference being a non-indexed alt-text field. **[OPEN — decide: veto wildcards, index all
+    text, or accept]**
+  - *NOT* — core's `-word` excludes on keywords in every field, hidden and inactive ones included; the
+    plugin's applies to the searched fields. `sculpture -landscape`: 15,059 vs 15,049.
+  - *Literal punctuation in a value* — a tag stored as `landscape]` is a different keyword in core and
+    the plain word in Typesense. `sculpture landscape`: 34,409 vs 34,408.
 - **Invisible characters in stored values hid resources** — a checkbox value stored as
   `\u{FEFF}sculpture` (a byte-order mark) was used by 6,548 resources on the test copy and never
   matched `sculpture`; non-breaking spaces glued words together on 4,347 more. RS strips these when

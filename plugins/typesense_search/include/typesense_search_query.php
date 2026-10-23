@@ -580,9 +580,9 @@ function typesense_build_q_from_keywords(TypesenseSearchContext $ctx, TypesenseQ
                 if (in_array($field['type'], (array)$FIXED_LIST_FIELD_TYPES, true)) {
                     continue; // already in $node_bucket
                 }
-                // Never scope a search to a field the user can't view (would probe hidden data).
-                if (!metadata_field_view_access((int)$field['ref'])) {
-                    $plan->markUnsupported('field-scoped search on a non-viewable field');
+                // Never scope a search to a field core hides: inactive, or one the user can't view.
+                if (empty($field['active']) || !metadata_field_view_access((int)$field['ref'])) {
+                    $plan->markUnsupported('field-scoped search on a hidden field');
                     return '';
                 }
                 // OR-groups (";") can't be reproduced in a single Typesense field filter -> veto.
@@ -714,7 +714,7 @@ function typesense_apply_default_sort(TypesenseSearchContext $ctx, TypesenseQuer
 /**
  * Resolve a field short name to its ref and type, or null if it is not a field.
  *
- * @return array{ref:int,type:int,partial_index:int}|null
+ * @return array{ref:int,type:int,partial_index:int,active:int}|null
  */
 function typesense_search_field_by_shortname(string $name): ?array
 {
@@ -726,13 +726,13 @@ function typesense_search_field_by_shortname(string $name): ?array
     }
 
     $rows = ps_query(
-        "SELECT ref, `type`, partial_index FROM resource_type_field WHERE name = ?",
+        "SELECT ref, `type`, partial_index, active FROM resource_type_field WHERE name = ?",
         array('s', $name),
         'schema'
     );
 
     $cache[$key] = count($rows) > 0
-        ? array('ref' => (int)$rows[0]['ref'], 'type' => (int)$rows[0]['type'], 'partial_index' => (int)$rows[0]['partial_index'])
+        ? array('ref' => (int)$rows[0]['ref'], 'type' => (int)$rows[0]['type'], 'partial_index' => (int)$rows[0]['partial_index'], 'active' => (int)$rows[0]['active'])
         : null;
 
     return $cache[$key];

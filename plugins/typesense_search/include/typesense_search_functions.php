@@ -1227,6 +1227,7 @@ function typesense_search_reindex_resource_attributes(int $limit = 100, int $aft
             INNER JOIN node n ON n.resource_type_field  = rtf.ref
             INNER JOIN resource_node rn ON rn.node = n.ref
             WHERE (rtf.keywords_index = 1 OR rtf.partial_index = 1 OR rtf.complete_index = 1)
+            AND rtf.active = 1
             AND rn.resource IN (" . ps_param_insert(count($resource_list)) . ")
             ORDER BY rn.resource ASC, rtf.ref ASC, n.ref, n.name ASC;",
         $param_array
