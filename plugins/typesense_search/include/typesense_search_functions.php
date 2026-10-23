@@ -12,3 +12,4 @@ require_once __DIR__ . '/options.php';
 require_once __DIR__ . '/tenancy.php';
 require_once __DIR__ . '/schema.php';
 require_once __DIR__ . '/dates.php';
+require_once __DIR__ . '/text.php';
