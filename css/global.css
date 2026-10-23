@@ -700,7 +700,7 @@ div.tile-select {
 .featured-tile-image-container {
     position: relative;
 }
-.smart-fc-image-loading {
+.featured-collection-image-loading {
     position: absolute;
     top: 50%;
     left: 50%;

@@ -42,6 +42,15 @@ $pagetime_start = microtime();
 $pagetime_start = explode(' ', $pagetime_start);
 $pagetime_start = $pagetime_start[1] + $pagetime_start[0];
 
+// Check for critical PHP security patch released 2026-10-21.
+if (!array_key_exists('memory_hard_limit_percent', ini_get_all())) {
+    exit(
+        "Critical PHP security patch may be missing. " .
+        "Please update PHP immediately or verify that your vendor has applied " .
+        "<a href='https://www.php.net/archive/2026.php#2026-10-21-5'>the October 2026 security fixes</a>."
+    );
+}
+
 if ((!isset($suppress_headers) || !$suppress_headers) && !isset($nocache)) {
     header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");    // Date in the past
     header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");  // always modified

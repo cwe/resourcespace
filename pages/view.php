@@ -1463,7 +1463,7 @@ function RenderPushedMetadata($resource, $field_data, $all_field_data)
         <div class="RecordPanel PushedRecordPanel">
             <div class="backtoresults">&gt;<a href="<?php echo $baseurl ?>/pages/view.php?ref=<?php echo $ref ?>" onClick="return CentralSpaceLoad(this,true);"><?php echo escape($lang["view"]); ?></a>
         </div>
-        <div class="Title"><?php echo i18n_get_translated($resource["resource_type_name"]) . " : " . $resource["field" . $view_title_field] ?></div>
+        <div class="Title"><?php echo escape(i18n_get_translated($resource["resource_type_name"]) . " : " . $resource["field{$view_title_field}"]); ?></div>
             <?php
             $GLOBALS["showing_pushed_metadata"] = true;
             include "view_metadata.php";

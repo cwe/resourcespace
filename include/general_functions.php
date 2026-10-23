@@ -315,7 +315,7 @@ function redirect(string $url)
  */
 function trim_spaces($text)
 {
-    while (strpos($text, "  ") !== false) {
+    while (strpos($text ?? "", "  ") !== false) {
         $text = str_replace("  ", " ", $text);
     }
     return trim($text);
