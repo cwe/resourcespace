@@ -1,2 +1,4 @@
 .svn*
 update_check.sh
+
+.DS_Store
