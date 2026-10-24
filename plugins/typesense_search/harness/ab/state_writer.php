@@ -6,9 +6,10 @@ if (PHP_SAPI !== 'cli') {
 }
 
 // The second writer of the A6 battery's two-process case. Boots the harness on the file database named by
-// HARNESS_DB (the tables are already there), says READY, waits for a line on stdin, then increments the counter
+// HARNESS_DB (the tables are already there), or, with HARNESS_DB=mysql and HARNESS_MYSQL_KEEP=1, on the battery's
+// own MySQL database, says READY, waits for a line on stdin, then increments the counter
 // named in the first argument as many times as the second says and reports how many SQL errors it met.
-// Usage: HARNESS_DB=<file> php state_writer.php <entry> <times>
+// Usage: HARNESS_DB=<file>|mysql php state_writer.php <entry> <times>
 require __DIR__ . '/boot.php';
 
 $name = $argv[1] ?? 'validation_drops';

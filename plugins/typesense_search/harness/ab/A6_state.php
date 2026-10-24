@@ -28,18 +28,13 @@ function a6_throws(callable $fn): string
 /** Rows in the state table for one tenant and entry, read directly. */
 function a6_rows(string $prefix, string $name): int
 {
-    global $DB;
-    $stmt = $DB->prepare('SELECT COUNT(*) AS n FROM typesense_search_state WHERE prefix = ? AND name = ?');
-    $stmt->bindValue(1, $prefix, SQLITE3_TEXT);
-    $stmt->bindValue(2, $name, SQLITE3_TEXT);
-    return (int)$stmt->execute()->fetchArray(SQLITE3_ASSOC)['n'];
+    return (int)harness_scalar('SELECT COUNT(*) AS n FROM typesense_search_state WHERE prefix = ? AND name = ?', array('s', $prefix, 's', $name));
 }
 
 /** Another writer: a statement on the table that bypasses the module and its cache. */
 function a6_other_writer(string $sql): void
 {
-    global $DB;
-    $DB->exec($sql);
+    harness_run($sql, array());
 }
 
 /** The statements the module sent while $fn ran, whitespace collapsed. */
@@ -76,17 +71,17 @@ function a6_read_line($pipe, int $seconds): string
     return trim($line);
 }
 
-/** Start a writer process on the shared file database and wait for its READY; null when it does not get there. */
+/** Start a writer process on the shared database (a file under SQLite, this battery's own database under MySQL) and wait for its READY; null when it does not get there. */
 function a6_writer_start(string $file, string $name, int $times): ?array
 {
-    global $SCRATCH;
+    global $SCRATCH, $HARNESS;
 
     $process = proc_open(
         array(PHP_BINARY, __DIR__ . '/state_writer.php', $name, (string)$times),
         array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('file', $SCRATCH . '/a6_writer.log', 'a')),
         $pipes,
         __DIR__,
-        array_merge(getenv(), array('HARNESS_DB' => $file))
+        array_merge(getenv(), $HARNESS['mode'] === 'mysql' ? array('HARNESS_DB' => 'mysql', 'HARNESS_MYSQL_KEEP' => '1') : array('HARNESS_DB' => $file))
     );
     if (!is_resource($process)) {
         return null;
@@ -117,8 +112,17 @@ harness_check(
         && count($columns['prefix']) === 6
 );
 $pk = array();
-foreach (harness_run('PRAGMA table_info(typesense_search_state)', array()) as $info) {
-    $pk[$info['name']] = (int)$info['pk'];
+if ($HARNESS['mode'] === 'mysql') {
+    foreach (harness_run('SHOW COLUMNS FROM typesense_search_state', array()) as $info) {
+        $pk[$info['Field']] = 0;
+    }
+    foreach (harness_run("SHOW INDEX FROM typesense_search_state WHERE Key_name = 'PRIMARY'", array()) as $info) {
+        $pk[$info['Column_name']] = (int)$info['Seq_in_index'];
+    }
+} else {
+    foreach (harness_run('PRAGMA table_info(typesense_search_state)', array()) as $info) {
+        $pk[$info['name']] = (int)$info['pk'];
+    }
 }
 harness_check(
     'A6.2 the harness built the table from the plugin\'s dbstruct with that composite key',
@@ -223,7 +227,7 @@ harness_check(
     $back === $rebuild,
     $back === $rebuild ? '' : json_encode($back)
 );
-$stored = $DB->querySingle("SELECT value FROM typesense_search_state WHERE prefix = 'harness' AND name = 'last_rebuild'");
+$stored = harness_scalar("SELECT value FROM typesense_search_state WHERE prefix = 'harness' AND name = 'last_rebuild'");
 harness_check(
     'A6.15 the stored text is ASCII-only JSON, so the column\'s character set cannot alter it',
     is_string($stored) && preg_match('/^[\x20-\x7e]*$/', $stored) === 1 && strpos($stored, 'caf' . chr(92) . 'u00e9') !== false,
@@ -237,7 +241,7 @@ harness_check(
 harness_check(
     'A6.17 repeated writes are one insert-or-update: one row per entry',
     a6_rows('harness', 'live_generation') === 1 && a6_rows('harness', 'ready') === 1
-        && (int)$DB->querySingle("SELECT COUNT(*) FROM typesense_search_state WHERE prefix = 'harness'") === 5
+        && (int)harness_scalar("SELECT COUNT(*) FROM typesense_search_state WHERE prefix = 'harness'") === 5
 );
 a6_other_writer("UPDATE typesense_search_state SET updated = '2000-01-01 00:00:00' WHERE prefix = 'harness' AND name = 'live_generation'");
 $old = typesense_search_state_updated('live_generation');
@@ -295,9 +299,11 @@ harness_check('A6.23 a counter starts at its default and moves by one', $one ===
 $sent = a6_sql(function () {
     typesense_search_state_increment('validation_drops');
 });
+// The SQLite driver logs what it ran (the upsert translated); the MySQL driver logs what the module sent.
+$upsert = $HARNESS['mode'] === 'mysql' ? 'ON DUPLICATE KEY UPDATE' : 'ON CONFLICT DO UPDATE SET';
 harness_check(
     'A6.24 an increment is one statement with no read: INSERT ... ON CONFLICT DO UPDATE SET value = CAST(value AS SIGNED) + 1',
-    count($sent) === 1 && preg_match('/^INSERT INTO typesense_search_state .* ON CONFLICT DO UPDATE SET `value` = CAST\(`value` AS SIGNED\) \+ 1, updated = NOW\(\)$/', $sent[0]) === 1
+    count($sent) === 1 && preg_match('/^INSERT INTO typesense_search_state .* ' . $upsert . ' `value` = CAST\(`value` AS SIGNED\) \+ 1, updated = NOW\(\)$/', $sent[0]) === 1
         && stripos($sent[0], 'SELECT') === false,
     implode(' | ', $sent)
 );
@@ -325,6 +331,10 @@ foreach (array('', '-journal', '-wal', '-shm') as $suffix) {
     @unlink($file . $suffix);
 }
 @unlink($SCRATCH . '/a6_writer.log');
+if ($HARNESS['mode'] === 'mysql') {
+    // The writers share this battery's database, not a file of their own: start the counter from nothing.
+    typesense_search_state_delete('validation_drops');
+}
 $writers = array();
 $first = a6_writer_start($file, 'validation_drops', $A6_TIMES);
 if ($first !== null) {
@@ -350,7 +360,9 @@ foreach ($writers as $writer) {
     proc_close($writer['process']);
 }
 $shared_count = null;
-if (is_file($file)) {
+if ($HARNESS['mode'] === 'mysql') {
+    $shared_count = harness_scalar("SELECT value FROM typesense_search_state WHERE prefix = 'harness' AND name = 'validation_drops'");
+} elseif (is_file($file)) {
     $shared = new SQLite3($file, SQLITE3_OPEN_READONLY);
     $shared_count = $shared->querySingle("SELECT value FROM typesense_search_state WHERE prefix = 'harness' AND name = 'validation_drops'");
     $shared->close();
@@ -376,7 +388,7 @@ $sent = a6_sql(function () use ($rival, &$taken_again) {
 harness_check(
     'A6.30 a second taker is refused and the first holder\'s value stays: INSERT IGNORE then a read, no UPDATE',
     $taken_again === false && typesense_search_state_get('building_generation') === $lock
-        && count($sent) === 2 && stripos($sent[0], 'INSERT OR IGNORE INTO typesense_search_state') === 0
+        && count($sent) === 2 && stripos($sent[0], $HARNESS['mode'] === 'mysql' ? 'INSERT IGNORE INTO typesense_search_state' : 'INSERT OR IGNORE INTO typesense_search_state') === 0
         && stripos($sent[1], 'SELECT') === 0,
     implode(' | ', $sent)
 );
@@ -437,6 +449,6 @@ harness_check(
     'A6.37 a row another writer removed reads as the default once the cache is cleared',
     typesense_search_state_get('ready') === false && a6_rows('harness', 'ready') === 0
 );
-harness_check('A6.38 no statement failed on SQLite during the battery', count($HARNESS['sql_errors']) === 0, implode(' || ', $HARNESS['sql_errors']));
+harness_check('A6.38 no statement failed on ' . harness_mode_name() . ' during the battery', count($HARNESS['sql_errors']) === 0, implode(' || ', $HARNESS['sql_errors']));
 
 harness_finish('A6_state');

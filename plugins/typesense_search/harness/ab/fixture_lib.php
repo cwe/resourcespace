@@ -1,8 +1,8 @@
 <?php
 
-// Helpers for building a fixture in the A/B harness: rows go into SQLite the way core would write them (with
-// core's real keyword indexing). Fixtures are files under fixtures/, loaded by name with fx_load(); a battery
-// loads the base fixture and only the additions it needs (Q10.13).
+// Helpers for building a fixture in the A/B harness: rows go into the database (SQLite, or MySQL under
+// HARNESS_DB=mysql) the way core would write them (with core's real keyword indexing). Fixtures are files under
+// fixtures/, loaded by name with fx_load(); a battery loads the base fixture and only the additions it needs (Q10.13).
 
 $FX_LOADED = array();
 
@@ -23,7 +23,16 @@ function fx_load(string $name): void
 
 function fx_exec(string $sql, array $values = array()): void
 {
-    global $DB;
+    global $DB, $HARNESS;
+    if ($HARNESS['mode'] === 'mysql') {
+        $parameters = array();
+        foreach (array_values($values) as $v) {
+            $parameters[] = is_int($v) ? 'i' : (is_float($v) ? 'd' : 's');
+            $parameters[] = $v;
+        }
+        harness_run($sql, $parameters);
+        return;
+    }
     $stmt = $DB->prepare($sql);
     foreach (array_values($values) as $i => $v) {
         $stmt->bindValue($i + 1, $v, $v === null ? SQLITE3_NULL : (is_int($v) ? SQLITE3_INTEGER : (is_float($v) ? SQLITE3_FLOAT : SQLITE3_TEXT)));
@@ -44,14 +53,14 @@ function fx_field(int $ref, string $name, int $type, array $over = array()): voi
 /** Create a node the way set_node() does for a new node: insert it, then index it if the field is indexed. */
 function fx_node(int $field, string $name, ?int $parent = null, ?int $ref = null): int
 {
-    global $DB, $DATE_FIELD_TYPES;
+    global $DATE_FIELD_TYPES;
     if ($ref === null) {
         fx_exec('INSERT INTO node (resource_type_field, name, parent, order_by) VALUES (?, ?, ?, ?)', array($field, $name, $parent, 10));
-        $ref = $DB->lastInsertRowID();
+        $ref = sql_insert_id();
     } else {
         fx_exec('INSERT INTO node (ref, resource_type_field, name, parent, order_by) VALUES (?, ?, ?, ?, ?)', array($ref, $field, $name, $parent, 10));
     }
-    $row = $DB->querySingle('SELECT keywords_index, type FROM resource_type_field WHERE ref = ' . $field, true);
+    $row = harness_run('SELECT keywords_index, type FROM resource_type_field WHERE ref = ?', array('i', $field))[0] ?? array();
     if ((int)($row['keywords_index'] ?? 0) === 1) {
         $is_date = in_array((int)$row["type"], $DATE_FIELD_TYPES);
         $is_html = (int)$row["type"] === FIELD_TYPE_TEXT_BOX_FORMATTED_AND_TINYMCE;

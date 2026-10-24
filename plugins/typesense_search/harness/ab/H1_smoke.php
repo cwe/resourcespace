@@ -16,20 +16,25 @@ harness_check('H1.1 private Typesense answers', $status === 200 && isset($debug[
 harness_check('H1.2 Typesense is 30.x', isset($debug['version']) && strpos((string)$debug['version'], '30.') === 0, (string)($debug['version'] ?? '?'));
 harness_check('H1.3 harness prefix', typesense_search_tenancy_prefix() === 'harness');
 
-$tables = (int)$DB->querySingle("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name <> 'sqlite_sequence'");
+$tables = (int)harness_scalar(
+    $HARNESS['mode'] === 'mysql'
+        ? 'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE()'
+        : "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name <> 'sqlite_sequence'"
+);
 $dbstruct = count(glob($ROOT . '/dbstruct/table_*.txt')) + count(glob($ROOT . '/plugins/typesense_search/dbstruct/table_*.txt'));
-harness_check('H1.4 one SQLite table per dbstruct file, core and plugin', $tables === $dbstruct, $tables . ' tables');
-harness_check('H1.5 fixture resources', (int)$DB->querySingle('SELECT COUNT(*) FROM resource') === 34);
-harness_check('H1.6 fixture fields', (int)$DB->querySingle('SELECT COUNT(*) FROM resource_type_field') === 14);
-$keywords = (int)$DB->querySingle('SELECT COUNT(*) FROM keyword');
-harness_check('H1.7 core indexed the fixture', $keywords > 100, $keywords . ' keywords, ' . $DB->querySingle('SELECT COUNT(*) FROM node_keyword') . ' node_keyword rows');
+harness_check('H1.4 one ' . harness_mode_name() . ' table per dbstruct file, core and plugin', $tables === $dbstruct, $tables . ' tables');
+harness_check('H1.5 fixture resources', (int)harness_scalar('SELECT COUNT(*) FROM resource') === 34);
+harness_check('H1.6 fixture fields', (int)harness_scalar('SELECT COUNT(*) FROM resource_type_field') === 14);
+$keywords = (int)harness_scalar('SELECT COUNT(*) FROM keyword');
+harness_check('H1.7 core indexed the fixture', $keywords > 100, $keywords . ' keywords, ' . harness_scalar('SELECT COUNT(*) FROM node_keyword') . ' node_keyword rows');
 
 // What core's keyword index holds for a few nodes (the fixture must exist in the keyword table, or core never asks the plugin).
-foreach (harness_run("SELECT n.ref, n.resource_type_field f, substr(n.name,1,40) name, group_concat(k.keyword || '@' || nk.position, ' ') kws FROM node n LEFT JOIN node_keyword nk ON nk.node=n.ref LEFT JOIN keyword k ON k.ref=nk.keyword WHERE n.ref IN (204, 302) OR n.resource_type_field IN (51, 90, 94, 96) GROUP BY n.ref", array()) as $r) {
+$kws = $HARNESS['mode'] === 'mysql' ? "GROUP_CONCAT(CONCAT(k.keyword, '@', nk.position) SEPARATOR ' ')" : "group_concat(k.keyword || '@' || nk.position, ' ')";
+foreach (harness_run("SELECT n.ref, n.resource_type_field f, substr(n.name,1,40) name, " . $kws . " kws FROM node n LEFT JOIN node_keyword nk ON nk.node=n.ref LEFT JOIN keyword k ON k.ref=nk.keyword WHERE n.ref IN (204, 302) OR n.resource_type_field IN (51, 90, 94, 96) GROUP BY n.ref", array()) as $r) {
     echo sprintf("    node %-5s field %-3s %-42s => %s\n", $r['ref'], $r['f'], json_encode($r['name']), $r['kws']);
 }
-harness_check('H1.8 partial index built for field 51', (int)$DB->querySingle("SELECT COUNT(*) FROM node_keyword nk JOIN keyword k ON k.ref = nk.keyword WHERE k.keyword = 'ulpture'") === 1);
-harness_check('H1.9 non-indexed field 96 has no keywords', (int)$DB->querySingle('SELECT COUNT(*) FROM node_keyword nk JOIN node n ON n.ref = nk.node WHERE n.resource_type_field = 96') === 0);
+harness_check('H1.8 partial index built for field 51', (int)harness_scalar("SELECT COUNT(*) FROM node_keyword nk JOIN keyword k ON k.ref = nk.keyword WHERE k.keyword = 'ulpture'") === 1);
+harness_check('H1.9 non-indexed field 96 has no keywords', (int)harness_scalar('SELECT COUNT(*) FROM node_keyword nk JOIN node n ON n.ref = nk.node WHERE n.resource_type_field = 96') === 0);
 
 // ----------------------------------------------------------------------------------------- the index seam
 fx_index();

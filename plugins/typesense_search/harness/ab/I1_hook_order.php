@@ -40,7 +40,7 @@ function i1_run(callable $call, $stub): array
     $seen = $PLUGIN_STATE;
     $seen['sql'] = $HARNESS['sql_log'];
     foreach (array_unique($HARNESS['sql_errors']) as $err) {
-        echo '    (core SQL did not run on SQLite: ' . substr($err, 0, 200) . ")\n";
+        echo '    (core SQL did not run on ' . harness_mode_name() . ': ' . substr($err, 0, 200) . ")\n";
     }
     return array($result, $seen);
 }
@@ -81,7 +81,7 @@ harness_check('I1.7 the structured empty set (offset and limit) is returned as i
 list($result) = i1_run(function () {
     return do_search('sunset', '', 'relevance', '0', -1, 'DESC', false, DEPRECATED_STARSEARCH, false, false, '', false, true);
 }, $canned);
-$usage = (int)$DB->querySingle("SELECT COUNT(*) FROM daily_stat WHERE activity_type LIKE 'Keyword usage%'");
+$usage = (int)harness_scalar("SELECT COUNT(*) FROM daily_stat WHERE activity_type LIKE 'Keyword usage%'");
 harness_check('I1.8 keyword usage is still logged when the hook answers', $result === $canned && $usage > 0, $usage . ' daily_stat rows');
 
 // ----------------------------------------------------------------------------------------- what the hook receives

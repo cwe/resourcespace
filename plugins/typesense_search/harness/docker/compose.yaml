@@ -1,7 +1,8 @@
 # The harness in Docker: php runs the batteries and the code checks on the checkout mounted at /app, typesense is
 # the private Typesense (no host port), mysql (profile "mysql") is for the H9 MySQL mode. php shares typesense's
 # network namespace so that the server is 127.0.0.1:8108 to it: the plugin's client takes plain http from a
-# loopback host only (Q12.2), and boot.php starts nothing for a host it cannot start a server on anyway.
+# loopback host only (Q12.2), and boot.php starts nothing for a host it cannot start a server on anyway. mysql is
+# on the project network that namespace belongs to, so php reaches it by its service name.
 # Driven by ../run.ps1, ../battery.ps1, ../check.ps1 and ../run.sh; the keys and passwords here are throwaway
 # defaults for containers that only listen inside the compose network (mysql publishes 13306 on the host).
 name: rs_typesense_harness
@@ -21,6 +22,8 @@ services:
       HARNESS_TS_HOST: 127.0.0.1
       HARNESS_TS_PORT: 8108
       HARNESS_TS_KEY: local-harness-key
+      HARNESS_MYSQL_HOST: mysql
+      HARNESS_MYSQL_PORT: 3306
       COMPOSER_PROCESS_TIMEOUT: 0 # the repository-wide phpstan on a bind mount outlives Composer's 300s default
     network_mode: service:typesense
     depends_on:
@@ -39,8 +42,21 @@ services:
       timeout: 3s
       retries: 30
 
+  # MySQL 8 as a ResourceSpace host runs it, for the full-text and collation behaviour core's SQL depends on. The
+  # full-text settings are MySQL 8's own defaults, written out so that they are visible and cannot drift: tokens of
+  # three characters or more, the built-in stop-word list (no innodb_ft_server_stopword_table). The test host's
+  # values are not recorded in the plan: confirm them there with SHOW VARIABLES LIKE 'innodb_ft%' and
+  # @@collation_server. The last two options only make the throwaway databases quicker to create and drop.
   mysql:
     image: mysql:8
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --innodb-ft-min-token-size=3
+      - --innodb-ft-max-token-size=84
+      - --innodb-ft-enable-stopword=ON
+      - --innodb-flush-log-at-trx-commit=0
+      - --skip-log-bin
     environment:
       MYSQL_DATABASE: rs_harness
       MYSQL_USER: rs_harness
@@ -50,6 +66,12 @@ services:
       - "13306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+    healthcheck:
+      # Over TCP: the temporary server of a first start listens on a socket only.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
     profiles: [mysql]
 
 # vendor/ is a volume, not the checkout: unpacking Composer's packages onto a Windows bind mount took over five

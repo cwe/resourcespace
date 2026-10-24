@@ -41,3 +41,16 @@ function Repair-LineEndings
         }
     }
 }
+
+# The MySQL mode (H9): start the mysql service (profile "mysql") and wait for its health check. Returns the
+# arguments that put the php container in that mode, to splat after "run --rm".
+function Start-MysqlMode
+{
+    Write-Host '== starting mysql (first start initialises the data volume; a minute)'
+    & docker @Compose --profile mysql up -d --wait mysql
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host 'mysql did not become healthy (docker compose logs mysql)'
+        exit 2
+    }
+    return @('-e', 'HARNESS_DB=mysql')
+}

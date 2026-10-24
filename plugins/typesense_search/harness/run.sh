@@ -2,6 +2,7 @@
 # Every battery through Docker on a POSIX host: builds the php image when missing, starts the private Typesense,
 # runs run_all.sh inside the php service (output and exit code are run_all.sh's). Usage: ./run.sh [--rebuild]
 # One battery: ./run.sh A3_schema. The code checks: ./run.sh --check (composer install once, phpcs, phpstan).
+# HARNESS_DB=mysql ./run.sh [A3_schema] (H9) starts the mysql service and runs core's SQL on it instead of SQLite.
 cd "$(dirname "$0")" || exit 1
 compose="docker compose -f docker/compose.yaml"
 if ! docker version --format '{{.Server.Version}}' > /dev/null 2>&1; then
@@ -13,9 +14,15 @@ if [ "$1" = "--rebuild" ] || ! docker image inspect rs_typesense_harness/php > /
     $compose build php || exit 2
     [ "$1" = "--rebuild" ] && shift
 fi
+mode=""
+if [ "$HARNESS_DB" = "mysql" ] && [ "$1" != "--check" ]; then
+    echo "== starting mysql (first start initialises the data volume; a minute)"
+    $compose --profile mysql up -d --wait mysql || { echo "mysql did not become healthy (docker compose logs mysql)"; exit 2; }
+    mode="-e HARNESS_DB=mysql"
+fi
 case "$1" in
     "")
-        exec $compose run --rm php sh run_all.sh
+        exec $compose run --rm $mode php sh run_all.sh
         ;;
     --check)
         if ! $compose run --rm php test -f /app/vendor/autoload.php; then
@@ -36,6 +43,6 @@ case "$1" in
     *)
         name=$(basename "$1" .php)
         [ -f "ab/$name.php" ] || { echo "no battery ab/$name.php"; exit 2; }
-        exec $compose run --rm php php "ab/$name.php"
+        exec $compose run --rm $mode php php "ab/$name.php"
         ;;
 esac
