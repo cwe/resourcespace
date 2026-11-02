@@ -320,6 +320,12 @@ read configuration globals of their own.
 | `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 83 searches with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with `tests/test_data/do_search_sql_snapshot.json`. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705`. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
+| `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
+| `tests/test_list/000701_do_search_special_states.php` | `!archivepending`, `!userpending`, `!resource` and `!listall` against resources in each workflow state. |
+| `tests/test_list/000702_do_search_special_images.php` | `!images`, `!colourkey`, `!colour`, `!rgb` and `!geo` against preview columns written directly. |
+| `tests/test_list/000703_do_search_order_by.php` | Every named ordering in `set_search_order_by()`, plus the fallback for an unknown value. |
+| `tests/test_list/000704_do_search_result_options.php` | Row limit padding, chunked fetchrows, refs only, disk usage totals, the recent days limit and the archive list. |
+| `tests/test_list/000709_do_search_hooks.php` | The keyword, select, special search, editable filter, fetchrows, alternative results, before-return and zero-results hooks through a test plugin. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
