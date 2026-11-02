@@ -28,13 +28,14 @@ $resource_706 = create_resource(1, 0);
 update_field($resource_706, $field_706, "alpha beta");
 
 /**
- * Test plugin hook: exclude one field from keyword searches.
+ * Test plugin hook: exclude one field from keyword searches. Inert once this test has torn down, as later tests may
+ * enable the testframework plugin too.
  *
- * @return array
+ * @return array|null
  */
 function HookTestframeworkAllExcludefieldsfromkeywordsearch()
 {
-    return [$GLOBALS["test_000706_excluded_field"]];
+    return isset($GLOBALS["test_000706_excluded_field"]) ? [$GLOBALS["test_000706_excluded_field"]] : null;
 }
 
 $plugins[] = "testframework";
