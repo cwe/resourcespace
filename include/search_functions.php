@@ -958,8 +958,8 @@ function search_filter($search, $archive, $restypes, $recent_search_daylimit, $a
             }
         }
         foreach ($additional_archive_states as $additional_archive_state) {
-            if (!checkperm("e" . $n)) {
-                $blockeditstates[] = $n;
+            if (!checkperm("e" . $additional_archive_state)) {
+                $blockeditstates[] = $additional_archive_state;
             }
         }
         // Add code to hide resources in archive<0 unless has 't' permission, resource has been contributed by user or has ert permission
