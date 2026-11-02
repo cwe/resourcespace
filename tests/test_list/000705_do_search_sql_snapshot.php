@@ -44,6 +44,7 @@ $saved_000705 = [
     "config_sheetsingle_fields"          => $config_sheetsingle_fields,
     "metadata_template_title_field"      => $metadata_template_title_field ?? null,
     "related_pushed_order_by"            => $related_pushed_order_by ?? null,
+    "additional_archive_states"          => $additional_archive_states,
 ];
 
 // Pin the join configuration so the snapshot does not depend on which tests ran earlier
@@ -64,6 +65,10 @@ $wildcard_always_applied = false;
 $index_contributed_by = false;
 $config_search_for_number = false;
 $category_tree_search_use_and_logic = false;
+
+// The runner reapplies config.default.php, but a plugin loaded from the base installation can still add
+// workflow states afterwards, and search_filter() excludes a state from every editable-only search for each of them
+$additional_archive_states = [];
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Fixtures
