@@ -90,14 +90,14 @@ function HookTestframeworkAllModifysearcheditable($editable_filter, $userref)
 }
 
 /**
- * Test plugin hook: record how many rows are about to be returned.
+ * Test plugin hook: record what is about to be returned: the rows, or the structured total/data result.
  */
 function HookTestframeworkAllBeforereturnresults($result, $archive)
 {
     if (($GLOBALS["test_000709"]["mode"] ?? "") !== "before") {
         return null;
     }
-    $GLOBALS["test_000709"]["before_return"] = is_array($result) ? count($result) : -1;
+    $GLOBALS["test_000709"]["before_return"] = isset($result["data"]) ? "structured:" . count($result["data"]) : "rows:" . count($result);
     return null;
 }
 
@@ -188,8 +188,15 @@ if ($results != [$first_709]) {
 // beforereturnresults: called with the rows about to be returned
 $GLOBALS["test_000709"]["mode"] = "before";
 test_000709_search("alpha709");
-if ($GLOBALS["test_000709"]["before_return"] !== 2) {
+if ($GLOBALS["test_000709"]["before_return"] !== "rows:2") {
     $errors_000709[] = "before return results: expected 2 rows, got " . json_encode($GLOBALS["test_000709"]["before_return"]);
+}
+
+// A special search calls the hook with the total/data structure from sql_limit_with_total_count() instead of the rows
+$GLOBALS["test_000709"]["before_return"] = null;
+test_000709_search("!list" . $first_709 . ":" . $second_709);
+if ($GLOBALS["test_000709"]["before_return"] !== "structured:2") {
+    $errors_000709[] = "before return results (special search): expected the structured result with 2 rows, got " . json_encode($GLOBALS["test_000709"]["before_return"]);
 }
 
 // zero_search_results: called when the query ran and matched nothing (an unknown keyword stops before the query)
