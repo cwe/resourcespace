@@ -3040,6 +3040,9 @@ function log_keyword_usage($keywords, $search_result)
 /**
  * Validate and set the order_by for the current search from the requested values passed to do_search()
  *
+ * Wrapper for resolve_search_order_by() that also reports through the $include_fieldx global whether the ORDER BY
+ * refers to metadata field columns, for callers that read it.
+ *
  * @param string $search
  * @param string $order_by
  * @param string $sort
@@ -3048,6 +3051,27 @@ function log_keyword_usage($keywords, $search_result)
  *
  */
 function set_search_order_by(string $search, string $order_by, string $sort): string
+{
+    $resolved = resolve_search_order_by($search, $order_by, $sort);
+    $GLOBALS["include_fieldx"] = $resolved["needs_fields"];
+    return $resolved["order_by"];
+}
+
+/**
+ * Resolve the ORDER BY clause for a search from the order and sort requested by the do_search() caller.
+ *
+ * The named orderings are listed below; "fieldN" orders by that metadata field, numerically or by dot notation
+ * according to the field's constraint and sort method. An unknown value falls back to relevance, or to the
+ * collection order for a "!collection" search. Plugins can change the orderings through the modifyorderarray hook.
+ *
+ * @param string $search   Search string
+ * @param string $order_by Requested ordering: a name from the list, or "fieldN"
+ * @param string $sort     Sort direction; an invalid value becomes "asc"
+ *
+ * @return array{order_by: string, needs_fields: bool} The ORDER BY clause body, and whether it refers to metadata
+ *                                                      field columns that must then be selected
+ */
+function resolve_search_order_by(string $search, string $order_by, string $sort): array
 {
     global $lang;
 
@@ -3098,16 +3122,16 @@ function set_search_order_by(string $search, string $order_by, string $sort): st
     }
 
     # Check if date_field is being used as this will be needed in the inner select to be used in ordering
-    $GLOBALS["include_fieldx"] = false;
+    $needs_fields = false;
     if (isset($order_by_date_sql) && array_key_exists($order_by, $order) && strpos($order[$order_by], $order_by_date_sql) !== false) {
-        $GLOBALS["include_fieldx"] = true;
+        $needs_fields = true;
     }
 
     # Append order by field to the above array if absent and if named "fieldn" (where n is one or more digits)
     if (!in_array($order_by, $order) && (substr($order_by, 0, 5) == "field")) {
         $order_by = check_order_by_in_table_joins($order_by);
         # If fieldx is being used this will be needed in the inner select to be used in ordering
-        $GLOBALS["include_fieldx"] = true;
+        $needs_fields = true;
         # Check for field type
         $field_order_check = ps_query(
             "SELECT field_constraint, sort_method
@@ -3139,7 +3163,7 @@ function set_search_order_by(string $search, string $order_by, string $sort): st
     hook("modifyorderarray");
     $order_by = (isset($order[$order_by]) ? $order[$order_by] : (substr($search, 0, 11) == '!collection' ? $order['collection'] : $order['relevance']));       // fail safe by falling back to default if not found
 
-    return $order_by;
+    return ["order_by" => $order_by, "needs_fields" => $needs_fields];
 }
 
 /**

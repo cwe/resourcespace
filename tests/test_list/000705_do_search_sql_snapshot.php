@@ -99,6 +99,10 @@ add_resource_nodes($res_b, [$node_blue]);
 $snapfilter = save_filter(0, "Snapshot filter", RS_FILTER_ALL);
 save_filter_rule("new", $snapfilter, [[RS_FILTER_NODE_IN, [$node_red]]]);
 
+// Collection holding one fixture, for the !collection searches
+$snapcol = create_collection($userref, "Snapshot collection");
+add_resource_to_collection($res_a, $snapcol);
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Corpus
 // ---------------------------------------------------------------------------------------------------------------------
@@ -224,6 +228,40 @@ $cases = [
                                                "config" => ["usersearchfilter" => $snapfilter]],
     ["name" => "featured only keyword",       "search" => "alpha",          "permissions" => $featured_only_permissions],
     ["name" => "featured only special last",  "search" => "!last10",        "permissions" => $featured_only_permissions],
+    // --- special searches: every branch of search_special() --------------------------------------------------------
+    ["name" => "special last non-integer",       "search" => "!lastabc"],
+    ["name" => "special last order by date",     "search" => "!last10", "args" => ["order_by" => "date"]],
+    ["name" => "special nodownloads",            "search" => "!nodownloads"],
+    ["name" => "special duplicates all",         "search" => "!duplicates"],
+    ["name" => "special duplicates of resource", "search" => "!duplicates" . $res_a],
+    ["name" => "special duplicates invalid",     "search" => "!duplicatesabc"],
+    ["name" => "special collection",             "search" => "!collection" . $snapcol],
+    ["name" => "special collection order",       "search" => "!collection" . $snapcol, "args" => ["order_by" => "collection"]],
+    ["name" => "special relatedpushed",          "search" => "!relatedpushed" . $res_a],
+    ["name" => "special related",                "search" => "!related" . $res_a],
+    ["name" => "special geo",                    "search" => "!geo51bm1t52b0"],
+    ["name" => "special colourkey",              "search" => "!colourkeyKLMN"],
+    ["name" => "special colour",                 "search" => "!colourKL"],
+    ["name" => "special rgb",                    "search" => "!rgb:250,10,10"],
+    ["name" => "special images",                 "search" => "!images"],
+    ["name" => "special resource",               "search" => "!resource" . $res_a],
+    ["name" => "special archivepending",         "search" => "!archivepending"],
+    ["name" => "special userpending",            "search" => "!userpending"],
+    ["name" => "special userpending by rating",  "search" => "!userpending", "args" => ["order_by" => "rating"]],
+    ["name" => "special listall",                "search" => "!listall" . $res_a . ":" . $res_b],
+    ["name" => "special list empty",             "search" => "!listabc"],
+    ["name" => "special properties",             "search" => "!propertieshmin:100;wmax:200;fmin:1;fmax:2;fext:-.jp*;pi:1;cu:" . $userref . ";orientation:portrait"],
+    ["name" => "special properties unknown",     "search" => "!propertiesbogus:1"],
+    ["name" => "special integrityfail",          "search" => "!integrityfail"],
+    ["name" => "special locked",                 "search" => "!locked"],
+    ["name" => "special noningested",            "search" => "!noningested"],
+    ["name" => "special report missing",         "search" => "!report99999"],
+    ["name" => "special refs only",              "search" => "!images", "args" => ["return_refs_only" => true]],
+    ["name" => "special disk usage",             "search" => "!images", "args" => ["return_disk_usage" => true]],
+    ["name" => "special with node",              "search" => "!images " . NODE_TOKEN_PREFIX . $node_red],
+    ["name" => "special with keyword",           "search" => "!images alpha"],
+    ["name" => "restricted special collection",  "search" => "!collection" . $snapcol, "permissions" => $restricted_permissions],
+    ["name" => "restricted special contributions", "search" => "!contributions" . $userref, "permissions" => $restricted_permissions],
 ];
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -236,13 +274,14 @@ $maps_000705 = [
     "resource"            => [$res_a => "a", $res_b => "b"],
     "user"                => [$userref => "USER"],
     "usergroup"           => [$usergroup => "GROUP"],
+    "collection"          => [$snapcol => "COL"],
 ];
 $maps_000705["created_by"] = $maps_000705["user"];
 
 /**
  * Map a bound value to a named token when it is a fixture ID.
  *
- * @param string $kind   Map name (resource_type_field, node, keyword, resource, user, usergroup, created_by)
+ * @param string $kind   Map name (resource_type_field, node, keyword, resource, user, usergroup, created_by, collection)
  * @param mixed  $value  Bound value
  * @param array  $maps   Fixture ID maps
  *
@@ -250,7 +289,7 @@ $maps_000705["created_by"] = $maps_000705["user"];
  */
 function test_000705_token(string $kind, $value, array $maps)
 {
-    $prefix = ["resource_type_field" => "F", "node" => "N", "keyword" => "K", "resource" => "R", "user" => "", "usergroup" => "", "created_by" => ""];
+    $prefix = ["resource_type_field" => "F", "node" => "N", "keyword" => "K", "resource" => "R", "user" => "", "usergroup" => "", "created_by" => "", "collection" => "C"];
     if (isset($maps[$kind]) && is_numeric($value) && isset($maps[$kind][(int) $value])) {
         $name = $maps[$kind][(int) $value];
         return "{" . ($prefix[$kind] !== "" ? $prefix[$kind] . ":" : "") . $name . "}";
@@ -297,9 +336,9 @@ function test_000705_normalise($result, array $maps): array
         $type = $params[$i * 2] ?? "MISSING";
         $value = $params[$i * 2 + 1] ?? "MISSING";
         $tail = substr($before, -160);
-        $pattern = '/(resource_type_field|usergroup|user|node|keyword|created_by|ref)`?\s*(=|<>|IN|NOT IN)\s*\(?\s*(\?\s*,\s*)*$/i';
+        $pattern = '/(resource_type_field|collection|usergroup|user|node|keyword|created_by|resource|related|ref)`?\s*(=|<>|IN|NOT IN)\s*\(?\s*(\?\s*,\s*)*$/i';
         if (preg_match($pattern, $tail, $m)) {
-            $kind = strtolower($m[1]) === "ref" ? "resource" : strtolower($m[1]);
+            $kind = in_array(strtolower($m[1]), ["ref", "related"]) ? "resource" : strtolower($m[1]);
             $value = test_000705_token($kind, $value, $maps);
         }
         $normalised_params[] = $type . ":" . (is_scalar($value) || is_null($value) ? var_export($value, true) : json_encode($value));
@@ -359,6 +398,7 @@ foreach ($raw_results as $case_name => $raw_result) {
 delete_resource($res_a);
 delete_resource($res_b);
 delete_filter($snapfilter);
+delete_collection($snapcol);
 delete_resource_type_field($snaptext);
 delete_resource_type_field($snaplist);
 delete_resource_type_field($snapdate);
