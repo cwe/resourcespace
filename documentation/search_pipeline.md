@@ -22,7 +22,8 @@ A step that must end the search early (no access to a field, or a suggested sear
 | `include/search_parse.php` | `ParsedSearch`, `search_parse()`, `resolve_given_nodes()` |
 | `include/search_query.php` | `SearchQuery`, `KeywordUnion`, `SearchStop`, `search_query_build()` and the non-keyword pipeline steps, `search_query_compile()`, `search_query_compile_count()` |
 | `include/search_keywords.php` | `KeywordKind`, `Keyword`, `search_query_keywords()`, `search_keyword_classify()` and one function per keyword kind |
-| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()`, `search_special()`, `resolve_search_order_by()` (which `set_search_order_by()` now wraps), `resolve_keyword()`, `get_filter_sql()` |
+| `include/search_special.php` | `SpecialSearch`, `search_special_run()`, `search_special_builder()`, `search_special_build()`, `search_special_finish()` and one builder function per special search |
+| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()`, `search_special()` (which now wraps `search_special_run()`), `resolve_search_order_by()` (which `set_search_order_by()` now wraps), `resolve_keyword()`, `get_filter_sql()` |
 
 `include/boot.php` loads them in that order.
 
@@ -54,9 +55,10 @@ flowchart TD
 
 ![Call flow](images/search_pipeline_call_flow.png)
 
-`search_special()` and the `external_search` hook keep their original signatures. `search_run_special()` and
-`search_run_external()` unpack the `SearchQuery` and the context for them, so `do_search()` itself reads as the
-sequence above. The external search hook is handed the options as the caller passed them.
+`search_run_special()` wraps the query fragments and the context in a `SpecialSearch` and hands it to
+`search_special_run()`, described under [Special searches](#special-searches). `search_run_external()` unpacks
+the `SearchQuery` and the context for the `external_search` hook, which keeps its original signature and is
+handed the options as the caller passed them. Either way `do_search()` itself reads as the sequence above.
 
 ## Building the query
 
@@ -297,6 +299,39 @@ Only `SearchQuery` is mutable; the context, the parsed search and each `Keyword`
 copies the parsed keywords and node bucket onto the query and adds to them there. Steps change the query only
 through its methods, so a reader can find every place a fragment is built by searching for the method name.
 
+## Special searches
+
+A special search answers instead of the standard query: the `!` searches, a resource ID when
+`$config_search_for_number` is set, and anything a plugin claims through the `addspecialsearch` hook. They live in
+`include/search_special.php` and run in three steps:
+
+1. `search_special_builder()` names the builder for the search string. It is a single ordered `match`, so the
+   precedence between identifiers that share a prefix (`!relatedpushed` before `!related`, `!colourkey` before
+   `!colour`, `!listall` handled by the `!list` builder) is visible in one place. Searches that match only the
+   whole string (`!images`, `!integrityfail`, `!locked`, `!noningested`) fall through to the standard query when
+   keywords follow them.
+2. `search_special_build()` runs the builder, then the `addspecialsearch` hook with whatever the builder produced,
+   so a plugin can add a search or replace a core one. It returns the filled `SpecialSearch`, a `SearchStop` when
+   the search is answered without a query (a collection the user may not see, an invalid `!duplicates` ID), or
+   null when nothing recognised the search and the standard query should run.
+3. `search_special_finish()` fills the `[SELECT_SQL]`, `[GROUP_BY_SQL]` and `[ORDER_BY_SQL]` placeholders twice,
+   for the full query and for the reduced query that counts rows or lists references, runs them through
+   `sql_limit_with_total_count()`, pads chunked results to the total and fires `beforereturnresults`.
+
+A builder is a function `search_special_<name>(SpecialSearch $s): SpecialSearch` that fills `$s->sql` with the SQL
+template and may rewrite `$s->select`, `$s->order_by`, `$s->join` and `$s->filter`. The template includes the
+prefix and suffix itself, because some searches wrap the query differently. Four output properties carry what the
+finish step needs beyond the template: `order_by_params` and `hard_limit` for `!rgb`, and `cache_count` for
+`!hasdata`. The four searches that only add a condition on the resource row (`!archivepending`, `!images`,
+`!integrityfail`, `!locked`) share `search_special_where()`.
+
+`search_special()` in `search_functions.php` keeps its thirteen-argument signature for plugins and for test 1210;
+it builds the `SpecialSearch` and calls `search_special_run()`, the same entry `search_run_special()` uses.
+
+The SQL each builder produces is unchanged from the previous implementation, including its whitespace, which the
+snapshot test checks. `!relatedpushed` now resolves its ordering through `resolve_search_order_by()` instead of
+`set_search_order_by()`, so it no longer writes the unused `$include_fieldx` global.
+
 ## Hooks
 
 | Hook | Fired from | Arguments |
@@ -309,7 +344,9 @@ through its methods, so a reader can find every place a fragment is built by sea
 | `customsearchkeywordfilter` | `search_keyword_classify()` | [field name, value] |
 | `excludefieldsfromkeywordsearch` | `search_keyword_standard()`, `search_keyword_phrase()` | none; returns field refs to exclude |
 | `external_search` | `search_run_external()` | the call arguments plus filter, join, select |
-| `beforereturnresults` | `search_execute()` | result, archive |
+| `addspecialsearch` | `search_special_build()` | search, select, join, filter, sql (objects; a returned `PreparedStatementQuery` replaces the query) |
+| `modifycollectionsearchsql` | `search_special_collection()` | sql; a returned query replaces it |
+| `beforereturnresults` | `search_execute()`, `search_special_finish()` | result, archive (rows from the standard query; the total/data structure from a special search) |
 | `zero_search_results` | `search_suggest_zero_results()` | none |
 
 Two ordering differences from the previous implementation: `modifyfetchrows` now fires while the context is
@@ -321,16 +358,19 @@ searches that return early.
 To add a keyword form: add a case to `KeywordKind`, detect it in `search_keyword_classify()`, write a
 `search_keyword_<kind>()` function that adds to the `SearchQuery`, and dispatch it in `search_query_keywords()`.
 To add a pipeline step: write `search_query_<step>(SearchContext $ctx, SearchQuery $query)` and call it from
-`search_query_build()` at the right point. Steps take what they need from the context; a step that keeps to that
-can be exercised with a hand-built `SearchContext`. Two places still touch globals: `$keysearch` in
-`search_query_build()`, and the helpers kept from the previous implementation (`resolve_search_order_by()`,
-`search_filter()`, `get_filter_sql()`), which read configuration globals of their own.
+`search_query_build()` at the right point. To add a core special search: write
+`search_special_<name>(SpecialSearch $s): SpecialSearch` in `search_special.php` and add its match to
+`search_special_builder()` at the right point in the order; a plugin uses the `addspecialsearch` hook instead.
+Steps take what they need from the context; a step that keeps to that can be exercised with a hand-built
+`SearchContext`. Globals remain in three places: `$keysearch` in `search_query_build()`, the helpers kept from the
+previous implementation (`resolve_search_order_by()`, `search_filter()`, `get_filter_sql()`), and the special
+search builders, each of which declares the configuration globals it reads.
 
 ## Tests and tools
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 116 searches, including every special search branch, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with `tests/test_data/do_search_sql_snapshot.json`. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705`. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 116 searches, including every special search branch, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
