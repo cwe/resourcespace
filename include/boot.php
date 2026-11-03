@@ -15,6 +15,7 @@ include_once __DIR__ . '/search_functions.php';
 include_once __DIR__ . '/search_context.php';
 include_once __DIR__ . '/search_parse.php';
 include_once __DIR__ . '/search_query.php';
+include_once __DIR__ . '/search_special.php';
 include_once __DIR__ . '/search_keywords.php';
 include_once __DIR__ . '/do_search.php';
 include_once __DIR__ . '/resource_functions.php';

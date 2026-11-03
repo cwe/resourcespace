@@ -129,9 +129,9 @@ function do_search(
 /**
  * Answer the search as a special search when it is one.
  *
- * search_special() handles the "!" searches, a numeric resource ID when $config_search_for_number is set, and any
- * search a plugin claims through the addspecialsearch hook. It is given a copy of the select list because special
- * searches and plugins rewrite it. Keyword usage is logged when the search is answered.
+ * The builders in search_special.php handle the "!" searches, a numeric resource ID when $config_search_for_number
+ * is set, and any search a plugin claims through the addspecialsearch hook. They are given a copy of the select
+ * list because special searches and plugins rewrite it. Keyword usage is logged when the search is answered.
  *
  * @param ParsedSearch  $parsed Parsed search
  * @param SearchQuery   $query  Built query
@@ -142,21 +142,19 @@ function do_search(
  */
 function search_run_special(ParsedSearch $parsed, SearchQuery $query, SearchContext $ctx): array|PreparedStatementQuery|false
 {
-    $result = search_special(
+    $special = new SpecialSearch(
         $parsed->search,
+        clone $query->select,
         $query->join,
-        $ctx->fetchrows,
+        $query->filter,
         $query->prefix,
         $query->suffix,
         $query->order_by,
         $ctx->requested_order_by,
-        clone $query->select,
-        $query->filter,
         $ctx->archive,
-        $ctx->return_disk_usage,
-        $ctx->return_refs_only,
-        $ctx->returnsql
+        $ctx->return_disk_usage
     );
+    $result = search_special_run($special, $ctx->fetchrows, $ctx->return_refs_only, $ctx->returnsql);
     if ($result !== false) {
         log_keyword_usage($query->keywords_used, $result);
     }
