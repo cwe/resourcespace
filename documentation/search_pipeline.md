@@ -17,14 +17,17 @@ A step that must end the search early (no access to a field, or a suggested sear
 
 | File | Contents |
 | --- | --- |
-| `include/do_search.php` | `do_search()` facade, `search_execute()`, `search_suggest_zero_results()` |
+| `include/do_search.php` | `do_search()` facade, `search_run_special()`, `search_run_external()`, `search_execute()`, `search_suggest_zero_results()` |
 | `include/search_context.php` | `SearchContext`, `search_context_create()`, legacy filter migration (`resolve_user_search_filter()`, `resolve_user_edit_filter()`) |
 | `include/search_parse.php` | `ParsedSearch`, `search_parse()`, `resolve_given_nodes()` |
 | `include/search_query.php` | `SearchQuery`, `KeywordUnion`, `SearchStop`, `search_query_build()` and the non-keyword pipeline steps, `search_query_compile()`, `search_query_compile_count()` |
 | `include/search_keywords.php` | `KeywordKind`, `Keyword`, `search_query_keywords()`, `search_keyword_classify()` and one function per keyword kind |
-| `include/search_functions.php` | Unchanged helpers the pipeline calls: `search_filter()`, `search_special()`, `set_search_order_by()`, `resolve_keyword()`, `get_filter_sql()` |
+| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()`, `search_special()`, `resolve_search_order_by()` (which `set_search_order_by()` now wraps), `resolve_keyword()`, `get_filter_sql()` |
 
 `include/boot.php` loads them in that order.
+
+Each diagram below is Mermaid source, rendered to a PNG in `documentation/images/` for viewers that do not
+render Mermaid. Regenerate the images when the source changes.
 
 ## Call flow
 
@@ -38,9 +41,9 @@ flowchart TD
     D --> E[search_parse]
     E --> F[search_query_build]
     F -- SearchStop --> R2([return stop result])
-    F -- SearchQuery --> G[search_special]
+    F -- SearchQuery --> G[search_run_special]
     G -- special search --> R3([return special results])
-    G --> H[hook external_search]
+    G --> H[search_run_external]
     H -- handled --> R4([return provider results])
     H --> I[search_execute]
     I -- returnsql --> R5([PreparedStatementQuery])
@@ -49,8 +52,11 @@ flowchart TD
     J --> R7([suggested search, empty string or empty array])
 ```
 
-`search_special()` and the `external_search` hook keep their original signatures. They receive the pieces of the
-`SearchQuery` (join, filter, select, order) as before.
+![Call flow](images/search_pipeline_call_flow.png)
+
+`search_special()` and the `external_search` hook keep their original signatures. `search_run_special()` and
+`search_run_external()` unpack the `SearchQuery` and the context for them, so `do_search()` itself reads as the
+sequence above. The external search hook is handed the options as the caller passed them.
 
 ## Building the query
 
@@ -62,7 +68,7 @@ add nodes, nodes and unions feed the score), and `search_query_build()` notes ea
 flowchart LR
     subgraph build [search_query_build]
         direction TB
-        O[search_query_order<br>ORDER BY via set_search_order_by] --> F[search_filter<br>archive, resource types, access, workflow]
+        O[search_query_order<br>ORDER BY via resolve_search_order_by] --> F[search_filter<br>archive, resource types, access, workflow]
         F --> A[search_query_access<br>custom access joins rca / rca2]
         A --> S[search_query_select<br>columns, modifyselect hooks, resultant_access, field columns]
         S --> P[hook search_pipeline_setup]
@@ -76,6 +82,8 @@ flowchart LR
     end
     build --> C[search_query_compile<br>results statement / count statement]
 ```
+
+![Building the query](images/search_pipeline_query_build.png)
 
 What each step touches on the `SearchQuery`:
 
@@ -136,6 +144,8 @@ flowchart TD
     HK -- no --> ST[Standard]
 ```
 
+![Keyword classification](images/search_pipeline_keywords.png)
+
 Each kind has one handler:
 
 | Kind | Handler | Adds |
@@ -162,6 +172,8 @@ flowchart LR
     W -- yes --> WC[search_keyword_wildcard<br>union: fulltext, LIKE or RLIKE on node names]
     W -- no --> SD[union: node_keyword match<br>with related and alternative keywords]
 ```
+
+![Union assembly](images/search_pipeline_union_assembly.png)
 
 Three helpers are shared by the handlers: `search_keyword_restriction()` builds the clause excluding hidden
 fields, fields excluded by the `excludefieldsfromkeywordsearch` hook and, for field-specific terms, every other
@@ -279,6 +291,8 @@ classDiagram
     Keyword ..> KeywordKind
 ```
 
+![Objects](images/search_pipeline_objects.png)
+
 Only `SearchQuery` is mutable; the context, the parsed search and each `Keyword` are readonly. Keyword matching
 copies the parsed keywords and node bucket onto the query and adds to them there. Steps change the query only
 through its methods, so a reader can find every place a fragment is built by searching for the method name.
@@ -294,7 +308,7 @@ through its methods, so a reader can find every place a fragment is built by sea
 | `search_pipeline_setup` | `search_query_build()` | search, select, join, filter, "" (objects, so plugins can append). May set the global `$keysearch` to false to skip keyword matching |
 | `customsearchkeywordfilter` | `search_keyword_classify()` | [field name, value] |
 | `excludefieldsfromkeywordsearch` | `search_keyword_standard()`, `search_keyword_phrase()` | none; returns field refs to exclude |
-| `external_search` | `do_search()` | the call arguments plus filter, join, select |
+| `external_search` | `search_run_external()` | the call arguments plus filter, join, select |
 | `beforereturnresults` | `search_execute()` | result, archive |
 | `zero_search_results` | `search_suggest_zero_results()` | none |
 
@@ -308,24 +322,27 @@ To add a keyword form: add a case to `KeywordKind`, detect it in `search_keyword
 `search_keyword_<kind>()` function that adds to the `SearchQuery`, and dispatch it in `search_query_keywords()`.
 To add a pipeline step: write `search_query_<step>(SearchContext $ctx, SearchQuery $query)` and call it from
 `search_query_build()` at the right point. Steps take what they need from the context; a step that keeps to that
-can be exercised with a hand-built `SearchContext`. Three places still touch globals: `$keysearch` in
-`search_query_build()`, the `include_fieldx` flag that `set_search_order_by()` reports through, and the helpers
-kept from the previous implementation (`set_search_order_by()`, `search_filter()`, `get_filter_sql()`), which
-read configuration globals of their own.
+can be exercised with a hand-built `SearchContext`. Two places still touch globals: `$keysearch` in
+`search_query_build()`, and the helpers kept from the previous implementation (`resolve_search_order_by()`,
+`search_filter()`, `get_filter_sql()`), which read configuration globals of their own.
 
 ## Tests and tools
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 83 searches with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with `tests/test_data/do_search_sql_snapshot.json`. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705`. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 116 searches, including every special search branch, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with `tests/test_data/do_search_sql_snapshot.json`. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705`. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
 | `tests/test_list/000701_do_search_special_states.php` | `!archivepending`, `!userpending`, `!resource` and `!listall` against resources in each workflow state. |
 | `tests/test_list/000702_do_search_special_images.php` | `!images`, `!colourkey`, `!colour`, `!rgb` and `!geo` against preview columns written directly. |
-| `tests/test_list/000703_do_search_order_by.php` | Every named ordering in `set_search_order_by()`, plus the fallback for an unknown value. |
+| `tests/test_list/000703_do_search_order_by.php` | Every named ordering in `resolve_search_order_by()`, plus the fallback for an unknown value. |
 | `tests/test_list/000704_do_search_result_options.php` | Row limit padding, chunked fetchrows, refs only, disk usage totals, the recent days limit and the archive list. |
 | `tests/test_list/000709_do_search_hooks.php` | The keyword, select, special search, editable filter, fetchrows, alternative results, before-return and zero-results hooks through a test plugin. |
+| `tests/test_list/000711_do_search_special_properties.php` | Every `!properties` option, their combination, ignored values and a node restriction. |
+| `tests/test_list/000712_do_search_special_flags.php` | `!integrityfail`, `!locked`, `!nopreview`, `!hasdata`, `!contributions` and `!last` against resource columns written directly. |
+| `tests/test_list/000713_do_search_special_collection.php` | `!collection` members in every archive state, collection columns and ordering, `$collections_omit_archived`, a node restriction and access for a non-administrator. |
+| `tests/test_list/000714_do_search_special_results.php` | Row limit padding, chunked fetchrows, the reduced refs-only query, disk usage and returned SQL for a special search. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -356,4 +373,4 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   search or split at the configured separator, and returned `false`. It is now handled as an `!empty` search.
 
 Known and left alone: two consecutive alternative keywords (`a;b c;d`) are OR'd together rather than both
-required; ordering by a field outside the configured table joins fails inside `set_search_order_by()`.
+required; ordering by a field outside the configured table joins fails inside `resolve_search_order_by()`.

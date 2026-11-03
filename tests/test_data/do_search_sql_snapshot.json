@@ -663,5 +663,221 @@
             "i:'{USER}'",
             "i:'{USER}'"
         ]
+    },
+    "special last non-integer": {
+        "sql": "SELECT DISTINCT *, r2.total_hit_count score FROM (SELECT r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE archive IN (?) AND r.ref>0 ORDER BY ref DESC LIMIT 1000 ) r2 ORDER BY r2.ref ASC",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special last order by date": {
+        "sql": "SELECT DISTINCT *, r2.total_hit_count score FROM (SELECT r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE archive IN (?) AND r.ref>0 ORDER BY ref DESC LIMIT 10 ) r2 ORDER BY field{F:date} desc, r2.ref desc, r2.ref desc",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special nodownloads": {
+        "sql": "SELECT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE archive IN (?) AND r.ref>0 AND r.ref NOT IN (SELECT DISTINCT object_ref FROM daily_stat WHERE activity_type='Resource download') GROUP BY r.ref ORDER BY ref DESC",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special duplicates all": {
+        "sql": "SELECT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE archive IN (?) AND r.ref>0 AND file_checksum IN (SELECT file_checksum FROM (SELECT file_checksum FROM resource WHERE file_checksum <> '' AND file_checksum IS NOT null GROUP BY file_checksum having count(file_checksum)>1)r2) ORDER BY file_checksum, ref",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special duplicates of resource": {
+        "sql": "SELECT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE archive IN (?) AND r.ref>0 AND file_checksum <> '' AND file_checksum IS NOT NULL AND file_checksum = ( SELECT file_checksum FROM resource WHERE ref= ? AND (file_checksum <> '' AND file_checksum IS NOT NULL) ) GROUP BY r.ref ORDER BY file_checksum, ref",
+        "params": [
+            "i:'0'",
+            "i:'{R:a}'"
+        ]
+    },
+    "special duplicates invalid": {
+        "result": []
+    },
+    "special collection": {
+        "sql": "SELECT DISTINCT c.date_added, c.comment, r.hit_count score, length(c.comment) commentset, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN collection_resource c ON r.ref=c.resource JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE c.collection = ? AND (r.ref>0) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{C:COL}'"
+        ]
+    },
+    "special collection order": {
+        "sql": "SELECT DISTINCT c.date_added, c.comment, r.hit_count score, length(c.comment) commentset, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN collection_resource c ON r.ref=c.resource JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE c.collection = ? AND (r.ref>0) GROUP BY r.ref ORDER BY c.sortorder desc, c.date_added ASC, r.ref desc",
+        "params": [
+            "i:'{C:COL}'"
+        ]
+    },
+    "special relatedpushed": {
+        "sql": "SELECT DISTINCT r.hit_count score, rt.name resource_type_name, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type rt ON r.resource_type=rt.ref AND rt.push_metadata=1 JOIN resource_related t ON (t.related=r.ref AND t.resource = ?) JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE 1=1 AND r.ref>0 GROUP BY r.ref UNION SELECT DISTINCT r.hit_count score, rt.name resource_type_name, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type rt ON r.resource_type=rt.ref AND rt.push_metadata=1 JOIN resource_related t ON (t.resource=r.ref AND t.related= ?) JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE 1=1 AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, ref desc",
+        "params": [
+            "i:'{R:a}'",
+            "i:'{R:a}'"
+        ]
+    },
+    "special related": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN resource_related t ON (t.related = r.ref AND t.resource = ?) WHERE r.ref>0 GROUP BY r.ref UNION SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN resource_related t ON (t.resource = r.ref AND t.related = ?) WHERE r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, ref desc",
+        "params": [
+            "i:'{R:a}'",
+            "i:'{R:a}'"
+        ]
+    },
+    "special geo": {
+        "sql": "SELECT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE geo_lat > ? AND geo_lat < ? AND geo_long > ? AND geo_long < ? AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "d:'51'",
+            "d:'52'",
+            "d:'-1'",
+            "d:'0'",
+            "i:'0'"
+        ]
+    },
+    "special colourkey": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE has_image > 0 AND LEFT(colour_key, 4) = ? AND archive IN (?) AND r.ref>0 GROUP BY r.ref",
+        "params": [
+            "s:'KLMN'",
+            "i:'0'"
+        ]
+    },
+    "special colour": {
+        "sql": "SELECT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE colour_key LIKE ? OR colour_key LIKE ? AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "s:'KL%'",
+            "s:'_KL%'",
+            "i:'0'"
+        ]
+    },
+    "special rgb": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE has_image > 0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY (abs(image_red - ?)+abs(image_green - ?)+abs(image_blue - ?)) ASC",
+        "params": [
+            "i:'0'",
+            "i:'250'",
+            "i:'10'",
+            "i:'10'"
+        ]
+    },
+    "special images": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE has_image>0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special resource": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.ref = ? AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{R:a}'",
+            "i:'0'"
+        ]
+    },
+    "special archivepending": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.archive=1 AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": []
+    },
+    "special userpending": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.archive=-1 AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": []
+    },
+    "special userpending by rating": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.archive=-1 AND r.ref>0 GROUP BY r.ref ORDER BY request_count DESC, r.rating desc, user_rating desc, score desc, r.ref desc",
+        "params": []
+    },
+    "special listall": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.ref IN (?, ?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{R:a}'",
+            "i:'{R:b}'"
+        ]
+    },
+    "special list empty": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.ref IS NULL AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": []
+    },
+    "special properties": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource WHERE r.ref > 0 AND archive IN (?) AND r.ref>0 AND rdim.height >= ? AND rdim.width <= ? AND r.file_size >= ? AND COALESCE(r.file_size, 0) <= ? AND r.file_extension NOT LIKE ? AND r.has_image = ? AND r.created_by = ? AND COALESCE(rdim.height, 0) > COALESCE(rdim.width, 0) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'0'",
+            "i:'100'",
+            "i:'200'",
+            "i:1048576.0",
+            "i:2097152.0",
+            "s:'jp%'",
+            "i:'1'",
+            "i:'{USER}'"
+        ]
+    },
+    "special properties unknown": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.ref > 0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special integrityfail": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE integrity_fail=1 AND no_file=0 AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": []
+    },
+    "special locked": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE lock_user<>0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special noningested": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE file_path IS NOT NULL AND file_path <> '' GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": []
+    },
+    "special report missing": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource AS r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE 1 = 2 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special refs only": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.archive, r.access, null group_access, null user_access, r.access resultant_access, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE has_image>0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special disk usage": {
+        "sql": "SELECT sum(disk_usage) total_disk_usage, count(*) total_resources, resourcelist.ref, resourcelist.score, resourcelist.user_rating, resourcelist.total_hit_count FROM (SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, r.disk_usage, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE has_image>0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc ) resourcelist",
+        "params": [
+            "i:'0'"
+        ]
+    },
+    "special with node": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, (SUM(r.hit_count) + SUM(rn0.hit_count)) total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN `resource_node` rn0 ON r.`ref`=rn0.`resource` AND rn0.`node` IN (?) WHERE has_image>0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{N:Red}'",
+            "i:'0'"
+        ]
+    },
+    "special with keyword": {
+        "sql": "SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE archive IN (?) AND r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{K:alpha}'",
+            "i:'0'"
+        ]
+    },
+    "restricted special collection": {
+        "sql": "SELECT DISTINCT c.date_added, c.comment, r.hit_count score, length(c.comment) commentset, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN collection_resource c ON r.ref=c.resource LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE c.collection = ? AND ((r.access<>'2' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3)) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{USER}'",
+            "i:'{GROUP}'",
+            "i:'{C:COL}'",
+            "i:'{USER}'",
+            "i:'{USER}'"
+        ]
+    },
+    "restricted special contributions": {
+        "sql": "SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE created_by = ? AND r.ref > 0 AND (r.access<>'2' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc",
+        "params": [
+            "i:'{USER}'",
+            "i:'{GROUP}'",
+            "i:'{USER}'",
+            "i:'0'",
+            "i:'{USER}'",
+            "i:'{USER}'"
+        ]
     }
 }

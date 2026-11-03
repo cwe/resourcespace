@@ -292,7 +292,7 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
 }
 
 /**
- * Pipeline step: validate the requested ORDER BY for this search (set_search_order_by(), which also lets plugins
+ * Pipeline step: validate the requested ORDER BY for this search (resolve_search_order_by(), which also lets plugins
  * change it) and note whether it refers to metadata field columns.
  *
  * @param ParsedSearch  $parsed Parsed search
@@ -301,9 +301,9 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
  */
 function search_query_order(ParsedSearch $parsed, SearchContext $ctx, SearchQuery $query): void
 {
-    $query->order_by = set_search_order_by($parsed->search, $ctx->requested_order_by, $ctx->sort);
-    // set_search_order_by() reports through this global whether the ORDER BY uses field columns
-    $query->order_needs_fields = ($GLOBALS["include_fieldx"] ?? false) === true;
+    $resolved = resolve_search_order_by($parsed->search, $ctx->requested_order_by, $ctx->sort);
+    $query->order_by = $resolved['order_by'];
+    $query->order_needs_fields = $resolved['needs_fields'];
 }
 
 /**

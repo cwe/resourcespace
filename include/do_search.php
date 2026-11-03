@@ -14,7 +14,8 @@
 * @uses search_context_create()
 * @uses search_parse()
 * @uses search_query_build()
-* @uses search_special()
+* @uses search_run_special()
+* @uses search_run_external()
 * @uses search_execute()
 * @uses search_suggest_zero_results()
 *
@@ -69,8 +70,8 @@ function do_search(
     debug_function_call("do_search", func_get_args());
 
     // Everything about the caller (options, permissions, filters, configuration) is resolved once here. The pipeline
-    // steps read $ctx instead of globals.
-    $ctx = search_context_create([
+    // steps read $ctx instead of globals. External search providers are handed the options as given.
+    $options = [
         'restypes'               => $restypes,
         'order_by'               => $order_by,
         'archive'                => $archive,
@@ -87,7 +88,8 @@ function do_search(
         'returnsql'              => $returnsql,
         'access'                 => $access,
         'smartsearch'            => $smartsearch,
-    ]);
+    ];
+    $ctx = search_context_create($options);
 
     if ($ctx->editable_only && !$ctx->returnsql && $ctx->external_share && !$ctx->internal_share) {
         return array();
@@ -106,10 +108,41 @@ function do_search(
         return $query->result;
     }
 
-    # --------------------------------------------------------------------------------
-    # Special Searches (start with an exclamation mark)
-    # --------------------------------------------------------------------------------
-    $special_results = search_special(
+    // Special searches ("!" prefix, a resource ID, or a plugin's own) and external search providers answer
+    // instead of the standard query when they recognise the search
+    $result = search_run_special($parsed, $query, $ctx);
+    if ($result !== false) {
+        return $result;
+    }
+    $result = search_run_external($parsed, $query, $ctx, $options);
+    if ($result !== false) {
+        return $result;
+    }
+
+    $result = search_execute($query, $ctx);
+    if ($ctx->return_refs_only || $result !== []) {
+        return $result;
+    }
+    return search_suggest_zero_results($parsed, $query);
+}
+
+/**
+ * Answer the search as a special search when it is one.
+ *
+ * search_special() handles the "!" searches, a numeric resource ID when $config_search_for_number is set, and any
+ * search a plugin claims through the addspecialsearch hook. It is given a copy of the select list because special
+ * searches and plugins rewrite it. Keyword usage is logged when the search is answered.
+ *
+ * @param ParsedSearch  $parsed Parsed search
+ * @param SearchQuery   $query  Built query
+ * @param SearchContext $ctx    Search context
+ *
+ * @return array|PreparedStatementQuery|false The result (or its SQL with $ctx->returnsql); false when the search
+ *                                            is not a special search
+ */
+function search_run_special(ParsedSearch $parsed, SearchQuery $query, SearchContext $ctx): array|PreparedStatementQuery|false
+{
+    $result = search_special(
         $parsed->search,
         $query->join,
         $ctx->fetchrows,
@@ -124,17 +157,29 @@ function do_search(
         $ctx->return_refs_only,
         $ctx->returnsql
     );
-    if ($special_results !== false) {
-        log_keyword_usage($query->keywords_used, $special_results);
-        return $special_results;
+    if ($result !== false) {
+        log_keyword_usage($query->keywords_used, $result);
     }
+    return $result;
+}
 
-    # -------------------------------------------------------------------------------------
-    # Standard Searches
-    # -------------------------------------------------------------------------------------
-
-    # Support external search providers.
-    $external_search_results = hook(
+/**
+ * Offer the search to external search providers through the external_search hook.
+ *
+ * The hook receives the do_search() options as the caller passed them, with the parsed keywords and nodes, the
+ * resolved ORDER BY and the built filter, join and select fragments. Keyword usage is logged when a provider
+ * answers.
+ *
+ * @param ParsedSearch  $parsed  Parsed search
+ * @param SearchQuery   $query   Built query
+ * @param SearchContext $ctx     Search context
+ * @param array         $options do_search() options keyed by parameter name, as passed by the caller
+ *
+ * @return mixed The provider's result; false when no provider answered
+ */
+function search_run_external(ParsedSearch $parsed, SearchQuery $query, SearchContext $ctx, array $options): mixed
+{
+    $result = hook(
         'external_search',
         '',
         [
@@ -142,35 +187,29 @@ function do_search(
             $query->keywords,
             $query->node_bucket,
             $parsed->node_bucket_not,
-            $restypes,
+            $options['restypes'],
             $query->order_by,
             $ctx->archive,
             $ctx->fetchrows,
             $ctx->sort,
-            $access_override,
-            $ignore_filters,
-            $return_disk_usage,
-            $recent_search_daylimit,
-            $return_refs_only,
-            $editable_only,
-            $returnsql,
-            $access,
-            $smartsearch,
+            $options['access_override'],
+            $options['ignore_filters'],
+            $options['return_disk_usage'],
+            $options['recent_search_daylimit'],
+            $options['return_refs_only'],
+            $options['editable_only'],
+            $options['returnsql'],
+            $options['access'],
+            $options['smartsearch'],
             $query->filter,
             $query->join,
             $query->select,
         ]
     );
-    if ($external_search_results !== false) {
-        log_keyword_usage($query->keywords_used, $external_search_results);
-        return $external_search_results;
+    if ($result !== false) {
+        log_keyword_usage($query->keywords_used, $result);
     }
-
-    $result = search_execute($query, $ctx);
-    if ($ctx->return_refs_only || $result !== []) {
-        return $result;
-    }
-    return search_suggest_zero_results($parsed, $query);
+    return $result;
 }
 
 /**
