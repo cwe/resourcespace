@@ -716,359 +716,41 @@ function compile_search_actions($top_actions)
 }
 
 /**
- * Constructs a SQL filter based on the provided search parameters.
+ * Build the base search filter: what the caller asked for and what the current user may see.
  *
- * This function generates a prepared statement query that can be used to filter search results
- * based on various criteria, including archive status, resource types, user permissions, and more.
- * The function also takes into account user-specific access rights and other configurations
- * to ensure that the returned resources meet the necessary visibility and editability criteria.
+ * Kept with its original signature for plugins. The clauses are built by the steps in search_filter.php from a
+ * SearchContext, which this wrapper creates from the arguments (so the modifyfetchrows hook fires and a legacy
+ * text filter is migrated, as for any do_search() call).
  *
- * @param string $search The search query string.
- * @param mixed $archive Archive states to filter by (can be a comma-separated string).
- * @param string $restypes Resource types to include in the search.
- * @param int $recent_search_daylimit Limit for filtering recent searches by creation date.
- * @param mixed $access_override If set, overrides access restrictions.
- * @param bool $return_disk_usage Indicates whether to include disk usage information.
- * @param bool $editable_only If true, only returns resources that are editable by the user.
- * @param int|null $access The specific access level to filter by (if applicable).
- * @param bool $smartsearch If true, enables smart search features.
- * @return PreparedStatementQuery A prepared statement object containing the SQL query and parameters.
+ * @param string       $search                 Search string; special search identifiers change the archive handling
+ * @param string|array $archive                Archive states to search
+ * @param string       $restypes               Comma separated resource types, or "" for all
+ * @param string       $recent_search_daylimit Only resources created within this many days, or ""
+ * @param bool         $access_override        Skip the permission based clauses
+ * @param bool         $return_disk_usage      Whether the caller wants disk usage rather than rows
+ * @param bool         $editable_only          Only resources the user may edit
+ * @param int|null     $access                 Only resources with this access level ('v' permission only)
+ * @param bool         $smartsearch            Whether this is a smart collection search
+ *
+ * @return PreparedStatementQuery The WHERE clauses, without a leading WHERE
  */
 function search_filter($search, $archive, $restypes, $recent_search_daylimit, $access_override, $return_disk_usage, $editable_only = false, $access = null, $smartsearch = false)
 {
     debug_function_call("search_filter", func_get_args());
 
-    global $userref,$userpermissions,$resource_created_by_filter,$uploader_view_override,$edit_access_for_contributor,$additional_archive_states,$heightmin,
-    $search_all_workflow_states,$collections_omit_archived,$k,$collection_allow_not_approved_share,$archive_standard;
-
-    if (hook("modifyuserpermissions")) {
-        $userpermissions = hook("modifyuserpermissions");
-    }
-    $userpermissions = (isset($userpermissions)) ? $userpermissions : array();
-
-    # Convert the provided search parameters into appropriate SQL, ready for inclusion in the do_search() search query.
-    if (!is_array($archive)) {
-        $archive = explode(",", $archive);
-    }
-    $archive = array_filter($archive, is_int_loose(...));
-
-    $sql_filter = new PreparedStatementQuery();
-
-    # Apply resource types
-    if (($restypes != "") && (substr($restypes, 0, 6) != "Global") && substr($search, 0, 11) != '!collection') {
-        if ($sql_filter->sql != "") {
-            $sql_filter->sql .= " AND ";
-        }
-        $restypes_x = explode(",", $restypes);
-        $sql_filter->sql .= "resource_type IN (" . ps_param_insert(count($restypes_x)) . ")";
-        $sql_filter->parameters = array_merge($sql_filter->parameters, ps_param_fill($restypes_x, "i"));
-    }
-
-    # Apply day limit
-    if ('' != $recent_search_daylimit && is_numeric($recent_search_daylimit)) {
-        if ('' != $sql_filter->sql) {
-            $sql_filter->sql .= ' AND ';
-        }
-
-        $sql_filter->sql .= "creation_date > (curdate() - interval ? DAY)";
-        $sql_filter->parameters = array_merge($sql_filter->parameters, ["i",$recent_search_daylimit]);
-    }
-
-    # The ability to restrict access by the user that created the resource.
-    if (isset($resource_created_by_filter) && count($resource_created_by_filter) > 0) {
-        $created_filter = "";
-        $created_filter_params = [];
-        foreach ($resource_created_by_filter as $filter_user) {
-            if ($filter_user == -1) {
-                $filter_user = $userref;
-            } # '-1' can be used as an alias to the current user. I.e. they can only see their own resources in search results.
-            if ($created_filter != "") {
-                $created_filter .= " OR ";
-            }
-            $created_filter .= "created_by = ?";
-            $created_filter_params[] = "i";
-            $created_filter_params[] = $filter_user;
-        }
-        if ($created_filter != "") {
-            if ($sql_filter->sql != "") {
-                $sql_filter->sql .= " AND ";
-            }
-            $sql_filter->sql .= "(" . $created_filter . ")";
-            $sql_filter->parameters = array_merge($sql_filter->parameters, $created_filter_params);
-        }
-    }
-
-    # append resource type restrictions based on 'T' permission
-    # look for all 'T' permissions and append to the SQL filter.
-    $rtfilter = array();
-
-    for ($n = 0; $n < count($userpermissions); $n++) {
-        if (substr($userpermissions[$n], 0, 1) == "T") {
-            $rt = substr($userpermissions[$n], 1);
-            if (is_numeric($rt) && !$access_override) {
-                $rtfilter[] = $rt;
-            }
-        }
-    }
-    if (count($rtfilter) > 0) {
-        if ($sql_filter->sql != "") {
-            $sql_filter->sql .= " AND ";
-        }
-        $sql_filter->sql .= "resource_type NOT IN (" . ps_param_insert(count($rtfilter)) . ")";
-        $sql_filter->parameters = array_merge($sql_filter->parameters, ps_param_fill($rtfilter, "i"));
-    }
-
-    # append "use" access rights, do not show confidential resources unless admin
-    if (!checkperm("v") && !$access_override) {
-        if ($sql_filter->sql != "") {
-            $sql_filter->sql .= " AND ";
-        }
-        # Check both the resource access, but if confidential is returned, also look at the joined user-specific or group-specific custom access for rows.
-        $sql_filter->sql .= "(r.access<>'2' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2))))";
-    }
-
-    # append standard archive searching criteria. Updated Jan 2016 to apply to collections as resources in a pending state that are in a shared collection could bypass approval process
-    if (!$access_override) {
-        if (substr($search, 0, 11) == "!collection" || substr($search, 0, 5) == "!list" || substr($search, 0, 15) == "!archivepending" || substr($search, 0, 12) == "!userpending") {
-            # Resources in a collection or list may be in any archive state
-            # Other special searches define the archive state in search_special()
-            if (substr($search, 0, 11) == "!collection" && $collections_omit_archived && !checkperm("e2")) {
-                $sql_filter->sql .= (($sql_filter->sql != "") ? " AND " : "") . "archive<>2";
-            }
-        } elseif ($search_all_workflow_states || substr($search, 0, 8) == "!related" || substr($search, 0, 8) == "!hasdata" || strpos($search, "integrityfail") !== false) {
-            hook("search_all_workflow_states_filter", "", [$sql_filter]);
-        } elseif (count($archive) == 0 || $archive_standard && !$smartsearch) {
-            # If no archive specified add in default archive states (set by config options or as set in rse_workflow plugin)
-            # Defaults are not used if searching smartsearch collection, actual values will be used instead
-            if ($sql_filter->sql != "") {
-                $sql_filter->sql .= " AND ";
-            }
-            $defaultsearchstates = get_default_search_states();
-            if (count($defaultsearchstates) == 0) {
-                // Make sure we have at least one state - system has been misconfigured
-                $defaultsearchstates[] = 0;
-            }
-            $sql_filter->sql .= "archive IN (" . ps_param_insert(count($defaultsearchstates)) . ")";
-            $sql_filter->parameters = array_merge($sql_filter->parameters, ps_param_fill($defaultsearchstates, "i"));
-        } else {
-            # Append normal filtering - extended as advanced search now allows searching by archive state
-            if ($sql_filter->sql != "") {
-                $sql_filter->sql .= " AND ";
-            }
-            $sql_filter->sql .= "archive IN (" . ps_param_insert(count($archive)) . ")";
-            $sql_filter->parameters = array_merge($sql_filter->parameters, ps_param_fill($archive, "i"));
-        }
-        if (!checkperm("v") && !(substr($search, 0, 11) == "!collection" && $k != '' && $collection_allow_not_approved_share)) {
-            // Append standard filtering to hide resources in a pending state, whatever the search
-            // except when the resource is of a type that the user has ert permission for
-            $rtexclusions = "";
-            $rtexclusions_params = [];
-            for ($n = 0; $n < count($userpermissions); $n++) {
-                if (substr($userpermissions[$n], 0, 3) == "ert") {
-                    $rt = substr($userpermissions[$n], 3);
-                    if (is_int_loose($rt)) {
-                        $rtexclusions .= " OR (resource_type = ?)";
-                        array_push($rtexclusions_params, "i", $rt);
-                    }
-                }
-            }
-            $sql_filter->sql .= " AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) " . $rtexclusions . ")";
-            $sql_filter->parameters = array_merge($sql_filter->parameters, ["i",$userref,"i",$userref], $rtexclusions_params);
-            unset($rtexclusions);
-        }
-    }
-    # Add code to filter out resoures in archive states that the user does not have access to due to a 'z' permission
-    $filterblockstates          = [];
-    for ($n = -2; $n <= 3; $n++) {
-        if (checkperm("z" . $n) && !$access_override) {
-            $filterblockstates[] = $n;
-        }
-    }
-
-    foreach ($additional_archive_states as $additional_archive_state) {
-        if (checkperm("z" . $additional_archive_state)) {
-            $filterblockstates[] = $additional_archive_state;
-        }
-    }
-    if (count($filterblockstates) > 0 && !$access_override) {
-        if ($uploader_view_override) {
-            if ($sql_filter->sql != "") {
-                $sql_filter->sql .= " AND ";
-            }
-            $sql_filter->sql .= "(archive NOT IN (" . ps_param_insert(count($filterblockstates)) . ") OR created_by = ?)";
-            $sql_filter->parameters = array_merge($sql_filter->parameters, ps_param_fill($filterblockstates, "i"));
-            $sql_filter->parameters[] = "i";
-            $sql_filter->parameters[] = $userref;
-        } else {
-            if ($sql_filter->sql != "") {
-                $sql_filter->sql .= " AND ";
-            }
-            $sql_filter->sql .= "archive NOT IN (" . ps_param_insert(count($filterblockstates)) . ")";
-            $sql_filter->parameters = array_merge($sql_filter->parameters, ps_param_fill($filterblockstates, "i"));
-        }
-    }
-
-    # Append media restrictions
-    if ($heightmin != '') {
-        if ($sql_filter->sql != "") {
-            $sql_filter->sql .= " AND ";
-        }
-        $sql_filter->sql .= "dim.height>= ? ";
-        $sql_filter->parameters[] = "i";
-        $sql_filter->parameters[] = $heightmin;
-    }
-
-    # append ref filter - never return the batch upload template (negative refs)
-    if ($sql_filter->sql != "") {
-        $sql_filter->sql .= " AND ";
-    }
-    $sql_filter->sql .= "r.ref>0";
-
-    // Only users with v perm can search for resources with a specific access
-    if (checkperm("v") && !is_null($access) && is_numeric($access)) {
-        $sql_filter->sql .= (trim($sql_filter->sql) != "" ? " AND " : "");
-        $sql_filter->sql .= "r.access = ?";
-        $sql_filter->parameters[] = "i";
-        $sql_filter->parameters[] = $access;
-    }
-    // Append filter if only searching for editable resources
-    if ($editable_only) {
-        $editable_filter = new PreparedStatementQuery();
-        if (!checkperm("v") && !$access_override) {
-            // following condition added 2020-03-02 so that resources without an entry in the resource_custom_access table are included in the search results - "OR (rca.access IS NULL AND rca2.access IS NULL)"
-            $editable_filter->sql .= "(r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1) OR (rca2.access IS NOT null AND rca2.access <> 1) OR (rca.access IS NULL AND rca2.access IS NULL)))) ";
-        }
-
-        # Construct resource type exclusion based on 'ert' permission
-        # look for all 'ert' permissions and append to the exclusion array.
-        $rtexclusions = array();
-        for ($n = 0; $n < count($userpermissions); $n++) {
-            if (substr($userpermissions[$n], 0, 3) == "ert") {
-                $rt = substr($userpermissions[$n], 3);
-                if (is_numeric($rt)) {
-                    $rtexclusions[] = $rt;
-                }
-            }
-        }
-
-        $blockeditstates = array();
-        for ($n = -2; $n <= 3; $n++) {
-            if (!checkperm("e" . $n)) {
-                $blockeditstates[] = $n;
-            }
-        }
-        foreach ($additional_archive_states as $additional_archive_state) {
-            if (!checkperm("e" . $additional_archive_state)) {
-                $blockeditstates[] = $additional_archive_state;
-            }
-        }
-        // Add code to hide resources in archive<0 unless has 't' permission, resource has been contributed by user or has ert permission
-        if (!checkperm("t")) {
-            if ($editable_filter->sql != "") {
-                $editable_filter->sql .= " AND ";
-            }
-            $editable_filter->sql .= "(archive NOT IN (-2,-1) OR (created_by = ?";
-            $editable_filter->parameters = ["i",$userref];
-            if (count($rtexclusions) > 0) {
-                $editable_filter->sql  .= " OR resource_type IN (" . ps_param_insert(count($rtexclusions)) . ")";
-                $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($rtexclusions, "i"));
-            }
-            $editable_filter->sql .= "))";
-        }
-
-        if (count($blockeditstates) > 0) {
-            $blockeditoverride          = "";
-            $blockeditoverride_params   = [];
-            global $userref;
-            if ($edit_access_for_contributor) {
-                $blockeditoverride .= " created_by = ?";
-                $blockeditoverride_params[] = "i";
-                $blockeditoverride_params[] = $userref;
-            }
-            if (count($rtexclusions) > 0) {
-                if ($blockeditoverride != "") {
-                    $blockeditoverride .= " AND ";
-                }
-                $blockeditoverride .= "resource_type IN (" . ps_param_insert(count($rtexclusions)) . ")";
-                $blockeditoverride_params = array_merge($blockeditoverride_params, ps_param_fill($rtexclusions, "i"));
-            }
-            if ($editable_filter->sql != "") {
-                $editable_filter->sql .= " AND ";
-            }
-
-            $editable_filter->sql .= "(archive NOT IN (" . ps_param_insert(count($blockeditstates)) . ")";
-            $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($blockeditstates, "i"));
-            if ($blockeditoverride != "") {
-                $editable_filter->sql .= " OR " . $blockeditoverride;
-                $editable_filter->parameters = array_merge($editable_filter->parameters, $blockeditoverride_params);
-            }
-            $editable_filter->sql .= ")";
-        }
-
-        // Check for blocked/allowed resource types
-        $allrestypes = get_resource_types("", false, false, true);
-        $blockedrestypes = array();
-        foreach ($allrestypes as $restype) {
-            if (checkperm("XE" . $restype["ref"])) {
-                $blockedrestypes[] = $restype["ref"];
-            }
-        }
-        if (checkperm("XE")) {
-            $okrestypes = array();
-            $okrestypesor = "";
-            $okrestypesorparams = [];
-            foreach ($allrestypes as $restype) {
-                if (checkperm("XE-" . $restype["ref"])) {
-                    $okrestypes[] = $restype["ref"];
-                }
-            }
-            if (count($okrestypes) > 0) {
-                if ($editable_filter->sql != "") {
-                    $editable_filter->sql .= " AND ";
-                }
-                if ($edit_access_for_contributor) {
-                    $okrestypesor .= " created_by = ?";
-                    $okrestypesorparams = ["i",$userref];
-                }
-                $editable_filter->sql .= "(resource_type IN (" . ps_param_insert(count($okrestypes)) . ")" . (($okrestypesor != "") ? " OR " . $okrestypesor : "") . ")";
-                $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($okrestypes, "i"), $okrestypesorparams);
-            } else {
-                if ($editable_filter->sql != "") {
-                    $editable_filter->sql .= " AND ";
-                }
-                $editable_filter->sql .= " 0=1";
-            }
-        }
-
-        if (count($blockedrestypes) > 0) {
-            $blockrestypesor = "";
-            $blockrestypesorparams = [];
-            if ($edit_access_for_contributor) {
-                $blockrestypesor .= " created_by = ?";
-                $blockrestypesorparams = ["i",$userref];
-            }
-            if ($editable_filter->sql != "") {
-                $editable_filter->sql .= " AND ";
-            }
-            $editable_filter->sql .= "(resource_type NOT IN (" . ps_param_insert(count($blockedrestypes)) . ")" . (($blockrestypesor != "") ? " OR " . $blockrestypesor : "") . ")";
-            $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($blockedrestypes, "i"), $blockrestypesorparams);
-        }
-
-        $updated_editable_filter = hook("modifysearcheditable", "", array($editable_filter,$userref));
-        if ($updated_editable_filter !== false) {
-            $editable_filter = $updated_editable_filter;
-        }
-
-        if ($editable_filter->sql != "") {
-            if ($sql_filter->sql != "") {
-                $sql_filter->sql .= " AND ";
-            }
-            $sql_filter->sql .= $editable_filter->sql;
-            $sql_filter->parameters = array_merge($sql_filter->parameters, $editable_filter->parameters);
-        }
-    }
-
-    return $sql_filter;
+    $ctx = search_context_create([
+        'archive'                => $archive,
+        'restypes'               => $restypes,
+        'recent_search_daylimit' => $recent_search_daylimit,
+        'access_override'        => $access_override,
+        'return_disk_usage'      => $return_disk_usage,
+        'editable_only'          => $editable_only,
+        'access'                 => $access,
+        'smartsearch'            => $smartsearch,
+    ]);
+    $query = new SearchQuery();
+    search_query_filter((string) $search, $ctx, $query);
+    return $query->filter;
 }
 
 /**

@@ -22,8 +22,9 @@ A step that must end the search early (no access to a field, or a suggested sear
 | `include/search_parse.php` | `ParsedSearch`, `search_parse()`, `resolve_given_nodes()` |
 | `include/search_query.php` | `SearchQuery`, `KeywordUnion`, `SearchStop`, `search_query_build()` and the non-keyword pipeline steps, `search_query_compile()`, `search_query_compile_count()` |
 | `include/search_keywords.php` | `KeywordKind`, `Keyword`, `search_query_keywords()`, `search_keyword_classify()` and one function per keyword kind |
+| `include/search_filter.php` | `search_query_filter()` and one `search_query_filter_<concern>()` step per clause of the base filter |
 | `include/search_special.php` | `SpecialSearch`, `search_special_run()`, `search_special_builder()`, `search_special_build()`, `search_special_finish()` and one builder function per special search |
-| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()`, `search_special()` (which now wraps `search_special_run()`), `resolve_search_order_by()` (which `set_search_order_by()` now wraps), `resolve_keyword()`, `get_filter_sql()` |
+| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()` (which now wraps `search_query_filter()`), `search_special()` (which now wraps `search_special_run()`), `resolve_search_order_by()` (which `set_search_order_by()` now wraps), `resolve_keyword()`, `get_filter_sql()` |
 
 `include/boot.php` loads them in that order.
 
@@ -114,7 +115,7 @@ add nodes, nodes and unions feed the score), and `search_query_build()` notes ea
 flowchart LR
     subgraph build [search_query_build]
         direction TB
-        O[search_query_order<br>ORDER BY via resolve_search_order_by] --> F[search_filter<br>archive, resource types, access, workflow]
+        O[search_query_order<br>ORDER BY via resolve_search_order_by] --> F[search_query_filter<br>requested types, permissions, archive, editable]
         F --> A[search_query_access<br>custom access joins rca / rca2]
         A --> S[search_query_select<br>columns, modifyselect hooks, resultant_access, field columns]
         S --> P[hook search_pipeline_setup]
@@ -136,7 +137,7 @@ What each step touches on the `SearchQuery`:
 | Step | select | join | filter | unions | score / order |
 | --- | --- | --- | --- | --- | --- |
 | `search_query_order` | | | | | order_by, order_needs_fields |
-| `search_filter` | | | adds (the base filter) | | |
+| `search_query_filter` | | | adds (the base filter) | | |
 | `search_query_access` | | adds | adds | | |
 | `search_query_select` | sets | | | | |
 | `search_query_keywords` | | adds (dates, ranges) | adds (omit, dates, ranges) | adds | |
@@ -145,6 +146,15 @@ What each step touches on the `SearchQuery`:
 | `search_query_assemble_unions` | | adds derived table | adds union condition | consumes | |
 | `search_query_score` | adds total_hit_count | | | | score |
 | `search_query_featured_only` | | prepends | | | |
+
+`search_query_filter()` in `search_filter.php` is itself a sequence, one function per clause in the order the
+clauses appear in the SQL: `search_query_filter_requested()` (resource types and recent days),
+`search_query_filter_contributors()` (`$resource_created_by_filter`), `search_query_filter_type_permissions()`
+('T' permissions), `search_query_filter_confidential()` (no 'v' permission), `search_query_filter_archive()`
+(archive states and pending resources), `search_query_filter_blocked_states()` ('z' permissions),
+`search_query_filter_media()` (`$heightmin`), the batch upload template exclusion,
+`search_query_filter_access_level()` and `search_query_filter_editable()`. Configuration comes from the context;
+permissions are read live because the `modifyuserpermissions` hook runs first and may replace them.
 
 `search_query_compile()` produces:
 
@@ -381,6 +391,9 @@ snapshot test checks. `!relatedpushed` now resolves its ordering through `resolv
 | Hook | Fired from | Arguments |
 | --- | --- | --- |
 | `modifyfetchrows` | `search_context_create()` | fetchrows |
+| `modifyuserpermissions` | `search_query_filter()` | none; the return value replaces `$userpermissions` |
+| `search_all_workflow_states_filter` | `search_query_filter_archive()` | filter (object, so plugins can append) |
+| `modifysearcheditable` | `search_query_filter_editable()` | editable filter, userref; the return value replaces the clause |
 | `alternativeresults` | `do_search()` | go |
 | `dosearchmodifykeywords` | `search_parse()` | keywords, search |
 | `modifyselect`, `modifyselect2` | `search_query_select()` | none; the return value is appended to the select |
@@ -407,14 +420,15 @@ To add a pipeline step: write `search_query_<step>(SearchContext $ctx, SearchQue
 `search_special_builder()` at the right point in the order; a plugin uses the `addspecialsearch` hook instead.
 Steps take what they need from the context; a step that keeps to that can be exercised with a hand-built
 `SearchContext`. Globals remain in three places: `$keysearch` in `search_query_build()`, the helpers kept from the
-previous implementation (`resolve_search_order_by()`, `search_filter()`, `get_filter_sql()`), and the special
+previous implementation (`resolve_search_order_by()`, `get_filter_sql()`), the filter steps, which read
+`$userpermissions` live because the `modifyuserpermissions` hook may replace it, and the special
 search builders, each of which declares the configuration globals it reads.
 
 ## Tests and tools
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 116 searches, including every special search branch, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 133 searches, including every special search branch and every base filter clause, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
