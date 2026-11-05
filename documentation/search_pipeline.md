@@ -60,6 +60,50 @@ flowchart TD
 the `SearchQuery` and the context for the `external_search` hook, which keeps its original signature and is
 handed the options as the caller passed them. Either way `do_search()` itself reads as the sequence above.
 
+## Parsing the search string
+
+`search_parse()` splits the string before any SQL is built. Node tokens come out first, from anywhere in the
+string. A special search keeps the whole string, identifier included, so that `search_special_builder()` can
+match it, and only the text after the first space becomes keywords. That is what makes a combination such as
+`!collection5 title:dog, @@12` work: the collection builder gets the keyword and node restrictions as join and
+filter fragments, built by the same steps a standard search uses. The four searches that match only the whole
+string (`!images`, `!integrityfail`, `!locked`, `!noningested`) cannot be combined; `!images dog` becomes a
+plain search for `dog`.
+
+```mermaid
+flowchart TD
+    IN([search string<br>e.g. !collection5 title:dog, @@12]) --> W{Only wildcards?}
+    W -- yes --> EMPTY[search = empty string]
+    W -- no --> NT[resolve_given_nodes<br>remove every @@N and @@!N token]
+    EMPTY --> NT
+    NT -- "@@N" --> NB[(node_bucket<br>one AND group per word,<br>tokens inside a word are ORed)]
+    NT -- "@@!N" --> NBN[(node_bucket_not)]
+    NT -- field not viewable --> DROP[token dropped]
+    NT --> ID{Whole string<br>an integer?}
+    ID -- yes, and a resource has that ref --> MR[(matches_resource_id = true)]
+    ID -- otherwise --> SP
+    MR --> SP{Starts with !<br>other than !empty?}
+    SP -- yes --> KEEP[search keeps the whole string<br>including the identifier]
+    KEEP --> AFTER{Text after<br>the first space?}
+    AFTER -- no --> NOKW[keywords = none]
+    AFTER -- yes --> SPLIT
+    SP -- no --> WS{Any whitespace<br>in the search?}
+    WS -- no --> ONE[one keyword, unsplit]
+    WS -- yes --> SPLIT[split_keywords<br>spaces, commas and configured separators]
+    ONE --> DEDUP[unique, drop wildcard-only terms]
+    SPLIT --> DEDUP
+    DEDUP --> HOOK[dosearchmodifykeywords hook]
+    HOOK --> OUT[(ParsedSearch<br>search = !collection5 title:dog<br>keywords = title:dog<br>node_bucket = 12)]
+    NOKW --> OUT
+    OUT -- search --> B1[search_special_builder<br>picks the !collection builder]
+    OUT -- keywords --> B2[search_keyword_classify<br>field terms, phrases, wildcards, dates, !empty;<br>a second ! word is ignored]
+    OUT -- node buckets --> B3[search_query_nodes]
+    B2 -- join and filter fragments --> B1
+    B3 -- join and filter fragments --> B1
+```
+
+![Parsing the search string](images/search_pipeline_parse.png)
+
 ## Building the query
 
 `search_query_build()` runs these steps in order. Each is a plain function taking the context, the query and,
