@@ -44,6 +44,16 @@ final class SearchContext
         public readonly ?int $derestrict_filter_id,
         public readonly array $hidden_indexed_fields,
         public readonly array $resource_types,
+        // Configuration read by the base filter steps (search_filter.php)
+        public readonly array $created_by_filter,
+        public readonly bool $uploader_view_override,
+        public readonly bool $edit_access_for_contributor,
+        public readonly array $additional_archive_states,
+        public readonly string $heightmin,
+        public readonly bool $search_all_workflow_states,
+        public readonly bool $collections_omit_archived,
+        public readonly bool $collection_allow_not_approved_share,
+        public readonly bool $archive_standard,
         // Configuration snapshot
         public readonly bool $stemming,
         public readonly bool $wildcard_always_applied,
@@ -82,7 +92,10 @@ function search_context_create(array $options): SearchContext
     global $userref, $usergroup, $k, $internal_share_access, $userderestrictfilter,
         $stemming, $wildcard_always_applied, $index_contributed_by, $config_search_for_number,
         $category_tree_search_use_and_logic, $noadd, $config_separators, $date_field,
-        $DATE_FIELD_TYPES, $FIXED_LIST_FIELD_TYPES, $view_title_field;
+        $DATE_FIELD_TYPES, $FIXED_LIST_FIELD_TYPES, $view_title_field,
+        $resource_created_by_filter, $uploader_view_override, $edit_access_for_contributor,
+        $additional_archive_states, $heightmin, $search_all_workflow_states, $collections_omit_archived,
+        $collection_allow_not_approved_share, $archive_standard;
 
     $defaults = [
         'restypes'               => '',
@@ -167,6 +180,15 @@ function search_context_create(array $options): SearchContext
         derestrict_filter_id: is_int_loose($userderestrictfilter) && $userderestrictfilter > 0 ? (int) $userderestrictfilter : null,
         hidden_indexed_fields: get_hidden_indexed_fields(),
         resource_types: $resource_types,
+        created_by_filter: is_array($resource_created_by_filter ?? null) ? $resource_created_by_filter : [],
+        uploader_view_override: (bool) $uploader_view_override,
+        edit_access_for_contributor: (bool) $edit_access_for_contributor,
+        additional_archive_states: is_array($additional_archive_states) ? $additional_archive_states : [],
+        heightmin: (string) ($heightmin ?? ''),
+        search_all_workflow_states: (bool) $search_all_workflow_states,
+        collections_omit_archived: (bool) $collections_omit_archived,
+        collection_allow_not_approved_share: (bool) $collection_allow_not_approved_share,
+        archive_standard: (bool) ($archive_standard ?? false),
         stemming: (bool) $stemming,
         wildcard_always_applied: (bool) $wildcard_always_applied,
         index_contributed_by: (bool) $index_contributed_by,
