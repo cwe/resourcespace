@@ -39,7 +39,7 @@ final class SpecialSearch
      * @param string                 $search             Search string, starting with the special search identifier
      * @param PreparedStatementQuery $select             Select list; builders prepend their score column to it
      * @param PreparedStatementQuery $join               JOIN fragment of the standard query
-     * @param PreparedStatementQuery $filter             WHERE fragment from search_filter()
+     * @param PreparedStatementQuery $filter             WHERE fragment built by search_query_filter()
      * @param string                 $prefix             SQL wrapped around the query, e.g. for disk usage
      * @param string                 $suffix             SQL appended after the query
      * @param string                 $order_by           Resolved ORDER BY clause
@@ -848,7 +848,7 @@ function search_special_unused(SpecialSearch $s): SpecialSearch
 
 /**
  * "!listA:B:C" or "!listallA:B:C": the listed resources. The archive filter is not applied to "!listall"; that is
- * decided in search_filter().
+ * decided in search_query_filter_archive().
  *
  * @param SpecialSearch $s Special search
  *

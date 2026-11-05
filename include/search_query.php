@@ -205,7 +205,7 @@ final class SearchQuery
 /**
  * Build the main search query for a parsed search.
  *
- * Runs the pipeline steps in order: ORDER BY validation, the base filter (search_filter()), custom access joins,
+ * Runs the pipeline steps in order: ORDER BY validation, the base filter (search_query_filter()), custom access joins,
  * selected columns, keyword matching, node restrictions, user search/edit filters, keyword union assembly, the
  * score columns and the featured collections restriction. Plugins see the query through the
  * search_pipeline_setup hook after the selected columns are set and before keywords are matched.
@@ -231,20 +231,8 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
     // The select step needs order_needs_fields from here
     search_query_order($parsed, $ctx, $query);
 
-    # The base filter is used for all queries (standard and special searches)
-    $base_filter = search_filter(
-        $parsed->search,
-        $ctx->archive,
-        $ctx->restypes,
-        $ctx->recent_search_daylimit,
-        $ctx->access_override,
-        $ctx->return_disk_usage,
-        $ctx->editable_only,
-        $ctx->access,
-        $ctx->smartsearch
-    );
-    debug("do_search(): \$sql_filter = '" . $base_filter->sql . "', parameters = ['" . implode("','", $base_filter->parameters) . "']");
-    $query->andFilter($base_filter->sql, $base_filter->parameters);
+    // The base filter: what was asked for and what the user may see; the same clauses apply to special searches
+    search_query_filter($parsed->search, $ctx, $query);
 
     # If returning disk used by the resources in the search results then wrap the returned SQL in an outer query that sums disk usage.
     if ($ctx->return_disk_usage) {

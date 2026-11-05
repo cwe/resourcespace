@@ -34,6 +34,17 @@ $saved_000705 = [
     "config_search_for_number"           => $config_search_for_number,
     "category_tree_search_use_and_logic" => $category_tree_search_use_and_logic,
     "hidden_fields_cache"                => $hidden_fields_cache ?? null,
+    // Configuration read by the base filter steps
+    "k"                                  => $k ?? null,
+    "resource_created_by_filter"         => $resource_created_by_filter ?? null,
+    "heightmin"                          => $heightmin ?? null,
+    "uploader_view_override"             => $uploader_view_override,
+    "additional_archive_states"          => $additional_archive_states,
+    "search_all_workflow_states"         => $search_all_workflow_states,
+    "archive_standard"                   => $archive_standard ?? null,
+    "collections_omit_archived"          => $collections_omit_archived,
+    "collection_allow_not_approved_share" => $collection_allow_not_approved_share,
+    "edit_access_for_contributor"        => $edit_access_for_contributor,
     // Resource table join configuration: earlier tests add fields to these, which changes the SELECT list
     "sort_fields"                        => $sort_fields,
     "thumbs_display_fields"              => $thumbs_display_fields,
@@ -262,6 +273,33 @@ $cases = [
     ["name" => "special with keyword",           "search" => "!images alpha"],
     ["name" => "restricted special collection",  "search" => "!collection" . $snapcol, "permissions" => $restricted_permissions],
     ["name" => "restricted special contributions", "search" => "!contributions" . $userref, "permissions" => $restricted_permissions],
+    // --- base filter: every branch of the filter steps ---------------------------------------------------------------
+    ["name" => "filter created by",               "search" => "alpha", "config" => ["resource_created_by_filter" => [-1, 999705]]],
+    ["name" => "filter height min",               "search" => "alpha", "config" => ["heightmin" => "100"]],
+    ["name" => "filter type permission",          "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["T3"])],
+    ["name" => "filter pending type exclusion",   "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["ert1"])],
+    ["name" => "filter blocked states",           "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["z-2", "z3"]),
+                                                   "config" => ["uploader_view_override" => false]],
+    ["name" => "filter blocked states uploader",  "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["z-2", "z3"]),
+                                                   "config" => ["uploader_view_override" => true]],
+    ["name" => "filter additional state",         "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["z4"]),
+                                                   "config" => ["additional_archive_states" => [4]]],
+    ["name" => "filter all workflow states",      "search" => "alpha", "config" => ["search_all_workflow_states" => true]],
+    ["name" => "filter archive standard",         "search" => "alpha", "args" => ["archive" => "2"], "config" => ["archive_standard" => true]],
+    ["name" => "filter archive standard smartsearch", "search" => "alpha", "args" => ["archive" => "2", "smartsearch" => true],
+                                                   "config" => ["archive_standard" => true]],
+    ["name" => "filter no archive",               "search" => "alpha", "args" => ["archive" => ""]],
+    ["name" => "filter omit archived collection", "search" => "!collection" . $snapcol, "permissions" => $restricted_permissions,
+                                                   "config" => ["collections_omit_archived" => true]],
+    ["name" => "filter share key collection",     "search" => "!collection" . $snapcol, "permissions" => $restricted_permissions,
+                                                   "config" => ["k" => "snapshotkey", "collection_allow_not_approved_share" => true]],
+    ["name" => "filter editable full",            "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["ert1", "XE", "XE-1"]),
+                                                   "args" => ["editable_only" => true]],
+    ["name" => "filter editable blocked type",    "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["XE2"]),
+                                                   "args" => ["editable_only" => true], "config" => ["edit_access_for_contributor" => true]],
+    ["name" => "filter editable with t",          "search" => "alpha", "permissions" => array_merge($restricted_permissions, ["t"]),
+                                                   "args" => ["editable_only" => true]],
+    ["name" => "filter access level restricted",  "search" => "alpha", "args" => ["access" => 1], "permissions" => $restricted_permissions],
 ];
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -368,6 +406,16 @@ foreach ($cases as $case) {
     $index_contributed_by = false;
     $config_search_for_number = false;
     $category_tree_search_use_and_logic = false;
+    $k = "";
+    $resource_created_by_filter = null;
+    $heightmin = null;
+    $uploader_view_override = true;
+    $additional_archive_states = [];
+    $search_all_workflow_states = false;
+    $archive_standard = null;
+    $collections_omit_archived = false;
+    $collection_allow_not_approved_share = false;
+    $edit_access_for_contributor = false;
     foreach ($case["config"] ?? [] as $config_name => $config_value) {
         $$config_name = $config_value;
     }
@@ -1052,6 +1100,179 @@ function test_000705_expected(): array
         'restricted special contributions' => [
             'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE created_by = ? AND r.ref > 0 AND (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
             'params' => ['i:\'{USER}\'', 'i:\'{GROUP}\'', 'i:\'{USER}\'', 'i:\'0\'', 'i:\'{USER}\'', 'i:\'{USER}\''],
+        ],
+        'filter created by' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (created_by = ? OR created_by = ?) AND archive IN (?) AND r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{K:alpha}\'', 'i:\'{USER}\'', 'i:999705', 'i:\'0\''],
+        ],
+        'filter height min' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE archive IN (?) AND dim.height>= ? AND r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{K:alpha}\'', 'i:\'0\'', 'i:\'100\''],
+        ],
+        'filter type permission' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE resource_type NOT IN (?) AND (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'3\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+            ],
+        ],
+        'filter pending type exclusion' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) OR (resource_type = ?)) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:\'1\'',
+            ],
+        ],
+        'filter blocked states' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND archive NOT IN (?, ?) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:-2',
+                'i:3',
+            ],
+        ],
+        'filter blocked states uploader' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND (archive NOT IN (?, ?) OR created_by = ?) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:-2',
+                'i:3',
+                'i:\'{USER}\'',
+            ],
+        ],
+        'filter additional state' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND (archive NOT IN (?) OR created_by = ?) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:4',
+                'i:\'{USER}\'',
+            ],
+        ],
+        'filter all workflow states' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{K:alpha}\''],
+        ],
+        'filter archive standard' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE archive IN (?) AND r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{K:alpha}\'', 'i:0'],
+        ],
+        'filter archive standard smartsearch' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE archive IN (?) AND r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{K:alpha}\'', 'i:\'2\''],
+        ],
+        'filter no archive' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) )) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE archive IN (?) AND r.ref>0 AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{K:alpha}\'', 'i:0'],
+        ],
+        'filter omit archived collection' => [
+            'sql' => 'SELECT DISTINCT c.date_added, c.comment, r.hit_count score, length(c.comment) commentset, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN collection_resource c ON r.ref=c.resource LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE c.collection = ? AND ((r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive<>2 AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3)) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{USER}\'', 'i:\'{GROUP}\'', 'i:\'{C:COL}\'', 'i:\'{USER}\'', 'i:\'{USER}\''],
+        ],
+        'filter share key collection' => [
+            'sql' => 'SELECT DISTINCT c.date_added, c.comment, r.hit_count score, length(c.comment) commentset, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN collection_resource c ON r.ref=c.resource LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE c.collection = ? AND ((r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3)) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{USER}\'', 'i:\'{GROUP}\'', 'i:\'{C:COL}\''],
+        ],
+        'filter editable full' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) OR (resource_type = ?)) AND r.ref>0 AND (r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1) OR (rca2.access IS NOT null AND rca2.access <> 1) OR (rca.access IS NULL AND rca2.access IS NULL)))) AND (archive NOT IN (-2, -1) OR (created_by = ? OR resource_type IN (?))) AND (archive NOT IN (?, ?, ?, ?, ?) OR resource_type IN (?)) AND (resource_type IN (?)) AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:\'1\'',
+                'i:\'{USER}\'',
+                'i:\'1\'',
+                'i:-2',
+                'i:-1',
+                'i:1',
+                'i:2',
+                'i:3',
+                'i:\'1\'',
+                'i:\'1\'',
+            ],
+        ],
+        'filter editable blocked type' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND (r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1) OR (rca2.access IS NOT null AND rca2.access <> 1) OR (rca.access IS NULL AND rca2.access IS NULL)))) AND (archive NOT IN (-2, -1) OR (created_by = ?)) AND (archive NOT IN (?, ?, ?, ?, ?) OR created_by = ?) AND (resource_type NOT IN (?) OR created_by = ?) AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:-2',
+                'i:-1',
+                'i:1',
+                'i:2',
+                'i:3',
+                'i:\'{USER}\'',
+                'i:\'2\'',
+                'i:\'{USER}\'',
+            ],
+        ],
+        'filter editable with t' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND (r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1) OR (rca2.access IS NOT null AND rca2.access <> 1) OR (rca.access IS NULL AND rca2.access IS NULL)))) AND (archive NOT IN (?, ?, ?, ?, ?)) AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+                'i:-2',
+                'i:-1',
+                'i:1',
+                'i:2',
+                'i:3',
+            ],
+        ],
+        'filter access level restricted' => [
+            'sql' => 'SELECT DISTINCT h.score score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, rca.access group_access, rca2.access user_access, LEAST(IFNULL(rca.access, 1), IFNULL(rca2.access, 1)) resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2 LEFT OUTER JOIN resource_custom_access rca ON r.ref=rca.resource AND rca.usergroup = ? AND rca.access<>2 JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN ( SELECT resource, sum(score) AS score, BIT_OR(`keyword_1_found`) AS `keyword_1_found` from ( SELECT resource, TRUE AS `keyword_1_found`, hit_count AS score FROM resource_node rn1 WHERE rn1.node IN (SELECT node FROM `node_keyword` nk1 WHERE ((nk1.keyword = ? ) AND nk1.node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (?)))) GROUP BY resource ) AS hits GROUP BY resource) AS h ON h.resource=r.ref WHERE (r.access<>\'2\' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2)))) AND archive IN (?) AND (((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) ) AND r.ref>0 AND NOT (rca.resource IS null AND r.access=3) AND (`h`.`keyword_1_found`) GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => [
+                'i:\'{USER}\'',
+                'i:\'{GROUP}\'',
+                'i:\'{K:alpha}\'',
+                'i:\'{F:snaptext}\'',
+                'i:\'0\'',
+                'i:\'{USER}\'',
+                'i:\'{USER}\'',
+            ],
         ],
     ];
 }
