@@ -413,34 +413,21 @@ clear_restype_cache();
 // ---------------------------------------------------------------------------------------------------------------------
 if ($update_snapshot) {
     $source = file_get_contents(__FILE__);
-    $marker_at = strrpos($source, "
-" . $snapshot_marker);
+    $marker_at = strrpos($source, "\n" . $snapshot_marker);
     if ($marker_at === false) {
-        echo "ERROR - snapshot marker not found in " . __FILE__ . "
-";
+        echo "ERROR - snapshot marker not found in " . __FILE__ . "\n";
         return false;
     }
-    $block = $snapshot_marker . "
-
-"
-        . "/**
-"
-        . " * The expected normalised SQL and parameters for every case in the corpus, as last regenerated.
-"
-        . " *
-"
-        . " * @return array
-"
-        . " */
-"
-        . "function test_000705_expected(): array
-"
-        . "{
-"
-        . "    return " . test_000705_export($actual, "    ") . ";
-"
-        . "}
-";
+    $block = $snapshot_marker . "\n\n"
+        . "/**\n"
+        . " * The expected normalised SQL and parameters for every case in the corpus, as last regenerated.\n"
+        . " *\n"
+        . " * @return array\n"
+        . " */\n"
+        . "function test_000705_expected(): array\n"
+        . "{\n"
+        . "    return " . test_000705_export($actual, "    ") . ";\n"
+        . "}\n";
     file_put_contents(__FILE__, substr($source, 0, $marker_at + 1) . $block);
     echo "snapshot updated (" . count($actual) . " cases) ";
     return true;
@@ -454,13 +441,11 @@ foreach ($actual as $case_name => $actual_entry) {
     } elseif ($expected[$case_name] !== $actual_entry) {
         $expected_text = json_encode($expected[$case_name], JSON_UNESCAPED_SLASHES);
         $actual_text = json_encode($actual_entry, JSON_UNESCAPED_SLASHES);
-        $diff_at = strspn($expected_text ^ $actual_text, " ");
+        $diff_at = strspn($expected_text ^ $actual_text, "\0");
         $window_start = max(0, $diff_at - 80);
         $failures[] = "'" . $case_name . "' differs at offset " . $diff_at
-            . "
-  expected: ..." . substr($expected_text, $window_start, 240)
-            . "
-  actual:   ..." . substr($actual_text, $window_start, 240);
+            . "\n  expected: ..." . substr($expected_text, $window_start, 240)
+            . "\n  actual:   ..." . substr($actual_text, $window_start, 240);
     }
 }
 foreach (array_diff(array_keys($expected), array_keys($actual)) as $stale) {
@@ -468,10 +453,7 @@ foreach (array_diff(array_keys($expected), array_keys($actual)) as $stale) {
 }
 
 if (count($failures) > 0) {
-    echo "ERROR - do_search() SQL differs from snapshot in " . count($failures) . " case(s):
-" . implode("
-", $failures) . "
-";
+    echo "ERROR - do_search() SQL differs from snapshot in " . count($failures) . " case(s):\n" . implode("\n", $failures) . "\n";
     return false;
 }
 
@@ -498,15 +480,11 @@ function test_000705_export($value, string $indent): string
         if (strlen($indent) + strlen($inline) <= 110) {
             return $inline;
         }
-        return "[
-" . implode("", array_map(fn($item) => $inner . $item . ",
-", $items)) . $indent . "]";
+        return "[\n" . implode("", array_map(fn($item) => $inner . $item . ",\n", $items)) . $indent . "]";
     }
-    $out = "[
-";
+    $out = "[\n";
     foreach ($value as $key => $item) {
-        $out .= $inner . var_export($key, true) . " => " . test_000705_export($item, $inner) . ",
-";
+        $out .= $inner . var_export($key, true) . " => " . test_000705_export($item, $inner) . ",\n";
     }
     return $out . $indent . "]";
 }
