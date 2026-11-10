@@ -9,10 +9,27 @@
  * batch upload template, a requested access level and, for an editable-only search, what the user may edit. The
  * same clauses apply to the standard query and to every special search.
  *
+ * The filter does not know the special searches by name, with one exception. Which archive states a special
+ * search covers is declared beside the special search dispatch, in search_special_archive_states(). The exception
+ * is a collection search, which has filter rules of its own that are driven by configuration.
+ *
  * Configuration comes from the SearchContext. Permissions are read live through checkperm() and
  * $userpermissions, because the modifyuserpermissions hook may replace them at the start of the filter.
  * search_filter() in search_functions.php keeps the previous signature and wraps search_query_filter().
  */
+
+/**
+ * The archive states a search covers, see search_query_filter_archive().
+ */
+enum SearchArchiveStates
+{
+    /** The states the caller asked for, or the default search states when none were requested */
+    case Requested;
+    /** Every state: the members of a collection or list, and pending resources, are found whatever their state */
+    case Any;
+    /** Every workflow state, with the search_all_workflow_states_filter hook able to narrow them */
+    case AllWorkflow;
+}
 
 /**
  * Add the base filter clauses to the query.
@@ -37,6 +54,7 @@ function search_query_filter(string $search, SearchContext $ctx, SearchQuery $qu
     search_query_filter_type_permissions($ctx, $query);
     search_query_filter_confidential($ctx, $query);
     search_query_filter_archive($search, $ctx, $query);
+    search_query_filter_pending($search, $ctx, $query);
     search_query_filter_blocked_states($ctx, $query);
     search_query_filter_media($ctx, $query);
 
@@ -66,7 +84,7 @@ function search_query_filter(string $search, SearchContext $ctx, SearchQuery $qu
 function search_query_filter_requested(string $search, SearchContext $ctx, SearchQuery $query): void
 {
     $restypes = $ctx->restypes;
-    if (($restypes != "") && (substr($restypes, 0, 6) != "Global") && substr($search, 0, 11) != '!collection') {
+    if ($restypes != "" && substr($restypes, 0, 6) != "Global" && !str_starts_with($search, "!collection")) {
         $restypes_x = explode(",", $restypes);
         $query->andFilter(
             "resource_type IN (" . ps_param_insert(count($restypes_x)) . ")",
@@ -164,14 +182,16 @@ function search_query_filter_confidential(SearchContext $ctx, SearchQuery $query
 }
 
 /**
- * Archive states and pending resources. Not applied with access override.
+ * Archive states. Not applied with access override.
  *
- * A collection, list or pending search accepts members in any state, apart from archived members of a collection
- * when $collections_omit_archived applies to the user. Searches over all workflow states leave the states to the
- * search_all_workflow_states_filter hook. Otherwise the requested states apply, or the default search states when
- * none were requested or $archive_standard is set. A user without the 'v' permission then also loses pending
- * resources they did not contribute, except for resource types covered by an 'ert' permission, and except inside
- * a collection shared with a key when $collection_allow_not_approved_share is set.
+ * search_special_archive_states() says which states the search covers; the $search_all_workflow_states
+ * configuration widens an ordinary search to every workflow state.
+ *
+ * - Any: no condition, apart from archived members of a collection when $collections_omit_archived applies to
+ *   the user.
+ * - AllWorkflow: no condition, but the search_all_workflow_states_filter hook may add one.
+ * - Requested: the states the caller asked for, or the default search states when none were requested or
+ *   $archive_standard is set. A smart search always uses the states it asked for.
  *
  * @param string        $search Search string
  * @param SearchContext $ctx    Search context
@@ -181,69 +201,70 @@ function search_query_filter_confidential(SearchContext $ctx, SearchQuery $query
  */
 function search_query_filter_archive(string $search, SearchContext $ctx, SearchQuery $query): void
 {
-    global $userpermissions;
-
     if ($ctx->access_override) {
         return;
     }
-    $archive = array_filter($ctx->archive, is_int_loose(...));
 
-    $any_state = substr($search, 0, 11) == "!collection"
-        || substr($search, 0, 5) == "!list"
-        || substr($search, 0, 15) == "!archivepending"
-        || substr($search, 0, 12) == "!userpending";
-    $all_workflow_states = $ctx->search_all_workflow_states
-        || substr($search, 0, 8) == "!related"
-        || substr($search, 0, 8) == "!hasdata"
-        || strpos($search, "integrityfail") !== false;
+    $states = search_special_archive_states($search);
+    if ($states === SearchArchiveStates::Requested && $ctx->search_all_workflow_states) {
+        $states = SearchArchiveStates::AllWorkflow;
+    }
 
-    if ($any_state) {
-        # Resources in a collection or list may be in any archive state
-        # Other special searches define the archive state in search_special()
-        if (substr($search, 0, 11) == "!collection" && $ctx->collections_omit_archived && !checkperm("e2")) {
+    if ($states === SearchArchiveStates::Any) {
+        if (str_starts_with($search, "!collection") && $ctx->collections_omit_archived && !checkperm("e2")) {
             $query->andFilter("archive<>2");
         }
-    } elseif ($all_workflow_states) {
+        return;
+    }
+    if ($states === SearchArchiveStates::AllWorkflow) {
         hook("search_all_workflow_states_filter", "", [$query->filter]);
-    } elseif (count($archive) == 0 || $ctx->archive_standard && !$ctx->smartsearch) {
-        # If no archive specified add in default archive states (set by config options or as set in rse_workflow plugin)
-        # Defaults are not used if searching smartsearch collection, actual values will be used instead
-        $defaultsearchstates = get_default_search_states();
-        if (count($defaultsearchstates) == 0) {
-            // Make sure we have at least one state - system has been misconfigured
-            $defaultsearchstates[] = 0;
-        }
-        $query->andFilter(
-            "archive IN (" . ps_param_insert(count($defaultsearchstates)) . ")",
-            ps_param_fill($defaultsearchstates, "i")
-        );
-    } else {
-        # Append normal filtering - extended as advanced search now allows searching by archive state
-        $query->andFilter("archive IN (" . ps_param_insert(count($archive)) . ")", ps_param_fill($archive, "i"));
+        return;
     }
 
-    $shared_collection = substr($search, 0, 11) == "!collection"
+    $archive = array_filter($ctx->archive, is_int_loose(...));
+    if (count($archive) == 0 || $ctx->archive_standard && !$ctx->smartsearch) {
+        # If no archive specified add in default archive states (set by config options or as set in rse_workflow plugin)
+        # Defaults are not used if searching smartsearch collection, actual values will be used instead
+        $archive = get_default_search_states();
+        if (count($archive) == 0) {
+            // Make sure we have at least one state - system has been misconfigured
+            $archive[] = 0;
+        }
+    }
+    $query->andFilter("archive IN (" . ps_param_insert(count($archive)) . ")", ps_param_fill($archive, "i"));
+}
+
+/**
+ * Pending resources. Not applied with access override.
+ *
+ * Whatever the search, a user without the 'v' permission does not see resources pending submission or review
+ * (archive states -2 and -1) unless they contributed them or the resource type is covered by an 'ert'
+ * permission. The exception is a collection shared with a key when $collection_allow_not_approved_share is set.
+ *
+ * @param string        $search Search string
+ * @param SearchContext $ctx    Search context
+ * @param SearchQuery   $query  Query being built
+ *
+ * @return void
+ */
+function search_query_filter_pending(string $search, SearchContext $ctx, SearchQuery $query): void
+{
+    if ($ctx->access_override || checkperm("v")) {
+        return;
+    }
+    $shared_collection = str_starts_with($search, "!collection")
         && $ctx->external_share
         && $ctx->collection_allow_not_approved_share;
-    if (!checkperm("v") && !$shared_collection) {
-        // Append standard filtering to hide resources in a pending state, whatever the search
-        // except when the resource is of a type that the user has ert permission for
-        $rtexclusions = "";
-        $rtexclusions_params = [];
-        for ($n = 0; $n < count($userpermissions); $n++) {
-            if (substr($userpermissions[$n], 0, 3) == "ert") {
-                $rt = substr($userpermissions[$n], 3);
-                if (is_int_loose($rt)) {
-                    $rtexclusions .= " OR (resource_type = ?)";
-                    array_push($rtexclusions_params, "i", $rt);
-                }
-            }
-        }
-        $query->andFilter(
-            "(((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) " . $rtexclusions . ")",
-            array_merge(["i",$ctx->userref,"i",$ctx->userref], $rtexclusions_params)
-        );
+    if ($shared_collection) {
+        return;
     }
+
+    $ert_types = search_filter_ert_types();
+    $query->andFilter(
+        "(((r.archive<>-2 OR r.created_by = ?) AND (r.archive<>-1 OR r.created_by = ?)) "
+        . str_repeat(" OR (resource_type = ?)", count($ert_types)) . ")",
+        array_merge(["i", $ctx->userref, "i", $ctx->userref], ps_param_fill($ert_types, "i"))
+    );
 }
 
 /**
@@ -318,11 +339,14 @@ function search_query_filter_access_level(SearchContext $ctx, SearchQuery $query
 /**
  * For an editable-only search: what the user may edit.
  *
- * Restricted resources are excluded for a user without the 'v' permission unless custom access opens them. Without
- * the 't' permission, pending resources must be the user's own or of a type covered by an 'ert' permission. States
- * without an 'e' permission are excluded, unless the user contributed the resource and
- * $edit_access_for_contributor is set, or the type is covered by an 'ert' permission. 'XE' permissions block or
- * allow editing by resource type. The modifysearcheditable hook may replace the whole clause.
+ * The clause is built from one part per rule, joined with AND, in the order below. A part that does not apply to
+ * the user is left out. The modifysearcheditable hook is given the finished clause and may replace it.
+ *
+ * - search_editable_restricted(): restricted resources
+ * - search_editable_pending(): pending resources
+ * - search_editable_states(): archive states the user has no 'e' permission for
+ * - search_editable_allowed_types(): resource types allowed by 'XE-' permissions
+ * - search_editable_blocked_types(): resource types blocked by 'XE' permissions
  *
  * @param SearchContext $ctx   Search context
  * @param SearchQuery   $query Query being built
@@ -331,146 +355,214 @@ function search_query_filter_access_level(SearchContext $ctx, SearchQuery $query
  */
 function search_query_filter_editable(SearchContext $ctx, SearchQuery $query): void
 {
-    global $userpermissions;
+    $ert_types = search_filter_ert_types();
+    $resource_types = get_resource_types("", false, false, true);
+    $parts = [
+        search_editable_restricted($ctx),
+        search_editable_pending($ctx, $ert_types),
+        search_editable_states($ctx, $ert_types),
+        search_editable_allowed_types($ctx, $resource_types),
+        search_editable_blocked_types($ctx, $resource_types),
+    ];
 
-    $userref = $ctx->userref;
     $editable_filter = new PreparedStatementQuery();
-    if (!checkperm("v") && !$ctx->access_override) {
-        // following condition added 2020-03-02 so that resources without an entry in the resource_custom_access table
-        // are included in the search results - "OR (rca.access IS NULL AND rca2.access IS NULL)"
-        $editable_filter->sql .= "(r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1)"
-            . " OR (rca2.access IS NOT null AND rca2.access <> 1)"
-            . " OR (rca.access IS NULL AND rca2.access IS NULL)))) ";
+    foreach ($parts as $part) {
+        if ($part === null) {
+            continue;
+        }
+        $editable_filter->sql .= ($editable_filter->sql != "" ? " AND " : "") . $part->sql;
+        $editable_filter->parameters = array_merge($editable_filter->parameters, $part->parameters);
     }
 
-    # Construct resource type exclusion based on 'ert' permission
-    # look for all 'ert' permissions and append to the exclusion array.
-    $rtexclusions = array();
-    for ($n = 0; $n < count($userpermissions); $n++) {
-        if (substr($userpermissions[$n], 0, 3) == "ert") {
-            $rt = substr($userpermissions[$n], 3);
-            if (is_numeric($rt)) {
-                $rtexclusions[] = $rt;
-            }
-        }
-    }
-
-    $blockeditstates = array();
-    for ($n = -2; $n <= 3; $n++) {
-        if (!checkperm("e" . $n)) {
-            $blockeditstates[] = $n;
-        }
-    }
-    foreach ($ctx->additional_archive_states as $additional_archive_state) {
-        if (!checkperm("e" . $additional_archive_state)) {
-            $blockeditstates[] = $additional_archive_state;
-        }
-    }
-    // Add code to hide resources in archive<0 unless has 't' permission, resource has been contributed by user or has ert permission
-    if (!checkperm("t")) {
-        if ($editable_filter->sql != "") {
-            $editable_filter->sql .= " AND ";
-        }
-        $editable_filter->sql .= "(archive NOT IN (-2,-1) OR (created_by = ?";
-        $editable_filter->parameters = ["i",$userref];
-        if (count($rtexclusions) > 0) {
-            $editable_filter->sql  .= " OR resource_type IN (" . ps_param_insert(count($rtexclusions)) . ")";
-            $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($rtexclusions, "i"));
-        }
-        $editable_filter->sql .= "))";
-    }
-
-    if (count($blockeditstates) > 0) {
-        $blockeditoverride          = "";
-        $blockeditoverride_params   = [];
-        if ($ctx->edit_access_for_contributor) {
-            $blockeditoverride .= " created_by = ?";
-            $blockeditoverride_params[] = "i";
-            $blockeditoverride_params[] = $userref;
-        }
-        if (count($rtexclusions) > 0) {
-            if ($blockeditoverride != "") {
-                $blockeditoverride .= " AND ";
-            }
-            $blockeditoverride .= "resource_type IN (" . ps_param_insert(count($rtexclusions)) . ")";
-            $blockeditoverride_params = array_merge($blockeditoverride_params, ps_param_fill($rtexclusions, "i"));
-        }
-        if ($editable_filter->sql != "") {
-            $editable_filter->sql .= " AND ";
-        }
-
-        $editable_filter->sql .= "(archive NOT IN (" . ps_param_insert(count($blockeditstates)) . ")";
-        $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($blockeditstates, "i"));
-        if ($blockeditoverride != "") {
-            $editable_filter->sql .= " OR " . $blockeditoverride;
-            $editable_filter->parameters = array_merge($editable_filter->parameters, $blockeditoverride_params);
-        }
-        $editable_filter->sql .= ")";
-    }
-
-    // Check for blocked/allowed resource types
-    $allrestypes = get_resource_types("", false, false, true);
-    $blockedrestypes = array();
-    foreach ($allrestypes as $restype) {
-        if (checkperm("XE" . $restype["ref"])) {
-            $blockedrestypes[] = $restype["ref"];
-        }
-    }
-    if (checkperm("XE")) {
-        $okrestypes = array();
-        $okrestypesor = "";
-        $okrestypesorparams = [];
-        foreach ($allrestypes as $restype) {
-            if (checkperm("XE-" . $restype["ref"])) {
-                $okrestypes[] = $restype["ref"];
-            }
-        }
-        if (count($okrestypes) > 0) {
-            if ($editable_filter->sql != "") {
-                $editable_filter->sql .= " AND ";
-            }
-            if ($ctx->edit_access_for_contributor) {
-                $okrestypesor .= " created_by = ?";
-                $okrestypesorparams = ["i",$userref];
-            }
-            $editable_filter->sql .= "(resource_type IN (" . ps_param_insert(count($okrestypes)) . ")"
-                . (($okrestypesor != "") ? " OR " . $okrestypesor : "") . ")";
-            $editable_filter->parameters = array_merge(
-                $editable_filter->parameters,
-                ps_param_fill($okrestypes, "i"),
-                $okrestypesorparams
-            );
-        } else {
-            if ($editable_filter->sql != "") {
-                $editable_filter->sql .= " AND ";
-            }
-            $editable_filter->sql .= " 0=1";
-        }
-    }
-
-    if (count($blockedrestypes) > 0) {
-        $blockrestypesor = "";
-        $blockrestypesorparams = [];
-        if ($ctx->edit_access_for_contributor) {
-            $blockrestypesor .= " created_by = ?";
-            $blockrestypesorparams = ["i",$userref];
-        }
-        if ($editable_filter->sql != "") {
-            $editable_filter->sql .= " AND ";
-        }
-        $editable_filter->sql .= "(resource_type NOT IN (" . ps_param_insert(count($blockedrestypes)) . ")"
-            . (($blockrestypesor != "") ? " OR " . $blockrestypesor : "") . ")";
-        $editable_filter->parameters = array_merge(
-            $editable_filter->parameters,
-            ps_param_fill($blockedrestypes, "i"),
-            $blockrestypesorparams
-        );
-    }
-
-    $updated_editable_filter = hook("modifysearcheditable", "", array($editable_filter,$userref));
+    $updated_editable_filter = hook("modifysearcheditable", "", array($editable_filter, $ctx->userref));
     if ($updated_editable_filter !== false) {
         $editable_filter = $updated_editable_filter;
     }
 
     $query->andFilter($editable_filter->sql, $editable_filter->parameters);
+}
+
+/**
+ * Resource types named by the user's 'ert' permissions. An 'ert' permission gives edit access to resources of
+ * that type whatever their archive state, so these types are exceptions to the pending and state rules.
+ *
+ * @return array Resource type references
+ */
+function search_filter_ert_types(): array
+{
+    global $userpermissions;
+
+    $types = [];
+    foreach ($userpermissions as $permission) {
+        $type = substr($permission, 3);
+        if (substr($permission, 0, 3) == "ert" && is_int_loose($type)) {
+            $types[] = $type;
+        }
+    }
+    return $types;
+}
+
+/**
+ * Editable-only part: a user without the 'v' permission cannot edit restricted resources, unless custom access
+ * opens them or they have no custom access record at all. Not applied with access override.
+ *
+ * @param SearchContext $ctx Search context
+ *
+ * @return PreparedStatementQuery|null The part, or null when it does not apply
+ */
+function search_editable_restricted(SearchContext $ctx): ?PreparedStatementQuery
+{
+    if (checkperm("v") || $ctx->access_override) {
+        return null;
+    }
+    // "OR (rca.access IS NULL AND rca2.access IS NULL)" was added 2020-03-02 so that resources without an entry in
+    // the resource_custom_access table are included in the search results
+    return new PreparedStatementQuery(
+        "(r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1)"
+        . " OR (rca2.access IS NOT null AND rca2.access <> 1)"
+        . " OR (rca.access IS NULL AND rca2.access IS NULL)))) "
+    );
+}
+
+/**
+ * Editable-only part: without the 't' permission, a pending resource (archive state -2 or -1) must have been
+ * contributed by the user or be of a type covered by an 'ert' permission.
+ *
+ * @param SearchContext $ctx       Search context
+ * @param array         $ert_types Resource types from search_filter_ert_types()
+ *
+ * @return PreparedStatementQuery|null The part, or null when it does not apply
+ */
+function search_editable_pending(SearchContext $ctx, array $ert_types): ?PreparedStatementQuery
+{
+    if (checkperm("t")) {
+        return null;
+    }
+    $part = new PreparedStatementQuery("(archive NOT IN (-2,-1) OR (created_by = ?", ["i", $ctx->userref]);
+    if (count($ert_types) > 0) {
+        $part->sql .= " OR resource_type IN (" . ps_param_insert(count($ert_types)) . ")";
+        $part->parameters = array_merge($part->parameters, ps_param_fill($ert_types, "i"));
+    }
+    $part->sql .= "))";
+    return $part;
+}
+
+/**
+ * Editable-only part: archive states the user has no 'e' permission for are excluded, including any of
+ * $additional_archive_states.
+ *
+ * The exception is a resource the user contributed when $edit_access_for_contributor is set, or a resource of a
+ * type covered by an 'ert' permission. When both apply the resource must satisfy both.
+ *
+ * @param SearchContext $ctx       Search context
+ * @param array         $ert_types Resource types from search_filter_ert_types()
+ *
+ * @return PreparedStatementQuery|null The part, or null when the user may edit in every state
+ */
+function search_editable_states(SearchContext $ctx, array $ert_types): ?PreparedStatementQuery
+{
+    $blocked_states = [];
+    foreach (array_merge(range(-2, 3), $ctx->additional_archive_states) as $state) {
+        if (!checkperm("e" . $state)) {
+            $blocked_states[] = $state;
+        }
+    }
+    if (count($blocked_states) == 0) {
+        return null;
+    }
+
+    $exception = "";
+    $exception_params = [];
+    if ($ctx->edit_access_for_contributor) {
+        $exception = " created_by = ?";
+        $exception_params = ["i", $ctx->userref];
+    }
+    if (count($ert_types) > 0) {
+        $exception .= ($exception != "" ? " AND " : "") . "resource_type IN (" . ps_param_insert(count($ert_types)) . ")";
+        $exception_params = array_merge($exception_params, ps_param_fill($ert_types, "i"));
+    }
+
+    $part = new PreparedStatementQuery(
+        "(archive NOT IN (" . ps_param_insert(count($blocked_states)) . ")",
+        ps_param_fill($blocked_states, "i")
+    );
+    if ($exception != "") {
+        $part->sql .= " OR " . $exception;
+        $part->parameters = array_merge($part->parameters, $exception_params);
+    }
+    $part->sql .= ")";
+    return $part;
+}
+
+/**
+ * Editable-only part: with the 'XE' permission the user may only edit resource types named by an 'XE-' permission,
+ * and nothing at all when there are none. A contributor may still edit their own resources when
+ * $edit_access_for_contributor is set.
+ *
+ * @param SearchContext $ctx            Search context
+ * @param array         $resource_types Every resource type, as returned by get_resource_types()
+ *
+ * @return PreparedStatementQuery|null The part, or null when the user does not have the 'XE' permission
+ */
+function search_editable_allowed_types(SearchContext $ctx, array $resource_types): ?PreparedStatementQuery
+{
+    if (!checkperm("XE")) {
+        return null;
+    }
+    $allowed = [];
+    foreach ($resource_types as $resource_type) {
+        if (checkperm("XE-" . $resource_type["ref"])) {
+            $allowed[] = $resource_type["ref"];
+        }
+    }
+    if (count($allowed) == 0) {
+        return new PreparedStatementQuery(" 0=1");
+    }
+    return search_editable_type_part("resource_type IN", $allowed, $ctx);
+}
+
+/**
+ * Editable-only part: resource types named by an 'XE' permission cannot be edited. A contributor may still edit
+ * their own resources when $edit_access_for_contributor is set.
+ *
+ * @param SearchContext $ctx            Search context
+ * @param array         $resource_types Every resource type, as returned by get_resource_types()
+ *
+ * @return PreparedStatementQuery|null The part, or null when no resource type is blocked
+ */
+function search_editable_blocked_types(SearchContext $ctx, array $resource_types): ?PreparedStatementQuery
+{
+    $blocked = [];
+    foreach ($resource_types as $resource_type) {
+        if (checkperm("XE" . $resource_type["ref"])) {
+            $blocked[] = $resource_type["ref"];
+        }
+    }
+    if (count($blocked) == 0) {
+        return null;
+    }
+    return search_editable_type_part("resource_type NOT IN", $blocked, $ctx);
+}
+
+/**
+ * A resource type condition for the editable-only filter, with the contributor exception.
+ *
+ * @param string        $condition "resource_type IN" or "resource_type NOT IN"
+ * @param array         $types     Resource type references; not empty
+ * @param SearchContext $ctx       Search context
+ *
+ * @return PreparedStatementQuery
+ */
+function search_editable_type_part(string $condition, array $types, SearchContext $ctx): PreparedStatementQuery
+{
+    $part = new PreparedStatementQuery(
+        "(" . $condition . " (" . ps_param_insert(count($types)) . ")",
+        ps_param_fill($types, "i")
+    );
+    if ($ctx->edit_access_for_contributor) {
+        $part->sql .= " OR  created_by = ?";
+        array_push($part->parameters, "i", $ctx->userref);
+    }
+    $part->sql .= ")";
+    return $part;
 }

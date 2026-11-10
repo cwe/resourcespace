@@ -87,6 +87,34 @@ function search_special_execute(SpecialSearch $s, int|array $fetchrows, bool $re
 }
 
 /**
+ * Say which archive states a search covers, for the base filter (search_query_filter_archive()).
+ *
+ * This sits beside search_special_builder() so that a special search's dispatch and its archive handling are
+ * read, and changed, together. It tests the search string rather than the chosen builder because the rule also
+ * holds when keywords follow the identifier, and because "integrityfail" is matched anywhere in the search, as
+ * it always has been.
+ *
+ * @param string $search Search string
+ *
+ * @return SearchArchiveStates Requested for every search not listed here, including standard searches
+ */
+function search_special_archive_states(string $search): SearchArchiveStates
+{
+    return match (true) {
+        // Members of a collection or list, and pending resources, are found whatever their state
+        str_starts_with($search, "!collection"),
+        str_starts_with($search, "!list"),
+        str_starts_with($search, "!archivepending"),
+        str_starts_with($search, "!userpending") => SearchArchiveStates::Any,
+        // Related resources (which covers "!relatedpushed"), field data and integrity failures in any workflow state
+        str_starts_with($search, "!related"),
+        str_starts_with($search, "!hasdata"),
+        str_contains($search, "integrityfail") => SearchArchiveStates::AllWorkflow,
+        default => SearchArchiveStates::Requested,
+    };
+}
+
+/**
  * Name the builder function for a special search.
  *
  * The order of the checks matters where identifiers share a prefix: "!listall" is handled by the "!list" builder,
@@ -573,19 +601,20 @@ function search_special_relatedpushed(SpecialSearch $s): SpecialSearch
 
     $s->order_by = str_replace("r.", "", $s->order_by); # UNION below doesn't like table aliases in the ORDER BY.
     $s->select->sql = "DISTINCT r.hit_count score, rt.name resource_type_name, {$s->select->sql}";
-    $relatedselect = $s->prefix . "
+    // The same query in both directions of the relationship. The halves are concatenated rather than formatted,
+    // so a "%" in the join or filter SQL cannot be mistaken for a format specifier.
+    $related_select = "
                     SELECT [SELECT_SQL]
                       FROM resource r
                       JOIN resource_type rt ON r.resource_type=rt.ref AND rt.push_metadata=1
-                      JOIN resource_related t ON (%s) "
-                         . $s->join->sql
-                 . " WHERE 1=1 AND " . $s->filter->sql
-              . " [GROUP_BY_SQL]";
+                      JOIN resource_related t ON (";
+    $related_where = ") " . $s->join->sql . " WHERE 1=1 AND " . $s->filter->sql . " [GROUP_BY_SQL]";
 
-    $s->sql->sql = sprintf($relatedselect, "t.related=r.ref AND t.resource = ?")
-            . " UNION "
-            . sprintf($relatedselect, "t.resource=r.ref AND t.related= ?")
-            . " [ORDER_BY_SQL] {$s->suffix}";
+    $s->sql->sql = $s->prefix
+        . $related_select . "t.related=r.ref AND t.resource = ?" . $related_where
+        . " UNION "
+        . $related_select . "t.resource=r.ref AND t.related= ?" . $related_where
+        . " [ORDER_BY_SQL] {$s->suffix}";
     $s->sql->parameters = array_merge(
         $s->select->parameters,
         ["i",$resource],
@@ -660,20 +689,15 @@ function search_special_geo(SpecialSearch $s): SpecialSearch
     $bl = explode("b", $geo[0]);
     $tr = explode("b", $geo[1]);
     $s->select->sql = "r.hit_count score, {$s->select->sql}";
-    $s->sql->sql = "SELECT [SELECT_SQL]
-                       FROM resource r " . $s->join->sql .
-                 "WHERE geo_lat > ? AND geo_lat < ? " .
-                   "AND geo_long > ? AND geo_long < ?
-                        AND " . $s->filter->sql .
-                    " [GROUP_BY_SQL] [ORDER_BY_SQL]";
-
+    $s->sql->sql = $s->prefix . "SELECT [SELECT_SQL] FROM resource r " . $s->join->sql
+        . " WHERE geo_lat > ? AND geo_lat < ? AND geo_long > ? AND geo_long < ? AND " . $s->filter->sql
+        . " [GROUP_BY_SQL] [ORDER_BY_SQL]" . $s->suffix;
     $s->sql->parameters = array_merge(
         $s->select->parameters,
         $s->join->parameters,
         ["d", $bl[0], "d", $tr[0], "d", $bl[1], "d", $tr[1]],
         $s->filter->parameters
     );
-    $s->sql->sql = $s->prefix . $s->sql->sql . $s->suffix;
     return $s;
 }
 
@@ -702,7 +726,10 @@ function search_special_colourkey(SpecialSearch $s): SpecialSearch
 }
 
 /**
- * "!colourC": resources whose colour key contains colour C.
+ * "!colourC": resources whose colour key has colour C as its first or second character.
+ *
+ * The two patterns are bracketed so that the base filter applies to both. Without the brackets AND binds first,
+ * and a resource matching the first pattern is returned whatever its archive state or access.
  *
  * @param SpecialSearch $s Special search
  *
@@ -713,20 +740,15 @@ function search_special_colour(SpecialSearch $s): SpecialSearch
     $colour = explode(" ", $s->search);
     $colour = str_replace("!colour", "", $colour[0]);
     $s->select->sql = "r.hit_count score, {$s->select->sql}";
-    $s->sql->sql = "SELECT [SELECT_SQL]
-                       FROM resource r " . $s->join->sql .
-                " WHERE colour_key LIKE ? " .
-                    "OR  colour_key LIKE ? " .
-                   "AND " . $s->filter->sql .
-                   " [GROUP_BY_SQL] [ORDER_BY_SQL]";
-
+    $s->sql->sql = $s->prefix . "SELECT [SELECT_SQL] FROM resource r " . $s->join->sql
+        . " WHERE (colour_key LIKE ? OR colour_key LIKE ?) AND " . $s->filter->sql
+        . " [GROUP_BY_SQL] [ORDER_BY_SQL]" . $s->suffix;
     $s->sql->parameters = array_merge(
         $s->select->parameters,
         $s->join->parameters,
         ["s", $colour . "%", "s", "_" . $colour . "%"],
         $s->filter->parameters
     );
-    $s->sql->sql = $s->prefix . $s->sql->sql . $s->suffix;
     return $s;
 }
 
@@ -906,7 +928,7 @@ function search_special_unused(SpecialSearch $s): SpecialSearch
 
 /**
  * "!listA:B:C" or "!listallA:B:C": the listed resources. The archive filter is not applied to "!listall"; that is
- * decided in search_query_filter_archive().
+ * decided in search_special_archive_states().
  *
  * @param SpecialSearch $s Special search
  *

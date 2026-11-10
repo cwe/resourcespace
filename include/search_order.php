@@ -30,8 +30,9 @@ function search_query_order(ParsedSearch $parsed, SearchContext $ctx, SearchQuer
 /**
  * Resolve the ORDER BY clause for a search from the order and sort requested by the do_search() caller.
  *
- * The named orderings are listed below; "fieldN" orders by that metadata field (search_order_by_field()). An
- * unknown value falls back to relevance, or to the collection order for a "!collection" search. Every ordering
+ * The named orderings are listed below; "fieldN" orders by that metadata field (search_order_by_field()), or by
+ * resource ID when the field is not among the resource table joins. An unknown value falls back to relevance, or
+ * to the collection order for a "!collection" search. Every ordering
  * ends in the resource reference so that results keep a stable sequence. The modifyorderarray hook is called
  * before the ordering is chosen.
  *
@@ -97,7 +98,10 @@ function resolve_search_order_by(string $search, string $order_by, string $sort)
     $needs_fields = $date_sql !== null && isset($order[$order_by]) && strpos($order[$order_by], $date_sql) !== false;
 
     if (substr($order_by, 0, 5) == "field") {
+        // A field that is not among the resource table joins has no column to order by, and becomes "resourceid"
         $order_by = check_order_by_in_table_joins($order_by);
+    }
+    if (substr($order_by, 0, 5) == "field") {
         # The field column is needed in the inner select to be used in ordering
         $needs_fields = true;
         $order[$order_by] = search_order_by_field($order_by, $sort);

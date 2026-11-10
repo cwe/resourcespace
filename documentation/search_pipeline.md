@@ -152,10 +152,23 @@ What each step touches on the `SearchQuery`:
 clauses appear in the SQL: `search_query_filter_requested()` (resource types and recent days),
 `search_query_filter_contributors()` (`$resource_created_by_filter`), `search_query_filter_type_permissions()`
 ('T' permissions), `search_query_filter_confidential()` (no 'v' permission), `search_query_filter_archive()`
-(archive states and pending resources), `search_query_filter_blocked_states()` ('z' permissions),
-`search_query_filter_media()` (`$heightmin`), the batch upload template exclusion,
-`search_query_filter_access_level()` and `search_query_filter_editable()`. Configuration comes from the context;
-permissions are read live because the `modifyuserpermissions` hook runs first and may replace them.
+(archive states), `search_query_filter_pending()` (pending resources for a user without 'v'),
+`search_query_filter_blocked_states()` ('z' permissions), `search_query_filter_media()` (`$heightmin`), the batch
+upload template exclusion, `search_query_filter_access_level()` and `search_query_filter_editable()`.
+Configuration comes from the context; permissions are read live because the `modifyuserpermissions` hook runs
+first and may replace them.
+
+The archive step does not know the special searches by name. `search_special_archive_states()`, which sits beside
+the dispatch table in `search_special.php`, returns a `SearchArchiveStates` value for the search: `Any` for
+collections, lists and the pending searches, `AllWorkflow` for related resources, `!hasdata` and integrity
+failures, and `Requested` for everything else. The only special search the filter still names is `!collection`,
+which has three rules of its own that configuration controls: resource types are ignored, archived members can be
+omitted, and a collection shared with a key can show pending resources.
+
+The editable-only clause is built from parts, one function each, joined with AND in this order and left out when
+they do not apply: `search_editable_restricted()`, `search_editable_pending()`, `search_editable_states()`,
+`search_editable_allowed_types()` and `search_editable_blocked_types()`. `search_filter_ert_types()` lists the
+resource types the user's 'ert' permissions name, which are exceptions in both pending rules and in the state rule.
 
 `search_query_compile()` produces:
 
@@ -452,7 +465,8 @@ To add a keyword form: add a case to `KeywordKind`, detect it in `search_keyword
 To add a pipeline step: write `search_query_<step>(SearchContext $ctx, SearchQuery $query)` and call it from
 `search_query_build()` at the right point. To add a core special search: write
 `search_special_<name>(SpecialSearch $s): SpecialSearch` in `search_special.php` and add its match to
-`search_special_builder()` at the right point in the order; a plugin uses the `addspecialsearch` hook instead.
+`search_special_builder()` at the right point in the order, and to `search_special_archive_states()` below it
+when the search should not be limited to the requested archive states; a plugin uses the `addspecialsearch` hook instead.
 Steps take what they need from the context; a step that keeps to that can be exercised with a hand-built
 `SearchContext`. Globals remain in three places: `$keysearch` in `search_query_build()`, the helpers kept from the
 previous implementation (`get_filter_sql()`), `resolve_search_order_by()`, which reads `$date_field` and
@@ -464,13 +478,13 @@ search builders, each of which declares the configuration globals it reads.
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 136 searches, including every special search branch and every base filter clause, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 151 searches, including every special search branch and every base filter clause, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
 | `tests/test_list/000701_do_search_special_states.php` | `!archivepending`, `!userpending`, `!resource` and `!listall` against resources in each workflow state. |
-| `tests/test_list/000702_do_search_special_images.php` | `!images`, `!colourkey`, `!colour`, `!rgb` and `!geo` against preview columns written directly. |
-| `tests/test_list/000703_do_search_order_by.php` | Every named ordering in `resolve_search_order_by()`, plus the fallback for an unknown value. |
+| `tests/test_list/000702_do_search_special_images.php` | `!images`, `!colourkey`, `!colour`, `!rgb` and `!geo` against preview columns written directly, and the base filter on both `!colour` patterns for an administrator and for a user without the 'v' permission. |
+| `tests/test_list/000703_do_search_order_by.php` | Every named ordering in `resolve_search_order_by()`, plus the fallbacks for an unknown value and for a field outside the table joins. |
 | `tests/test_list/000704_do_search_result_options.php` | Row limit padding, chunked fetchrows, refs only with and without a row limit, a search matching nothing, disk usage totals, the recent days limit and the archive list. |
 | `tests/test_list/000709_do_search_hooks.php` | The keyword, select, special search, editable filter, fetchrows, alternative results, before-return and zero-results hooks through a test plugin. |
 | `tests/test_list/000711_do_search_special_properties.php` | Every `!properties` option, their combination, ignored values and a node restriction. |
@@ -510,9 +524,20 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
 - A special search asked for every row (`$fetchrows` of -1) padded its result up to the total, which for
   `!hasdata` can be a cached count that is out of date. Like the standard query, it now pads only when a row
   limit applies.
+- `!relatedpushed` with `$return_disk_usage` opened the disk usage wrapper in both halves of its UNION and closed
+  it once, which is a syntax error. The wrapper now opens once.
+- Ordering by a field that is not among the resource table joins raised an error, because the fallback name
+  `resourceid` was then treated as a field column. It now orders by resource ID, as
+  `check_order_by_in_table_joins()` intends.
+- `!geo` followed by keywords or nodes ran the last join condition into `WHERE` without a space.
+- An editable-only search accepted any numeric suffix on an 'ert' permission where the pending filter accepted
+  only an integer. Both now read the permissions through `search_filter_ert_types()` and require an integer.
+- `!colour` wrote its two patterns as `a OR b AND filter`, so the base filter applied to the second pattern only
+  and a resource matching the first was returned whatever its archive state, access or type permissions. The
+  patterns are now bracketed.
 
 One function was removed: `set_search_order_by()` had no callers in core or the bundled plugins. A site plugin
 that calls it should call `resolve_search_order_by()` and read `order_by` from the result.
 
 Known and left alone: two consecutive alternative keywords (`a;b c;d`) are OR'd together rather than both
-required; ordering by a field outside the configured table joins fails inside `resolve_search_order_by()`.
+required.
