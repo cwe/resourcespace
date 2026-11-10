@@ -828,7 +828,7 @@ function search_filter($search, $archive, $restypes, $recent_search_daylimit, $a
  * Run a special search ("!" searches, a resource ID, or a plugin's own) with the query fragments do_search() built.
  *
  * Kept with its original signature for plugins and tests. The work is done in search_special.php: the search is
- * wrapped in a SpecialSearch and handed to search_special_run().
+ * wrapped in a SpecialSearch and handed to search_special_execute().
  *
  * @param string                 $search            The search string indicating the type of special search.
  * @param PreparedStatementQuery $sql_join          The SQL JOIN query to be applied.
@@ -866,7 +866,7 @@ function search_special($search, $sql_join, $fetchrows, $sql_prefix, $sql_suffix
         $archive,
         (bool) $return_disk_usage
     );
-    return search_special_run($special, $fetchrows, (bool) $return_refs_only, (bool) $returnsql);
+    return search_special_execute($special, $fetchrows, (bool) $return_refs_only, (bool) $returnsql);
 }
 
 /**
@@ -2077,135 +2077,6 @@ function log_keyword_usage($keywords, $search_result)
             daily_stat($log_code, $keyword);
         }
     }
-}
-
-/**
- * Validate and set the order_by for the current search from the requested values passed to do_search()
- *
- * Wrapper for resolve_search_order_by() that also reports through the $include_fieldx global whether the ORDER BY
- * refers to metadata field columns, for callers that read it.
- *
- * @param string $search
- * @param string $order_by
- * @param string $sort
- *
- * @return string
- *
- */
-function set_search_order_by(string $search, string $order_by, string $sort): string
-{
-    $resolved = resolve_search_order_by($search, $order_by, $sort);
-    $GLOBALS["include_fieldx"] = $resolved["needs_fields"];
-    return $resolved["order_by"];
-}
-
-/**
- * Resolve the ORDER BY clause for a search from the order and sort requested by the do_search() caller.
- *
- * The named orderings are listed below; "fieldN" orders by that metadata field, numerically or by dot notation
- * according to the field's constraint and sort method. An unknown value falls back to relevance, or to the
- * collection order for a "!collection" search. Plugins can change the orderings through the modifyorderarray hook.
- *
- * @param string $search   Search string
- * @param string $order_by Requested ordering: a name from the list, or "fieldN"
- * @param string $sort     Sort direction; an invalid value becomes "asc"
- *
- * @return array{order_by: string, needs_fields: bool} The ORDER BY clause body, and whether it refers to metadata
- *                                                      field columns that must then be selected
- */
-function resolve_search_order_by(string $search, string $order_by, string $sort): array
-{
-    global $lang;
-
-    if (!validate_sort_value($sort)) {
-        $sort = 'asc';
-    }
-    $order_by_date_sql_comma = ",";
-    $order_by_date = "r.ref $sort";
-    if (metadata_field_view_access($GLOBALS["date_field"])) {
-        $order_by_date_sql = "field" . (int) $GLOBALS["date_field"] . " " . $sort;
-        $order_by_date_sql_comma = ", {$order_by_date_sql}, ";
-        $order_by_date = "{$order_by_date_sql}, r.ref {$sort}";
-    }
-
-    # Check if order_by is empty string as this avoids 'relevance' default
-    if ($order_by === "") {
-        $order_by = "relevance";
-    }
-
-    $order = [
-        "relevance"       => "score $sort, user_rating $sort, total_hit_count $sort {$order_by_date_sql_comma} r.ref $sort",
-        "popularity"      => "user_rating $sort, total_hit_count $sort {$order_by_date_sql_comma} r.ref $sort",
-        "rating"          => "r.rating $sort, user_rating $sort, score $sort, r.ref $sort",
-        "date"            => "$order_by_date, r.ref $sort",
-        "colour"          => "has_image $sort, image_blue $sort, image_green $sort, image_red $sort {$order_by_date_sql_comma} r.ref $sort",
-        "title"           => "field" . (int) $GLOBALS["view_title_field"] . " " . $sort . ", r.ref $sort",
-        "file_path"       => "file_path $sort, r.ref $sort",
-        "resourceid"      => "r.ref $sort",
-        "resourcetype"    => "order_by $sort, resource_type $sort, r.ref $sort",
-        "extension"       => "file_extension $sort, r.ref $sort",
-        "status"          => "archive $sort, r.ref $sort",
-        "modified"        => "modified $sort, r.ref $sort",
-        "random"          => "RAND()"
-    ];
-
-    // Used for collection sort order as sortorder is ASC, date is DESC
-    $revsort = (strtoupper($sort) == 'DESC') ? "ASC" : " DESC";
-
-    // These options are only supported if the default field 3 is still present
-    if (in_array(3, get_resource_table_joins())) {
-        $order["country"] = "field3 $sort, r.ref $sort";
-        $order["titleandcountry"] = "field" . $GLOBALS["view_title_field"] . " $sort, field3 $sort, r.ref $sort";
-    }
-
-    // Add collection sort option only if searching a collection
-    if (substr($search, 0, 11) == '!collection') {
-        $order["collection"] = "c.sortorder $sort,c.date_added $revsort,r.ref $sort";
-    }
-
-    # Check if date_field is being used as this will be needed in the inner select to be used in ordering
-    $needs_fields = false;
-    if (isset($order_by_date_sql) && array_key_exists($order_by, $order) && strpos($order[$order_by], $order_by_date_sql) !== false) {
-        $needs_fields = true;
-    }
-
-    # Append order by field to the above array if absent and if named "fieldn" (where n is one or more digits)
-    if (!in_array($order_by, $order) && (substr($order_by, 0, 5) == "field")) {
-        $order_by = check_order_by_in_table_joins($order_by);
-        # If fieldx is being used this will be needed in the inner select to be used in ordering
-        $needs_fields = true;
-        # Check for field type
-        $field_order_check = ps_query(
-            "SELECT field_constraint, sort_method
-            FROM resource_type_field
-            WHERE ref = ?
-            LIMIT 1",
-            ["i",str_replace("field", "", $order_by)],
-            "",
-            "schema"
-        )[0];
-        # Establish sort order (numeric or otherwise)
-        # Attach ref as a final key to foster stable result sets which should eliminate resequencing when moving <- and -> through resources (in view.php)
-        if ($field_order_check["sort_method"] == FIELD_SORT_METHODS['dot-notation']) {
-            $order[$order_by] =
-                "CASE WHEN TRIM($order_by) = '' THEN 0 ELSE 1 END $sort,
-                ISNULL(REGEXP_SUBSTR(SUBSTRING_INDEX($order_by, '.', 1), '[^0-9]+')) $sort,
-                IFNULL(REGEXP_SUBSTR(SUBSTRING_INDEX($order_by, '.', 1), '[^0-9]+'), '') $sort,
-                CAST(REGEXP_SUBSTR(SUBSTRING_INDEX($order_by, '.', 1), '[0-9]+') AS UNSIGNED) $sort,";
-            for ($n = 2; $n <= 10; $n++) {
-                $order[$order_by] .= "\nCAST(SUBSTRING_INDEX(SUBSTRING_INDEX($order_by, '.', $n), '.', -1) AS UNSIGNED) $sort,";
-            }
-            $order[$order_by] .= "\nref $sort";
-        } elseif ($field_order_check["field_constraint"] == 1) {
-            $order[$order_by] = "$order_by +0 $sort,r.ref $sort";
-        } else {
-            $order[$order_by] = "$order_by $sort,r.ref $sort";
-        }
-    }
-    hook("modifyorderarray");
-    $order_by = (isset($order[$order_by]) ? $order[$order_by] : (substr($search, 0, 11) == '!collection' ? $order['collection'] : $order['relevance']));       // fail safe by falling back to default if not found
-
-    return ["order_by" => $order_by, "needs_fields" => $needs_fields];
 }
 
 /**

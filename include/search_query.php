@@ -234,9 +234,11 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
     // The base filter: what was asked for and what the user may see; the same clauses apply to special searches
     search_query_filter($parsed->search, $ctx, $query);
 
-    # If returning disk used by the resources in the search results then wrap the returned SQL in an outer query that sums disk usage.
+    # If returning disk used by the resources in the search results then wrap the returned SQL in an outer query that
+    # sums disk usage.
     if ($ctx->return_disk_usage) {
-        $query->prefix = "SELECT sum(disk_usage) total_disk_usage, count(*) total_resources, resourcelist.ref, resourcelist.score, resourcelist.user_rating, resourcelist.total_hit_count FROM (";
+        $query->prefix = "SELECT sum(disk_usage) total_disk_usage, count(*) total_resources, resourcelist.ref,"
+            . " resourcelist.score, resourcelist.user_rating, resourcelist.total_hit_count FROM (";
         $query->suffix = ") resourcelist";
     }
 
@@ -280,21 +282,6 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
 }
 
 /**
- * Pipeline step: validate the requested ORDER BY for this search (resolve_search_order_by(), which also lets plugins
- * change it) and note whether it refers to metadata field columns.
- *
- * @param ParsedSearch  $parsed Parsed search
- * @param SearchContext $ctx    Search context; requested_order_by and sort are read
- * @param SearchQuery   $query  Query under construction; order_by and order_needs_fields are set
- */
-function search_query_order(ParsedSearch $parsed, SearchContext $ctx, SearchQuery $query): void
-{
-    $resolved = resolve_search_order_by($parsed->search, $ctx->requested_order_by, $ctx->sort);
-    $query->order_by = $resolved['order_by'];
-    $query->order_needs_fields = $resolved['needs_fields'];
-}
-
-/**
  * Pipeline step: join the custom access records of the user and their group so that custom access can be
  * evaluated in the query, and exclude custom access resources without a matching record.
  *
@@ -311,7 +298,8 @@ function search_query_access(SearchContext $ctx, SearchQuery $query): void
     # one extra join (rca2) is required for user specific permissions (enabling more intelligent watermarks in search view)
     # the original join is used to gather group access into the search query as well.
     $query->addJoin(
-        " LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ? AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2  ",
+        " LEFT OUTER JOIN resource_custom_access rca2 ON r.ref=rca2.resource AND rca2.user = ?"
+        . " AND (rca2.user_expires IS null or rca2.user_expires>now()) AND rca2.access<>2  ",
         ["i", $ctx->userref]
     );
     $query->addJoin(
@@ -334,7 +322,13 @@ function search_query_access(SearchContext $ctx, SearchQuery $query): void
  */
 function search_query_select(SearchContext $ctx, SearchQuery $query): void
 {
-    $query->addSelect("r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size ");
+    $query->addSelect(
+        "r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating,"
+        . " r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green,"
+        . " r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified,"
+        . " r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path,"
+        . " r.modified, r.file_size "
+    );
 
     $modified_select = hook('modifyselect');
     $query->addSelect($modified_select ? $modified_select : '');      // modify select hook 1
@@ -424,7 +418,8 @@ function search_query_featured_only(ParsedSearch $parsed, SearchContext $ctx, Se
 {
     $upload_collection = '!collection' . (0 - $ctx->userref);
     if ($ctx->featured_only && $parsed->search != $upload_collection) {
-        $collection_join = " JOIN collection_resource AS jcr ON jcr.resource = r.ref JOIN collection AS jc ON jcr.collection = jc.ref";
+        $collection_join = " JOIN collection_resource AS jcr ON jcr.resource = r.ref"
+            . " JOIN collection AS jc ON jcr.collection = jc.ref";
         $collection_join .= featured_collections_permissions_filter_sql("AND", "jc.ref", true);
         $query->prependJoin($collection_join);
     }

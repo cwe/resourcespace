@@ -154,7 +154,7 @@ function search_run_special(ParsedSearch $parsed, SearchQuery $query, SearchCont
         $ctx->archive,
         $ctx->return_disk_usage
     );
-    $result = search_special_run($special, $ctx->fetchrows, $ctx->return_refs_only, $ctx->returnsql);
+    $result = search_special_execute($special, $ctx->fetchrows, $ctx->return_refs_only, $ctx->returnsql);
     if ($result !== false) {
         log_keyword_usage($query->keywords_used, $result);
     }
@@ -213,12 +213,16 @@ function search_run_external(ParsedSearch $parsed, SearchQuery $query, SearchCon
 /**
  * Run the built search query and shape the results for do_search()'s callers.
  *
- * With $ctx->returnsql the compiled statement is returned instead. Otherwise the query runs with the requested
- * chunk (see setup_search_chunks()) and a total count, keyword usage is logged, and the result is:
+ * With $ctx->returnsql the compiled statement is returned instead. Otherwise the query runs for the requested
+ * rows (search_fetch()), keyword usage is logged, and the result is:
  * - the ['total' => , 'data' => ] structure when fetchrows is an array;
  * - a list of ['ref' => ] entries for refs-only searches, or [] when nothing matched;
- * - the resource rows, padded with 0 up to the total when a row limit applies, after the beforereturnresults hook;
+ * - the resource rows, padded with 0 up to the total when a row limit applies (search_pad_rows()), after the
+ *   beforereturnresults hook;
  * - [] when nothing matched (keyword usage is not logged in this case).
+ *
+ * Special searches end in search_special_finish(), which shares search_fetch() and search_pad_rows() but differs
+ * in what it returns for refs-only searches and in how it calls the beforereturnresults hook.
  *
  * @param SearchQuery   $query Built query
  * @param SearchContext $ctx   Search context
@@ -234,27 +238,16 @@ function search_execute(SearchQuery $query, SearchContext $ctx): array|PreparedS
         return $results_sql;
     }
 
-    setup_search_chunks($ctx->fetchrows, $chunk_offset, $search_chunk_size);
-    $result = sql_limit_with_total_count($results_sql, $search_chunk_size, $chunk_offset, true, search_query_compile_count($query));
+    $result = search_fetch($results_sql, search_query_compile_count($query), $ctx->fetchrows, true);
 
     // An array fetchrows returns the ['total' => , 'data' => ] structure as it is; otherwise shape the rows
     if (!is_array($ctx->fetchrows)) {
-        $resultcount = $result["total"] ?? 0;
-        $found = $resultcount > 0 && count($result["data"]) > 0;
-
         if ($ctx->return_refs_only) {
-            $result = $found ? array_map(fn($val) => ["ref" => $val["ref"]], $result["data"]) : [];
-        } elseif (!$found) {
-            return [];
+            $result = array_map(fn($row) => ["ref" => $row["ref"]], $result["data"]);
         } else {
-            $result = $result['data'];
-            if ($search_chunk_size !== -1) {
-                // Only perform legacy padding of results if not all rows have been requested or total may be incorrect
-                $diff = $resultcount - count($result);
-                while ($diff > 0) {
-                    $result = array_merge($result, array_fill(0, ($diff < 1000000 ? $diff : 1000000), 0));
-                    $diff -= 1000000;
-                }
+            $result = search_pad_rows($result, $ctx->fetchrows);
+            if ($result === []) {
+                return [];
             }
             hook("beforereturnresults", "", array($result, $ctx->archive));
         }
@@ -262,6 +255,63 @@ function search_execute(SearchQuery $query, SearchContext $ctx): array|PreparedS
 
     log_keyword_usage($query->keywords_used, $result);
     return $result;
+}
+
+/**
+ * Run a search statement for the rows do_search() was asked for, together with the total number of matches.
+ *
+ * The shared last query of a search: search_execute() calls it for the standard query and
+ * search_special_finish() for a special search.
+ *
+ * @param PreparedStatementQuery $sql         Statement returning the rows
+ * @param PreparedStatementQuery $count_sql   Statement whose row count is the total; a reduced form of $sql
+ * @param int|array              $fetchrows   Rows to fetch, or an [offset, count] chunk; see setup_search_chunks()
+ * @param bool                   $cache_count Allow the total to be read from the query cache
+ * @param int|null               $row_cap     Most rows the statement can return, for a search with a fixed limit:
+ *                                            a chunk that would reach past the cap is moved back to end at it
+ *
+ * @return array{total: int, data: array} The total and the fetched rows, see sql_limit_with_total_count()
+ */
+function search_fetch(
+    PreparedStatementQuery $sql,
+    PreparedStatementQuery $count_sql,
+    int|array $fetchrows,
+    bool $cache_count,
+    ?int $row_cap = null
+): array {
+    setup_search_chunks($fetchrows, $chunk_offset, $search_chunk_size);
+    if ($row_cap !== null && $chunk_offset > $row_cap - $search_chunk_size) {
+        $chunk_offset = $row_cap - $search_chunk_size;
+    }
+    return sql_limit_with_total_count($sql, $search_chunk_size, $chunk_offset, $cache_count, $count_sql);
+}
+
+/**
+ * Turn the result of search_fetch() into the list do_search() returns for an integer $fetchrows.
+ *
+ * Callers page through the list by position, so when a row limit applies the fetched rows are followed by 0
+ * entries up to the total. Nothing is padded when every row was requested (-1), where the list is already
+ * complete and a total read from the query cache may be out of date.
+ *
+ * @param array{total: int, data: array} $result    Result of search_fetch()
+ * @param int                            $fetchrows Row limit the search ran with; -1 for every row
+ *
+ * @return array The rows, padded up to the total; [] when nothing matched
+ */
+function search_pad_rows(array $result, int $fetchrows): array
+{
+    $rows = $result["data"];
+    $total = $result["total"] ?? 0;
+    if ($total <= 0 || count($rows) == 0) {
+        return [];
+    }
+    if ($fetchrows === -1) {
+        return $rows;
+    }
+    for ($missing = $total - count($rows); $missing > 0; $missing -= 1000000) {
+        $rows = array_merge($rows, array_fill(0, min($missing, 1000000), 0));
+    }
+    return $rows;
 }
 
 /**
