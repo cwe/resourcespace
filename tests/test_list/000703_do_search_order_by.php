@@ -60,6 +60,8 @@ $test_cases = [
     "date asc"         => ["order_by" => "date",         "sort" => "asc",  "expected" => [$r1, $r3, $r0, $r2]],
     "random"           => ["order_by" => "random",       "sort" => "asc",  "expected" => [$r0, $r1, $r2, $r3], "any_order" => true],
     "unknown value"    => ["order_by" => "sideways",     "sort" => "asc",  "expected" => [$r0, $r1, $r2, $r3], "any_order" => true],
+    // A field that is not among the resource table joins has no column to order by: the resource ID is used instead
+    "field not joined" => ["order_by" => "field99999999", "sort" => "desc", "expected" => [$r3, $r2, $r1, $r0]],
 ];
 if (in_array(3, get_resource_table_joins())) {
     $test_cases["country asc"] = ["order_by" => "country", "sort" => "asc", "expected" => [$r1, $r3, $r0, $r2]];
