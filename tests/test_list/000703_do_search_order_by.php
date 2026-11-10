@@ -1,7 +1,7 @@
 <?php
 
 /**
- * do_search() named orderings handled by set_search_order_by(): resourceid, rating, popularity, status, extension,
+ * do_search() named orderings handled by resolve_search_order_by(): resourceid, rating, popularity, status, extension,
  * file_path, modified, colour, resourcetype, date, country, random and an unknown value falling back to relevance.
  *
  * Four resources share a title node so a node search isolates them; the columns each ordering reads are written

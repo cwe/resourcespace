@@ -74,6 +74,23 @@ if (!$refs_only) {
     $errors_000704[] = "refs only: expected 3 rows with only a ref, got " . json_encode($results);
 }
 
+// Refs only with a row limit returns just that many references: unlike a special search, nothing is padded
+$results = test_000704_search(["return_refs_only" => true, "fetchrows" => 2]);
+$refs_only = is_array($results) && count($results) === 2 && count(array_filter($results, fn($row) => is_array($row) && array_keys($row) === ["ref"])) === 2;
+if (!$refs_only) {
+    $errors_000704[] = "refs only with a row limit: expected 2 rows with only a ref, got " . json_encode($results);
+}
+
+// A search that matches nothing returns an empty array, with or without refs only
+$results = test_000704_search(["archive" => "2"]);
+if ($results !== []) {
+    $errors_000704[] = "no match: expected an empty array, got " . json_encode($results);
+}
+$results = test_000704_search(["archive" => "2", "return_refs_only" => true]);
+if ($results !== []) {
+    $errors_000704[] = "no match, refs only: expected an empty array, got " . json_encode($results);
+}
+
 // Disk usage returns one row totalling the matched resources
 $results = test_000704_search(["return_disk_usage" => true]);
 if (!is_array($results) || count($results) !== 1 || (int) $results[0]["total_disk_usage"] !== 600 || (int) $results[0]["total_resources"] !== 3) {

@@ -17,14 +17,15 @@ A step that must end the search early (no access to a field, or a suggested sear
 
 | File | Contents |
 | --- | --- |
-| `include/do_search.php` | `do_search()` facade, `search_run_special()`, `search_run_external()`, `search_execute()`, `search_suggest_zero_results()` |
+| `include/do_search.php` | `do_search()` facade, `search_run_special()`, `search_run_external()`, `search_execute()`, the result helpers shared with special searches (`search_fetch()`, `search_pad_rows()`), `search_suggest_zero_results()` |
 | `include/search_context.php` | `SearchContext`, `search_context_create()`, legacy filter migration (`resolve_user_search_filter()`, `resolve_user_edit_filter()`) |
 | `include/search_parse.php` | `ParsedSearch`, `search_parse()`, `resolve_given_nodes()` |
 | `include/search_query.php` | `SearchQuery`, `KeywordUnion`, `SearchStop`, `search_query_build()` and the non-keyword pipeline steps, `search_query_compile()`, `search_query_compile_count()` |
+| `include/search_order.php` | The ORDER BY step `search_query_order()`, `resolve_search_order_by()` with the named orderings, `search_order_by_field()` |
 | `include/search_keywords.php` | `KeywordKind`, `Keyword`, `search_query_keywords()`, `search_keyword_classify()` and one function per keyword kind |
 | `include/search_filter.php` | `search_query_filter()` and one `search_query_filter_<concern>()` step per clause of the base filter |
-| `include/search_special.php` | `SpecialSearch`, `search_special_run()`, `search_special_builder()`, `search_special_build()`, `search_special_finish()` and one builder function per special search |
-| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()` (which now wraps `search_query_filter()`), `search_special()` (which now wraps `search_special_run()`), `resolve_search_order_by()` (which `set_search_order_by()` now wraps), `resolve_keyword()`, `get_filter_sql()` |
+| `include/search_special.php` | `SpecialSearch`, `search_special_execute()`, `search_special_builder()`, `search_special_build()`, `search_special_finish()`, `search_special_compile()` and one builder function per special search |
+| `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()` (which now wraps `search_query_filter()`), `search_special()` (which now wraps `search_special_execute()`), `resolve_keyword()`, `get_filter_sql()`, `setup_search_chunks()`, `log_keyword_usage()` |
 
 `include/boot.php` loads them in that order.
 
@@ -57,7 +58,7 @@ flowchart TD
 ![Call flow](images/search_pipeline_call_flow.png)
 
 `search_run_special()` wraps the query fragments and the context in a `SpecialSearch` and hands it to
-`search_special_run()`, described under [Special searches](#special-searches). `search_run_external()` unpacks
+`search_special_execute()`, described under [Special searches](#special-searches). `search_run_external()` unpacks
 the `SearchQuery` and the context for the `external_search` hook, which keeps its original signature and is
 handed the options as the caller passed them. Either way `do_search()` itself reads as the sequence above.
 
@@ -368,9 +369,31 @@ A special search answers instead of the standard query: the `!` searches, a reso
    so a plugin can add a search or replace a core one. It returns the filled `SpecialSearch`, a `SearchStop` when
    the search is answered without a query (a collection the user may not see, an invalid `!duplicates` ID), or
    null when nothing recognised the search and the standard query should run.
-3. `search_special_finish()` fills the `[SELECT_SQL]`, `[GROUP_BY_SQL]` and `[ORDER_BY_SQL]` placeholders twice,
-   for the full query and for the reduced query that counts rows or lists references, runs them through
-   `sql_limit_with_total_count()`, pads chunked results to the total and fires `beforereturnresults`.
+3. `search_special_finish()` is the counterpart of `search_execute()`. It calls `search_special_compile()`, which
+   fills the `[SELECT_SQL]`, `[GROUP_BY_SQL]` and `[ORDER_BY_SQL]` placeholders twice, for the full query and for
+   the reduced query that counts rows or lists references. It then runs them through `search_fetch()`, fires
+   `beforereturnresults` and pads a row limited result with `search_pad_rows()`.
+
+### The shared result tail
+
+The standard query and a special search end the same way, through two functions in `do_search.php`:
+
+- `search_fetch()` resolves `$fetchrows` into an offset and a row count (`setup_search_chunks()`) and runs the
+  statement with a total (`sql_limit_with_total_count()`). The `!rgb` search, which is limited to 500 rows, passes
+  that limit so a chunk cannot start past it.
+- `search_pad_rows()` turns that into the list returned for an integer `$fetchrows`: the rows, followed by `0`
+  entries up to the total when a row limit applies, or `[]` when nothing matched. Nothing is padded when every
+  row was requested.
+
+An array `$fetchrows` returns the total/data structure from `search_fetch()` as it is, on both paths. Three
+differences between the paths are part of what callers and plugins see, so each path keeps them in its own
+function, where they are a few lines side by side rather than two copies of the whole tail:
+
+| | `search_execute()` | `search_special_finish()` |
+| --- | --- | --- |
+| Refs only | A list of `['ref' => N]`, never padded | The rows of the reduced query, padded like any other result |
+| `beforereturnresults` | Given the padded rows; not called for refs only or when nothing matched | Given the total/data structure; always called for an integer `$fetchrows` |
+| Keyword usage | Logged here; not logged when nothing matched | Logged by `search_run_special()` for every answered search |
 
 A builder is a function `search_special_<name>(SpecialSearch $s): SpecialSearch` that fills `$s->sql` with the SQL
 template and may rewrite `$s->select`, `$s->order_by`, `$s->join` and `$s->filter`. The template includes the
@@ -380,11 +403,23 @@ finish step needs beyond the template: `order_by_params` and `hard_limit` for `!
 `!integrityfail`, `!locked`) share `search_special_where()`.
 
 `search_special()` in `search_functions.php` keeps its thirteen-argument signature for plugins and for test 1210;
-it builds the `SpecialSearch` and calls `search_special_run()`, the same entry `search_run_special()` uses.
+it builds the `SpecialSearch` and calls `search_special_execute()`, the same entry `search_run_special()` uses.
 
 The SQL each builder produces is unchanged from the previous implementation, including its whitespace, which the
-snapshot test checks. `!relatedpushed` now resolves its ordering through `resolve_search_order_by()` instead of
-`set_search_order_by()`, so it no longer writes the unused `$include_fieldx` global.
+snapshot test checks.
+
+### Ordering
+
+`search_query_order()` in `search_order.php` resolves the ORDER BY once, early in `search_query_build()`, because
+the select step needs to know whether the ordering reads metadata field columns. `resolve_search_order_by()` holds
+the table of named orderings; `search_order_by_field()` builds the clause for a `fieldN` ordering from the field's
+sort method and constraint. The step cannot move into `search_context_create()`: the collection ordering depends
+on the parsed search string, and the `modifyorderarray` hook would then run before `alternativeresults`.
+
+A special search that needs something else rewrites `$s->order_by` in its builder: `!last` and the related
+searches drop the table alias, `!rgb` orders by colour distance with its own parameters, and `!relatedpushed`
+calls `resolve_search_order_by()` for its configured ordering. `set_search_order_by()`, the previous entry point,
+had no callers left and has been removed along with the `$include_fieldx` global it wrote.
 
 ## Hooks
 
@@ -420,7 +455,8 @@ To add a pipeline step: write `search_query_<step>(SearchContext $ctx, SearchQue
 `search_special_builder()` at the right point in the order; a plugin uses the `addspecialsearch` hook instead.
 Steps take what they need from the context; a step that keeps to that can be exercised with a hand-built
 `SearchContext`. Globals remain in three places: `$keysearch` in `search_query_build()`, the helpers kept from the
-previous implementation (`resolve_search_order_by()`, `get_filter_sql()`), the filter steps, which read
+previous implementation (`get_filter_sql()`), `resolve_search_order_by()`, which reads `$date_field` and
+`$view_title_field` because the `!relatedpushed` builder calls it without a context, the filter steps, which read
 `$userpermissions` live because the `modifyuserpermissions` hook may replace it, and the special
 search builders, each of which declares the configuration globals it reads.
 
@@ -428,19 +464,19 @@ search builders, each of which declares the configuration globals it reads.
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 133 searches, including every special search branch and every base filter clause, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 136 searches, including every special search branch and every base filter clause, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
 | `tests/test_list/000701_do_search_special_states.php` | `!archivepending`, `!userpending`, `!resource` and `!listall` against resources in each workflow state. |
 | `tests/test_list/000702_do_search_special_images.php` | `!images`, `!colourkey`, `!colour`, `!rgb` and `!geo` against preview columns written directly. |
 | `tests/test_list/000703_do_search_order_by.php` | Every named ordering in `resolve_search_order_by()`, plus the fallback for an unknown value. |
-| `tests/test_list/000704_do_search_result_options.php` | Row limit padding, chunked fetchrows, refs only, disk usage totals, the recent days limit and the archive list. |
+| `tests/test_list/000704_do_search_result_options.php` | Row limit padding, chunked fetchrows, refs only with and without a row limit, a search matching nothing, disk usage totals, the recent days limit and the archive list. |
 | `tests/test_list/000709_do_search_hooks.php` | The keyword, select, special search, editable filter, fetchrows, alternative results, before-return and zero-results hooks through a test plugin. |
 | `tests/test_list/000711_do_search_special_properties.php` | Every `!properties` option, their combination, ignored values and a node restriction. |
 | `tests/test_list/000712_do_search_special_flags.php` | `!integrityfail`, `!locked`, `!nopreview`, `!hasdata`, `!contributions` and `!last` against resource columns written directly. |
 | `tests/test_list/000713_do_search_special_collection.php` | `!collection` members in every archive state, collection columns and ordering, `$collections_omit_archived`, a node restriction and access for a non-administrator. |
-| `tests/test_list/000714_do_search_special_results.php` | Row limit padding, chunked fetchrows, the reduced refs-only query, disk usage and returned SQL for a special search. |
+| `tests/test_list/000714_do_search_special_results.php` | Row limit padding, no padding when every row is requested, chunked fetchrows, a search matching nothing, the reduced refs-only query with and without a row limit, disk usage and returned SQL for a special search. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -469,6 +505,14 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   parameters of that match without its SQL. The match is now appended to the union, as on the other wildcard paths.
 - `!emptyFIELDNAME` with a special character in the short name (`!emptysnap_under`) was quoted into a phrase
   search or split at the configured separator, and returned `false`. It is now handled as an `!empty` search.
+- `!unused` with `$return_disk_usage` appended the closing `) resourcelist` of the disk usage wrapper twice, and
+  `!duplicatesN` left the wrapper out, so both failed or returned rows instead of a total.
+- A special search asked for every row (`$fetchrows` of -1) padded its result up to the total, which for
+  `!hasdata` can be a cached count that is out of date. Like the standard query, it now pads only when a row
+  limit applies.
+
+One function was removed: `set_search_order_by()` had no callers in core or the bundled plugins. A site plugin
+that calls it should call `resolve_search_order_by()` and read `order_by` from the result.
 
 Known and left alone: two consecutive alternative keywords (`a;b c;d`) are OR'd together rather than both
 required; ordering by a field outside the configured table joins fails inside `resolve_search_order_by()`.

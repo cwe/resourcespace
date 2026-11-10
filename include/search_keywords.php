@@ -288,7 +288,8 @@ function search_keyword_non_field(string $keyword, ParsedSearch $parsed, SearchC
         $non_field_union->sql .= " UNION (SELECT " . (int)$keyword . " AS resource, [bit_or_condition] 1 AS score)";
     } elseif (in_array(mb_strtolower($keyword), array_map("mb_strtolower", array_column($ctx->resource_types, "name")))) {
         // Resource type is no longer actually indexed but this will still honour the config by including in search
-        $non_field_union->sql .= " UNION (SELECT r.ref AS resource, [bit_or_condition] 1 AS score FROM resource r LEFT JOIN resource_type rt ON r.resource_type=rt.ref WHERE r.ref > 0 AND rt.name LIKE ?)";
+        $non_field_union->sql .= " UNION (SELECT r.ref AS resource, [bit_or_condition] 1 AS score FROM resource r"
+            . " LEFT JOIN resource_type rt ON r.resource_type=rt.ref WHERE r.ref > 0 AND rt.name LIKE ?)";
         array_push($non_field_union->parameters, "s", $keyword);
     }
     if ($ctx->index_contributed_by) {
@@ -364,10 +365,12 @@ function search_keyword_fixed_list_nodes(int $field_ref, string $keystring): arr
 function search_keyword_fulltext(Keyword $keyword, SearchContext $ctx, SearchQuery $query): void
 {
     $union = new PreparedStatementQuery();
-    $union->sql = " SELECT resource, [bit_or_condition] 1 AS score FROM resource_node rn LEFT JOIN node n ON n.ref=rn.node WHERE MATCH(name) AGAINST (? IN BOOLEAN MODE)";
+    $union->sql = " SELECT resource, [bit_or_condition] 1 AS score FROM resource_node rn"
+        . " LEFT JOIN node n ON n.ref=rn.node WHERE MATCH(name) AGAINST (? IN BOOLEAN MODE)";
     $union->parameters = ["s", $keyword->text];
     if (count($ctx->hidden_indexed_fields) > 0) {
-        $union->sql .= " AND n.resource_type_field NOT IN (" . ps_param_insert(count($ctx->hidden_indexed_fields)) . ")";
+        $union->sql .= " AND n.resource_type_field NOT IN ("
+            . ps_param_insert(count($ctx->hidden_indexed_fields)) . ")";
         $union->parameters = array_merge($union->parameters, ps_param_fill($ctx->hidden_indexed_fields, "i"));
     }
     $query->addUnion(new KeywordUnion($union, false));
@@ -400,12 +403,18 @@ function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $
         if ($fieldinfo['type'] == FIELD_TYPE_DATE_RANGE) {
             // Find where the searched value is between the range values
             $query->addJoin(
-                " JOIN resource_node drrn" . $c . "s ON drrn" . $c . "s.resource=r.ref JOIN node drn" . $c . "s ON drn" . $c . "s.ref=drrn" . $c . "s.node AND drn" . $c . "s.resource_type_field = ? AND drn" . $c . "s.name >= ? JOIN resource_node drrn" . $c . "e ON drrn" . $c . "e.resource=r.ref JOIN node drn" . $c . "e ON drn" . $c . "e.ref=drrn" . $c . "e.node AND drn" . $c . "e.resource_type_field = ? AND DATE(drn" . $c . "e.name) <= ?",
+                " JOIN resource_node drrn{$c}s ON drrn{$c}s.resource=r.ref"
+                . " JOIN node drn{$c}s ON drn{$c}s.ref=drrn{$c}s.node"
+                . " AND drn{$c}s.resource_type_field = ? AND drn{$c}s.name >= ?"
+                . " JOIN resource_node drrn{$c}e ON drrn{$c}e.resource=r.ref"
+                . " JOIN node drn{$c}e ON drn{$c}e.ref=drrn{$c}e.node"
+                . " AND drn{$c}e.resource_type_field = ? AND DATE(drn{$c}e.name) <= ?",
                 ["i", $datefield, "i", $datefield, "s", $val, "s", $val]
             );
         } else {
             $query->addJoin(
-                " JOIN resource_node rnd" . $c . " ON rnd" . $c . ".resource=r.ref JOIN node dn" . $c . " ON dn" . $c . ".ref=rnd" . $c . ".node AND dn" . $c . ".resource_type_field = ?",
+                " JOIN resource_node rnd{$c} ON rnd{$c}.resource=r.ref"
+                . " JOIN node dn{$c} ON dn{$c}.ref=rnd{$c}.node AND dn{$c}.resource_type_field = ?",
                 ["i", $datefield]
             );
             $query->andFilter("dn" . $c . ".name like ?", ["s", $val . "%"]);
@@ -415,7 +424,8 @@ function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $
         if ($query->basic_date_join === null) {
             // We only want to join once to the date_field
             $query->addJoin(
-                " JOIN resource_node rdnf" . $c . " ON rdnf" . $c . ".resource=r.ref JOIN node rdn" . $c . " ON rdnf" . $c  . ".node=rdn" . $c . ".ref AND rdn" . $c . ".resource_type_field = ?",
+                " JOIN resource_node rdnf{$c} ON rdnf{$c}.resource=r.ref"
+                . " JOIN node rdn{$c} ON rdnf{$c}.node=rdn{$c}.ref AND rdn{$c}.resource_type_field = ?",
                 ["i", $ctx->date_field]
             );
             $query->basic_date_join = $c;
@@ -427,10 +437,14 @@ function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $
         $rangestring = substr($keystring, 5);
         if (strpos($rangestring, "start") !== false) {
             $rangestartpos = strpos($rangestring, "start") + 5;
-            $rangestart = str_replace(" ", "-", substr($rangestring, $rangestartpos, strpos($rangestring, "end") ? strpos($rangestring, "end") - $rangestartpos : 10));
+            $rangeendpos = strpos($rangestring, "end");
+            $rangestartlen = $rangeendpos ? $rangeendpos - $rangestartpos : 10;
+            $rangestart = str_replace(" ", "-", substr($rangestring, $rangestartpos, $rangestartlen));
             // Need to check for a date greater than the start date
             $query->addJoin(
-                " JOIN resource_node drrn" . $c . "s ON drrn" . $c . "s.resource=r.ref JOIN node drn" . $c . "s ON drn" . $c . "s.ref=drrn" . $c . "s.node AND drn" . $c . "s.resource_type_field = ? AND drn" . $c . "s.name>= ? ",
+                " JOIN resource_node drrn{$c}s ON drrn{$c}s.resource=r.ref"
+                . " JOIN node drn{$c}s ON drn{$c}s.ref=drrn{$c}s.node"
+                . " AND drn{$c}s.resource_type_field = ? AND drn{$c}s.name>= ? ",
                 ["i", $fieldinfo['ref'], "s", $rangestart]
             );
         }
@@ -439,7 +453,9 @@ function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $
             $rangeend = substr($rangeend, strpos($rangeend, "end") + 3, 10) . " 23:59:59";
             // Need to check for a date earlier than the end date
             $query->addJoin(
-                " JOIN resource_node drrn" . $c . "e ON drrn" . $c . "e.resource=r.ref JOIN node drn" . $c . "e ON drn" . $c . "e.ref=drrn" . $c . "e.node AND drn" . $c . "e.resource_type_field = ? AND drn" . $c . "e.name <= ? ",
+                " JOIN resource_node drrn{$c}e ON drrn{$c}e.resource=r.ref"
+                . " JOIN node drn{$c}e ON drn{$c}e.ref=drrn{$c}e.node"
+                . " AND drn{$c}e.resource_type_field = ? AND drn{$c}e.name <= ? ",
                 ["i", $fieldinfo['ref'], "s", $rangeend]
             );
         }
@@ -473,7 +489,8 @@ function search_keyword_numrange(Keyword $keyword, SearchQuery $query): void
     }
 
     $query->addJoin(
-        " JOIN resource_node rrn" . $c . " ON rrn" . $c . ".resource=r.ref LEFT JOIN node rnn" . $c . " ON rnn" . $c . ".ref=rrn" . $c . ".node AND rnn" . $c . ".resource_type_field = ?",
+        " JOIN resource_node rrn{$c} ON rrn{$c}.resource=r.ref"
+        . " LEFT JOIN node rnn{$c} ON rnn{$c}.ref=rrn{$c}.node AND rnn{$c}.resource_type_field = ?",
         ["i", $rangefield]
     );
 }
@@ -574,10 +591,12 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
     $exclude_fields = hook("excludefieldsfromkeywordsearch");
 
     if ($omit) {
-        # Exclude matching resources from query (omit feature): check that keyword does not exist via resource_node->node_keyword relationship
+        # Exclude matching resources from query (omit feature): check that keyword does not exist via
+        # resource_node->node_keyword relationship
         $query->andFilter(
-            "`r`.`ref` NOT IN (SELECT `resource` FROM `resource_node` JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node`" .
-                " WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?)",
+            "`r`.`ref` NOT IN (SELECT `resource` FROM `resource_node`"
+            . " JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node`"
+            . " WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?)",
             ["i", $keyref]
         );
         return null;
@@ -667,7 +686,10 @@ function search_keyword_related(int $keyref, string $text, ?array $field, Search
         if ($original_keyref && $original_keyref !== $keyref) {
             $original_related = get_related_keywords($original_keyref);
             if (count($original_related) > 0) {
-                $original_related_kws = ps_array("SELECT keyword AS `value` FROM keyword WHERE ref IN (" . ps_param_insert(count($original_related)) . ")", ps_param_fill($original_related, "i"));
+                $original_related_kws = ps_array(
+                    "SELECT keyword AS `value` FROM keyword WHERE ref IN (" . ps_param_insert(count($original_related)) . ")",
+                    ps_param_fill($original_related, "i")
+                );
                 $extra_related = array();
                 foreach ($original_related_kws as $orig_related_kw) {
                     $extrakeyword = GetStem(trim($orig_related_kw));
@@ -718,15 +740,19 @@ function search_keyword_restriction(
         if ($wildcards) {
             $clause->sql .= " AND resource_type_field NOT IN (" . ps_param_insert(count($exclude_fields)) . ")";
         } else {
-            $clause->sql .= " AND " . $node_alias . ".node NOT IN (SELECT ref FROM node WHERE resource_type_field IN (" . ps_param_insert(count($exclude_fields)) . "))";
+            $clause->sql .= " AND " . $node_alias . ".node NOT IN (SELECT ref FROM node WHERE resource_type_field IN ("
+                . ps_param_insert(count($exclude_fields)) . "))";
         }
         $clause->parameters = array_merge($clause->parameters, ps_param_fill($exclude_fields, "i"));
     }
     if (count($ctx->hidden_indexed_fields) > 0) {
         if ($wildcards) {
-            $clause->sql .= " AND resource_type_field NOT IN (" . ps_param_insert(count($ctx->hidden_indexed_fields)) . ")";
+            $clause->sql .= " AND resource_type_field NOT IN ("
+                . ps_param_insert(count($ctx->hidden_indexed_fields)) . ")";
         } else {
-            $clause->sql .= " AND " . $node_alias . ".node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN (" . ps_param_insert(count($ctx->hidden_indexed_fields)) . "))";
+            $clause->sql .= " AND " . $node_alias
+                . ".node NOT IN (SELECT ref FROM node WHERE node.resource_type_field IN ("
+                . ps_param_insert(count($ctx->hidden_indexed_fields)) . "))";
         }
         $clause->parameters = array_merge($clause->parameters, ps_param_fill($ctx->hidden_indexed_fields, "i"));
     }
@@ -735,7 +761,8 @@ function search_keyword_restriction(
         if ($wildcards) {
             $clause->sql .= " AND resource_type_field = ?";
         } else {
-            $clause->sql .= " AND " . $node_alias . ".node IN (SELECT ref FROM node WHERE node.resource_type_field = ?)";
+            $clause->sql .= " AND " . $node_alias
+                . ".node IN (SELECT ref FROM node WHERE node.resource_type_field = ?)";
         }
         $clause->parameters = array_merge($clause->parameters, ["i", $field_ref]);
     }
@@ -779,7 +806,8 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
         // Global field empty search
         // Candidate resources are those which exist in selected resource types
         if (count($selectedrestypes) > 0) {
-            $restypesql->sql = " AND r[union_index].resource_type IN (" . ps_param_insert(count($selectedrestypes)) . ") ";
+            $restypesql->sql = " AND r[union_index].resource_type IN ("
+                . ps_param_insert(count($selectedrestypes)) . ") ";
             $restypesql->parameters = ps_param_fill($selectedrestypes, "i");
         }
     } else {
@@ -791,7 +819,8 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
             $candidaterestypes = $nodatarestypes;
         }
         if (count($candidaterestypes) > 0) {
-            $restypesql->sql = " AND r[union_index].resource_type IN (" . ps_param_insert(count($candidaterestypes)) . ") ";
+            $restypesql->sql = " AND r[union_index].resource_type IN ("
+                . ps_param_insert(count($candidaterestypes)) . ") ";
             $restypesql->parameters = ps_param_fill($candidaterestypes, "i");
         } else {
             // No searched resource type can hold the field, so no resource has a value in it: every candidate matches
@@ -974,20 +1003,25 @@ function search_keyword_phrase(Keyword $keyword, SearchContext $ctx, SearchQuery
             $keyref = resolve_keyword($quotedkeyword, true, true, false);
         }
 
-        $restriction = search_keyword_restriction($exclude_fields, $ctx, $quotedfieldid, false, "nk_[union_index]_" . $qk);
+        // Table aliases for this keyword's resource_node and node_keyword rows; [union_index] is filled in below
+        $rn = "rn_[union_index]_" . $qk;
+        $nk = "nk_[union_index]_" . $qk;
+        $restriction = search_keyword_restriction($exclude_fields, $ctx, $quotedfieldid, false, $nk);
 
         if ($qk == 1) {
             // Add code to find matching nodes in resource_node
-            $fixedunion->sql = " SELECT rn_[union_index]_" . $qk . ".resource, [bit_or_condition] rn_[union_index]_" . $qk . ".hit_count AS score FROM resource_node rn_[union_index]_" . $qk .
-                " LEFT OUTER JOIN `node_keyword` nk_[union_index]_" . $qk . " ON rn_[union_index]_" . $qk . ".node=nk_[union_index]_" . $qk . ".node AND (nk_[union_index]_" . $qk . ".keyword = ? " .  ")";
+            $fixedunion->sql = " SELECT {$rn}.resource, [bit_or_condition] {$rn}.hit_count AS score FROM resource_node {$rn}"
+                . " LEFT OUTER JOIN `node_keyword` {$nk} ON {$rn}.node={$nk}.node AND ({$nk}.keyword = ? )";
             $fixedunion->parameters = array_merge($fixedunion->parameters, ["i", $keyref]);
 
-            $fixedunioncondition->sql = "nk_[union_index]_" . $qk . ".keyword = ? " . $restriction->sql;
+            $fixedunioncondition->sql = "{$nk}.keyword = ? " . $restriction->sql;
             $fixedunioncondition->parameters = array_merge(["i", $keyref], $restriction->parameters);
         } else {
             # For keywords other than the first one, check the position is next to the previous keyword.
             # Also check these occurances are within the same field.
-            $fixedunion->sql .= " JOIN `node_keyword` nk_[union_index]_" . $qk . " ON nk_[union_index]_" . $qk . ".node = nk_[union_index]_" . ($qk - 1) . ".node AND nk_[union_index]_" . $qk . ".keyword = ? AND  nk_[union_index]_" . $qk . ".position=nk_[union_index]_" . ($qk - 1) . ".position+" . $last_key_offset ;
+            $nk_previous = "nk_[union_index]_" . ($qk - 1);
+            $fixedunion->sql .= " JOIN `node_keyword` {$nk} ON {$nk}.node = {$nk_previous}.node AND {$nk}.keyword = ?"
+                . " AND  {$nk}.position={$nk_previous}.position+" . $last_key_offset;
             array_push($fixedunion->parameters, "i", $keyref);
         }
         $last_key_offset = 1;
@@ -997,7 +1031,12 @@ function search_keyword_phrase(Keyword $keyword, SearchContext $ctx, SearchQuery
     if (trim($fixedunioncondition->sql) != "") {
         if ($omit) {
             # Instead of adding to the union, filter out resources that do contain the quoted string.
-            $filter = str_replace("[bit_or_condition]", "", " r.ref NOT IN (SELECT resource FROM (" . $fixedunion->sql . " WHERE " . $fixedunioncondition->sql . ") qfilter[union_index]) ");
+            $filter = str_replace(
+                "[bit_or_condition]",
+                "",
+                " r.ref NOT IN (SELECT resource FROM (" . $fixedunion->sql . " WHERE " . $fixedunioncondition->sql
+                    . ") qfilter[union_index]) "
+            );
             $query->andFilter(
                 str_replace("[union_index]", $keyword->index + 1, $filter),
                 array_merge($fixedunion->parameters, $fixedunioncondition->parameters)

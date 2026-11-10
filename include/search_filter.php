@@ -68,7 +68,10 @@ function search_query_filter_requested(string $search, SearchContext $ctx, Searc
     $restypes = $ctx->restypes;
     if (($restypes != "") && (substr($restypes, 0, 6) != "Global") && substr($search, 0, 11) != '!collection') {
         $restypes_x = explode(",", $restypes);
-        $query->andFilter("resource_type IN (" . ps_param_insert(count($restypes_x)) . ")", ps_param_fill($restypes_x, "i"));
+        $query->andFilter(
+            "resource_type IN (" . ps_param_insert(count($restypes_x)) . ")",
+            ps_param_fill($restypes_x, "i")
+        );
     }
 
     $recent_search_daylimit = $ctx->recent_search_daylimit;
@@ -132,7 +135,10 @@ function search_query_filter_type_permissions(SearchContext $ctx, SearchQuery $q
         }
     }
     if (count($rtfilter) > 0) {
-        $query->andFilter("resource_type NOT IN (" . ps_param_insert(count($rtfilter)) . ")", ps_param_fill($rtfilter, "i"));
+        $query->andFilter(
+            "resource_type NOT IN (" . ps_param_insert(count($rtfilter)) . ")",
+            ps_param_fill($rtfilter, "i")
+        );
     }
 }
 
@@ -148,8 +154,12 @@ function search_query_filter_type_permissions(SearchContext $ctx, SearchQuery $q
 function search_query_filter_confidential(SearchContext $ctx, SearchQuery $query): void
 {
     if (!checkperm("v") && !$ctx->access_override) {
-        # Check both the resource access, but if confidential is returned, also look at the joined user-specific or group-specific custom access for rows.
-        $query->andFilter("(r.access<>'2' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2) OR (rca2.access IS NOT null AND rca2.access<>2))))");
+        # Check both the resource access, but if confidential is returned, also look at the joined user-specific or
+        # group-specific custom access for rows.
+        $query->andFilter(
+            "(r.access<>'2' OR (r.access=2 AND ((rca.access IS NOT null AND rca.access<>2)"
+            . " OR (rca2.access IS NOT null AND rca2.access<>2))))"
+        );
     }
 }
 
@@ -178,13 +188,22 @@ function search_query_filter_archive(string $search, SearchContext $ctx, SearchQ
     }
     $archive = array_filter($ctx->archive, is_int_loose(...));
 
-    if (substr($search, 0, 11) == "!collection" || substr($search, 0, 5) == "!list" || substr($search, 0, 15) == "!archivepending" || substr($search, 0, 12) == "!userpending") {
+    $any_state = substr($search, 0, 11) == "!collection"
+        || substr($search, 0, 5) == "!list"
+        || substr($search, 0, 15) == "!archivepending"
+        || substr($search, 0, 12) == "!userpending";
+    $all_workflow_states = $ctx->search_all_workflow_states
+        || substr($search, 0, 8) == "!related"
+        || substr($search, 0, 8) == "!hasdata"
+        || strpos($search, "integrityfail") !== false;
+
+    if ($any_state) {
         # Resources in a collection or list may be in any archive state
         # Other special searches define the archive state in search_special()
         if (substr($search, 0, 11) == "!collection" && $ctx->collections_omit_archived && !checkperm("e2")) {
             $query->andFilter("archive<>2");
         }
-    } elseif ($ctx->search_all_workflow_states || substr($search, 0, 8) == "!related" || substr($search, 0, 8) == "!hasdata" || strpos($search, "integrityfail") !== false) {
+    } elseif ($all_workflow_states) {
         hook("search_all_workflow_states_filter", "", [$query->filter]);
     } elseif (count($archive) == 0 || $ctx->archive_standard && !$ctx->smartsearch) {
         # If no archive specified add in default archive states (set by config options or as set in rse_workflow plugin)
@@ -194,13 +213,19 @@ function search_query_filter_archive(string $search, SearchContext $ctx, SearchQ
             // Make sure we have at least one state - system has been misconfigured
             $defaultsearchstates[] = 0;
         }
-        $query->andFilter("archive IN (" . ps_param_insert(count($defaultsearchstates)) . ")", ps_param_fill($defaultsearchstates, "i"));
+        $query->andFilter(
+            "archive IN (" . ps_param_insert(count($defaultsearchstates)) . ")",
+            ps_param_fill($defaultsearchstates, "i")
+        );
     } else {
         # Append normal filtering - extended as advanced search now allows searching by archive state
         $query->andFilter("archive IN (" . ps_param_insert(count($archive)) . ")", ps_param_fill($archive, "i"));
     }
 
-    if (!checkperm("v") && !(substr($search, 0, 11) == "!collection" && $ctx->external_share && $ctx->collection_allow_not_approved_share)) {
+    $shared_collection = substr($search, 0, 11) == "!collection"
+        && $ctx->external_share
+        && $ctx->collection_allow_not_approved_share;
+    if (!checkperm("v") && !$shared_collection) {
         // Append standard filtering to hide resources in a pending state, whatever the search
         // except when the resource is of a type that the user has ert permission for
         $rtexclusions = "";
@@ -253,7 +278,10 @@ function search_query_filter_blocked_states(SearchContext $ctx, SearchQuery $que
             array_merge(ps_param_fill($filterblockstates, "i"), ["i", $ctx->userref])
         );
     } else {
-        $query->andFilter("archive NOT IN (" . ps_param_insert(count($filterblockstates)) . ")", ps_param_fill($filterblockstates, "i"));
+        $query->andFilter(
+            "archive NOT IN (" . ps_param_insert(count($filterblockstates)) . ")",
+            ps_param_fill($filterblockstates, "i")
+        );
     }
 }
 
@@ -308,8 +336,11 @@ function search_query_filter_editable(SearchContext $ctx, SearchQuery $query): v
     $userref = $ctx->userref;
     $editable_filter = new PreparedStatementQuery();
     if (!checkperm("v") && !$ctx->access_override) {
-        // following condition added 2020-03-02 so that resources without an entry in the resource_custom_access table are included in the search results - "OR (rca.access IS NULL AND rca2.access IS NULL)"
-        $editable_filter->sql .= "(r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1) OR (rca2.access IS NOT null AND rca2.access <> 1) OR (rca.access IS NULL AND rca2.access IS NULL)))) ";
+        // following condition added 2020-03-02 so that resources without an entry in the resource_custom_access table
+        // are included in the search results - "OR (rca.access IS NULL AND rca2.access IS NULL)"
+        $editable_filter->sql .= "(r.access <> 1 OR (r.access = 1 AND ((rca.access IS NOT null AND rca.access <> 1)"
+            . " OR (rca2.access IS NOT null AND rca2.access <> 1)"
+            . " OR (rca.access IS NULL AND rca2.access IS NULL)))) ";
     }
 
     # Construct resource type exclusion based on 'ert' permission
@@ -402,8 +433,13 @@ function search_query_filter_editable(SearchContext $ctx, SearchQuery $query): v
                 $okrestypesor .= " created_by = ?";
                 $okrestypesorparams = ["i",$userref];
             }
-            $editable_filter->sql .= "(resource_type IN (" . ps_param_insert(count($okrestypes)) . ")" . (($okrestypesor != "") ? " OR " . $okrestypesor : "") . ")";
-            $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($okrestypes, "i"), $okrestypesorparams);
+            $editable_filter->sql .= "(resource_type IN (" . ps_param_insert(count($okrestypes)) . ")"
+                . (($okrestypesor != "") ? " OR " . $okrestypesor : "") . ")";
+            $editable_filter->parameters = array_merge(
+                $editable_filter->parameters,
+                ps_param_fill($okrestypes, "i"),
+                $okrestypesorparams
+            );
         } else {
             if ($editable_filter->sql != "") {
                 $editable_filter->sql .= " AND ";
@@ -422,8 +458,13 @@ function search_query_filter_editable(SearchContext $ctx, SearchQuery $query): v
         if ($editable_filter->sql != "") {
             $editable_filter->sql .= " AND ";
         }
-        $editable_filter->sql .= "(resource_type NOT IN (" . ps_param_insert(count($blockedrestypes)) . ")" . (($blockrestypesor != "") ? " OR " . $blockrestypesor : "") . ")";
-        $editable_filter->parameters = array_merge($editable_filter->parameters, ps_param_fill($blockedrestypes, "i"), $blockrestypesorparams);
+        $editable_filter->sql .= "(resource_type NOT IN (" . ps_param_insert(count($blockedrestypes)) . ")"
+            . (($blockrestypesor != "") ? " OR " . $blockrestypesor : "") . ")";
+        $editable_filter->parameters = array_merge(
+            $editable_filter->parameters,
+            ps_param_fill($blockedrestypes, "i"),
+            $blockrestypesorparams
+        );
     }
 
     $updated_editable_filter = hook("modifysearcheditable", "", array($editable_filter,$userref));
