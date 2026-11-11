@@ -455,8 +455,8 @@ function search_special_duplicates(SpecialSearch $s): SpecialSearch|SearchStop
  * "!collectionN": the resources in collection N, with their collection row.
  *
  * A user who is not an administrator may only search collections they own, can see or share, or that an external
- * share key opens. A smart collection is refreshed before it is listed. The modifycollectionsearchsql hook may
- * replace the query.
+ * share key opens, see search_special_collection_denied(). A smart collection is refreshed before it is listed. The
+ * modifycollectionsearchsql hook may replace the query.
  *
  * @param SpecialSearch $s Special search
  *
@@ -464,108 +464,31 @@ function search_special_duplicates(SpecialSearch $s): SpecialSearch|SearchStop
  */
 function search_special_collection(SpecialSearch $s): SpecialSearch|SearchStop
 {
-    global $userref, $ignore_collection_access, $k, $USER_SELECTION_COLLECTION, $allow_smart_collections, $smart_collections_async;
-
-    $colcustperm = $s->join;
-
     # Extract the collection number
     $collection = explode(' ', $s->search);
     $collection = str_replace('!collection', '', $collection[0]);
     $collection = explode(',', $collection); // just get the number
     $collection = (int)$collection[0];
 
-    if (!checkperm('a')) {
-        # Check access
-        $validcollections = [];
-        if (upload_share_active() !== false) {
-            $validcollections = get_session_collections(get_rs_session_id(), $userref);
-        } else {
-            $user_collections = array_column(get_user_collections($userref, "", "name", "ASC", -1, false), "ref");
-            $public_collections = array_column(search_public_collections('', 'name', 'ASC', true, false, false), 'ref');
-            # include collections of requested resources
-            $request_collections = array();
-            if (checkperm("R")) {
-                include_once 'request_functions.php';
-                $request_collections = array_column(get_requests(), 'collection');
-                $externally_requested_collections = array_column(ps_query('SELECT ref FROM collection WHERE user = -2'), 'ref');
-                $request_collections = array_merge($request_collections, $externally_requested_collections);
-            }
-            # include collections of research resources
-            $research_collections = array();
-            if (checkperm("r")) {
-                include_once 'research_functions.php';
-                $research_collections = array_column(get_research_requests(), 'collection');
-            }
-            $validcollections = array_unique(array_merge($user_collections, array($USER_SELECTION_COLLECTION), $public_collections, $request_collections, $research_collections));
-        }
-
-        // Attach the negated user reference special collection
-        $validcollections[] = (0 - $userref);
-
-        if (in_array($collection, $validcollections) || (in_array($collection, array_column(get_all_featured_collections(), 'ref')) && featured_collection_check_access_control($collection)) || $ignore_collection_access) {
-            if (!collection_readable($collection)) {
-                return new SearchStop([], "collection_not_readable");
-            }
-        } elseif (upload_share_active() !== false || !collection_access_key_valid($collection, (string) $k)) {
-            // Not one of the user's collections, so only an external share key for this collection opens it. The
-            // key is checked here as well as by the page: a signed in user can put any value in the URL.
-            return new SearchStop([], "collection_no_access");
-        }
+    $denied = search_special_collection_denied($collection);
+    if ($denied !== null) {
+        return new SearchStop([], $denied);
     }
 
-    if ($allow_smart_collections) {
-        global $smartsearch_ref_cache;
-        if (isset($smartsearch_ref_cache[$collection])) {
-            $smartsearch_ref = $smartsearch_ref_cache[$collection]; // this value is pretty much constant
-        } else {
-            $smartsearch_ref = ps_query('SELECT savedsearch, `type` FROM collection WHERE ref = ?', ['i',$collection], '');
-            $smartsearch_ref_cache[$collection] = $smartsearch_ref;
-        }
-
-        if (isset($smartsearch_ref[0])) {
-            $smartsearch_collection_type = $smartsearch_ref[0]['type'];
-            $smartsearch_ref = $smartsearch_ref[0]['savedsearch'];
-        } else {
-            $smartsearch_ref = '';
-        }
-
-        global $php_path, $remote_config, $host;
-        if ($smartsearch_ref != '' && !$s->return_disk_usage) {
-            if ($smart_collections_async && isset($php_path) && file_exists($php_path . '/php')) {
-                if (isset($remote_config, $host)) {
-                    putenv("RESOURCESPACE_URL=" . $host); // To keep context if remote config is used
-                }
-
-                if ($smartsearch_collection_type === COLLECTION_TYPE_FEATURED) {
-                    # Limit rate of updating smart collections async to avoid CPU / db connections becoming overwhelmed.
-                    # This can occur if smart collections are used as featured collections or dash tiles.
-                    # Smart collections should not be used as featured collections - use smart featured collections instead.
-                    $last_updated = ps_value("SELECT last_updated `value` FROM collection_savedsearch WHERE ref = ?;", array('i', $smartsearch_ref), '') ?? '1970-01-01';
-                    if (time() - strtotime($last_updated) < 2 * 60 * 60) {
-                        debug("Async skipping update of smart search ref $smartsearch_ref - last updated at $last_updated. 2 hour update interval.");
-                    } else {
-                        debug("Async updating smart search ref $smartsearch_ref - last updated at $last_updated.");
-                        exec($php_path . '/php ' . dirname(__FILE__) . '/../pages/ajax/update_smart_collection.php ' . escapeshellarg($smartsearch_ref) . ' ' . '> /dev/null 2>&1 &');
-                        ps_query('UPDATE collection_savedsearch SET last_updated = NOW() WHERE ref = ?;', array('i', $smartsearch_ref));
-                    }
-                } else {
-                    exec($php_path . '/php ' . dirname(__FILE__) . '/../pages/ajax/update_smart_collection.php ' . escapeshellarg($smartsearch_ref) . ' ' . '> /dev/null 2>&1 &');
-                }
-            } else {
-                update_smart_collection($smartsearch_ref);
-            }
-        }
+    // Asking only for the disk usage does not bring a smart collection up to date
+    if (!$s->return_disk_usage) {
+        refresh_smart_collection($collection);
     }
 
     $s->select->sql = "DISTINCT c.date_added,c.comment,r.hit_count score,length(c.comment) commentset, "
         . $s->select->sql;
     $s->sql->sql = $s->prefix . "SELECT [SELECT_SQL] FROM resource r JOIN collection_resource c ON r.ref=c.resource "
-        . $colcustperm->sql . " WHERE c.collection = ? AND (" . $s->filter->sql . ")"
+        . $s->join->sql . " WHERE c.collection = ? AND (" . $s->filter->sql . ")"
         . " [GROUP_BY_SQL] [ORDER_BY_SQL] {$s->suffix}";
 
     $s->sql->parameters = array_merge(
         $s->select->parameters,
-        $colcustperm->parameters,
+        $s->join->parameters,
         ["i", $collection],
         $s->filter->parameters
     );
@@ -576,6 +499,96 @@ function search_special_collection(SpecialSearch $s): SpecialSearch|SearchStop
         $s->sql = $collectionsearchsql;
     }
     return $s;
+}
+
+/**
+ * Why the current user may not search a collection, or null when they may.
+ *
+ * A user with the 'a' permission may search any collection. Anyone else may search a collection on their list, see
+ * search_special_collection_listed(), or any collection when $ignore_collection_access is set, provided that
+ * collection_readable() agrees. A collection that is not on the list opens only with an external share key that was
+ * issued for it, and never during an upload share.
+ *
+ * @param int $collection Collection ID
+ *
+ * @return string|null The reason to give SearchStop, or null when the search may run
+ */
+function search_special_collection_denied(int $collection): ?string
+{
+    global $ignore_collection_access, $k;
+
+    if (checkperm('a')) {
+        return null;
+    }
+
+    if (search_special_collection_listed($collection) || $ignore_collection_access) {
+        return collection_readable($collection) ? null : "collection_not_readable";
+    }
+
+    // Not one of the user's collections, so only an external share key for this collection opens it. The key is
+    // checked here as well as by the page: a signed in user can put any value in the URL.
+    if (upload_share_active() !== false || !collection_access_key_valid($collection, (string) $k)) {
+        return "collection_no_access";
+    }
+    return null;
+}
+
+/**
+ * Whether a collection is on the list of collections the current user may search without an external share key.
+ *
+ * The list holds the collections get_user_collections() returns for the user (their own and those shared with them
+ * or their group), their selection collection, public collections, requested collections with the 'R' permission
+ * and research collections with the 'r' permission. During an upload share it holds the collections of that
+ * session instead. The user's upload review collection is always on it, and a featured collection counts when the
+ * user's 'j' permissions open it.
+ *
+ * @param int $collection Collection ID
+ *
+ * @return bool
+ */
+function search_special_collection_listed(int $collection): bool
+{
+    global $userref, $USER_SELECTION_COLLECTION;
+
+    if (upload_share_active() !== false) {
+        $validcollections = get_session_collections(get_rs_session_id(), $userref);
+    } else {
+        $user_collections = array_column(get_user_collections($userref, "", "name", "ASC", -1, false), "ref");
+        $public_collections = array_column(search_public_collections('', 'name', 'ASC', true, false, false), 'ref');
+        # include collections of requested resources
+        $request_collections = array();
+        if (checkperm("R")) {
+            include_once 'request_functions.php';
+            $request_collections = array_column(get_requests(), 'collection');
+            $externally_requested_collections = array_column(
+                ps_query('SELECT ref FROM collection WHERE user = -2'),
+                'ref'
+            );
+            $request_collections = array_merge($request_collections, $externally_requested_collections);
+        }
+        # include collections of research resources
+        $research_collections = array();
+        if (checkperm("r")) {
+            include_once 'research_functions.php';
+            $research_collections = array_column(get_research_requests(), 'collection');
+        }
+        $validcollections = array_unique(array_merge(
+            $user_collections,
+            array($USER_SELECTION_COLLECTION),
+            $public_collections,
+            $request_collections,
+            $research_collections
+        ));
+    }
+
+    // Attach the negated user reference special collection
+    $validcollections[] = (0 - $userref);
+
+    return in_array($collection, $validcollections)
+        || (
+            in_array($collection, array_column(get_all_featured_collections(), 'ref'))
+            && featured_collection_check_access_control($collection)
+        );
 }
 
 /**
