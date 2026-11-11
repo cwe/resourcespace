@@ -478,7 +478,7 @@ search builders, each of which declares the configuration globals it reads.
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 207 searches, including every special search branch, every base filter clause and every branch of the keyword classifier and the standard keyword path, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 208 searches, including every special search branch, every base filter clause and every branch of the keyword classifier and the standard keyword path, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
@@ -492,6 +492,7 @@ search builders, each of which declares the configuration globals it reads.
 | `tests/test_list/000713_do_search_special_collection.php` | `!collection` members in every archive state, collection columns and ordering, `$collections_omit_archived`, a node restriction and access for a non-administrator. |
 | `tests/test_list/000714_do_search_special_results.php` | Row limit padding, no padding when every row is requested, chunked fetchrows, a search matching nothing, the reduced refs-only query with and without a row limit, disk usage and returned SQL for a special search. |
 | `tests/test_list/000715_do_search_collection_access.php` | Who may search a collection: an administrator, the owner, a user or group it is shared with, public and featured collections with each 'j' permission, requested and research collections, `$ignore_collection_access`, share keys (issued for the collection, made up, issued for another collection, expired, password protected, an upload link), an upload share and the upload review collection. Also the smart collection refresh. |
+| `tests/test_list/000716_do_search_date_range_field.php` | A date range field searched with a single date: inside, on the first and last day of, and outside two ranges, written with vertical bars and with hyphens. Also a month or a year, which finds every range overlapping it, and a range whose start is a year only. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -545,6 +546,14 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   and without its resource check accepts a key issued for any collection. `collection_readable()` made that
   call without the resource check, so a key from sharing any collection made every collection readable. It now
   uses the same function; `tests/test_list/000885_collection_readable_access_key.php` covers it.
+- A date range field searched with a single date (`field:2024-05-17`) bound its four parameters as field, field,
+  date, date against placeholders that read field, date, field, date. The second join then looked for a field
+  numbered after the year, so the search never found anything. The parameters are now in placeholder order and
+  the search finds every resource whose range contains the date.
+- The same search with a month or a year alone (`field:2024-05`, which the search form can send) found nothing,
+  because the join compared `DATE()` of a node with text that is not a date. Range nodes are named `YYYY-MM-DD`,
+  so the join now compares them as text: a node on or after the value, and a node on or before the value padded
+  to ten characters with `-99`. A month or year finds every range that overlaps it.
 
 One function was removed: `set_search_order_by()` had no callers in core or the bundled plugins. A site plugin
 that calls it should call `resolve_search_order_by()` and read `order_by` from the result.
