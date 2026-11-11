@@ -2103,6 +2103,50 @@ function check_access_key_collection($collection, $key, $checkresource = true)
 }
 
 /**
+ * Check that an external access key gives read access to a collection, without acting on the key.
+ *
+ * check_access_key_collection() is the check a page makes as it loads. It also emulates the sharing user, redirects
+ * to the share password page, starts an upload share and records the key as used, and when asked to skip the
+ * resources it accepts a key issued for any collection. This function only answers the question. It is for code that
+ * runs after the page check and must not rely on that check having been made.
+ *
+ * A key is accepted when it was issued for this collection, has not expired, is not an upload link and belongs to an
+ * approved user. If the share has a password the visitor must also hold the share access cookie.
+ *
+ * @param int    $collection Collection ID
+ * @param string $key        External access key
+ *
+ * @return bool True if the key gives read access to the collection
+ */
+function collection_access_key_valid(int $collection, string $key): bool
+{
+    if (trim($key) === "") {
+        return false;
+    }
+
+    $shares = ps_query(
+        "SELECT eak.password_hash
+           FROM external_access_keys eak
+           JOIN user u ON u.ref = eak.user
+          WHERE eak.access_key = ?
+            AND eak.collection = ?
+            AND eak.upload = 0
+            AND (eak.expires IS NULL OR eak.expires > NOW())
+            AND u.approved = 1
+          LIMIT 1",
+        ["s", $key, "i", $collection]
+    );
+    if (count($shares) == 0) {
+        return false;
+    }
+
+    if ((string) $shares[0]["password_hash"] === "") {
+        return true;
+    }
+    return check_share_password($key, "", (string) ($_COOKIE["share_access"] ?? ""));
+}
+
+/**
  * Generates a unique username for the given name
  *
  * @param string    $name       The user's full name

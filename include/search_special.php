@@ -506,7 +506,9 @@ function search_special_collection(SpecialSearch $s): SpecialSearch|SearchStop
             if (!collection_readable($collection)) {
                 return new SearchStop([], "collection_not_readable");
             }
-        } elseif ($k == "" || upload_share_active() !== false) {
+        } elseif (upload_share_active() !== false || !collection_access_key_valid($collection, (string) $k)) {
+            // Not one of the user's collections, so only an external share key for this collection opens it. The
+            // key is checked here as well as by the page: a signed in user can put any value in the URL.
             return new SearchStop([], "collection_no_access");
         }
     }
