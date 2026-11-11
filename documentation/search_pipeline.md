@@ -187,7 +187,11 @@ the statement in `{prefix}` and `{suffix}`) keep the full form because the wrapp
 term containing a colon that is not a field name, or a term containing configured separators), so the loop
 re-reads the count each time. The index identifies a keyword in `SearchQuery::$unresolved` and in SQL aliases.
 
-`search_keyword_classify()` does all the string inspection once and returns a `Keyword` with a kind:
+`search_keyword_classify()` does all the string inspection once and returns a `Keyword` with a kind. It settles
+the fulltext prefix, quoted phrases and `!` prefixed terms itself and hands a term containing a colon to
+`search_keyword_classify_field()`, which resolves the field and picks the date, numeric range, fixed list, phrase
+or standard form. `search_keyword_needs_quoting()` holds the rule that turns an unquoted term with special
+characters into a phrase.
 
 ```mermaid
 flowchart TD
@@ -229,18 +233,19 @@ Each kind has one handler:
 | Requeue | (loop) | the split tokens are appended to the keyword list |
 | Ignored | (none) | |
 
-`search_keyword_standard()` resolves the keyword (stemmed, then unstemmed), queues separator-split parts, records
-an unmatched plain keyword for the suggestion, then adds one of:
+`search_keyword_standard()` resolves the keyword (stemmed, then unstemmed, in `search_keyword_resolve()`), queues
+separator-split parts (`search_keyword_separator_parts()`), records an unmatched plain keyword for the suggestion,
+then adds one of:
 
 ```mermaid
 flowchart LR
     R[resolved keyword] --> O{Starts with a minus?}
-    O -- yes --> OM[filter: r.ref NOT IN resources with the keyword]
+    O -- yes --> OM[search_keyword_omit<br>filter: r.ref NOT IN resources with the keyword]
     O -- no --> E{Starts with !empty?}
     E -- yes --> EM[search_keyword_empty<br>union: resources with no value in the field]
     E -- no --> W{wildcard?}
     W -- yes --> WC[search_keyword_wildcard<br>union: fulltext, LIKE or RLIKE on node names]
-    W -- no --> SD[union: node_keyword match<br>with related and alternative keywords]
+    W -- no --> SD[search_keyword_union<br>union: node_keyword match<br>with related and alternative keywords]
 ```
 
 ![Union assembly](images/search_pipeline_union_assembly.png)
@@ -456,7 +461,7 @@ had no callers left and has been removed along with the `$include_fieldx` global
 | `dosearchmodifykeywords` | `search_parse()` | keywords, search |
 | `modifyselect`, `modifyselect2` | `search_query_select()` | none; the return value is appended to the select |
 | `search_pipeline_setup` | `search_query_build()` | search, select, join, filter, "" (objects, so plugins can append). May set the global `$keysearch` to false to skip keyword matching |
-| `customsearchkeywordfilter` | `search_keyword_classify()` | [field name, value] |
+| `customsearchkeywordfilter` | `search_keyword_classify_field()` | [field name, value] |
 | `excludefieldsfromkeywordsearch` | `search_keyword_standard()`, `search_keyword_phrase()` | none; returns field refs to exclude |
 | `external_search` | `search_run_external()` | the call arguments plus filter, join, select |
 | `addspecialsearch` | `search_special_build()` | search, select, join, filter, sql (objects; a returned `PreparedStatementQuery` replaces the query) |
