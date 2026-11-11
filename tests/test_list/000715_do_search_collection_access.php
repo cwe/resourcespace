@@ -6,11 +6,12 @@
  * search_special_collection() decides access before it builds the query. A user with the 'a' permission may search
  * any collection. Anyone else needs the collection to be one they own, one shared with them or their group, a
  * public collection, a featured collection their 'j' permissions open, a requested collection when they have the
- * 'R' permission, or any collection at all when $ignore_collection_access is set or an external share key is in
- * use. The collection must then also pass collection_readable(). A denied search returns no results.
+ * 'R' permission, or any collection at all when $ignore_collection_access is set. The collection must then also
+ * pass collection_readable(). Any other collection opens only with an external share key that was issued for it,
+ * see collection_access_key_valid(). A denied search returns no results.
  *
  * Each case below runs one search as an administrator or as a user holding only the 's' permission plus the
- * permissions the case names. The cases pin the current behaviour, including the two marked as surprising.
+ * permissions the case names. The cases pin the current behaviour, including the one marked as surprising.
  */
 
 command_line_only();
@@ -25,6 +26,7 @@ $saved_000715 = [
     "allow_smart_collections"  => $allow_smart_collections,
     "smart_collections_async"  => $smart_collections_async,
     "smartsearch_ref_cache"    => $GLOBALS["smartsearch_ref_cache"] ?? null,
+    "share_access_cookie"      => $_COOKIE["share_access"] ?? null,
 ];
 unset($resource_deletion_state);
 
@@ -74,6 +76,27 @@ if ($upload_col_created_715) {
 }
 $upload_res_715 = create_resource(1, 0);
 ps_query("INSERT INTO collection_resource (collection, resource) VALUES (?, ?)", ["i", $upload_col_715, "i", $upload_res_715]);
+
+// External share keys. The first four are made the way sharing a collection makes them. An upload link and a share
+// whose user no longer exists are written directly.
+$share_password_715 = "test715 password";
+$key_private_715    = generate_collection_access_key($private_col, 0, "", 0);
+$key_own_715        = generate_collection_access_key($own_col, 0, "", 0);
+$key_expired_715    = generate_collection_access_key($private_col, 0, "", 0, "2000-01-01");
+$key_password_715   = generate_collection_access_key($private_col, 0, "", 0, "", "", $share_password_715);
+$key_upload_715     = "t715upload";
+$key_orphan_715     = "t715orphan";
+ps_query(
+    "INSERT INTO external_access_keys (access_key, collection, user, usergroup, upload, date) VALUES (?, ?, ?, ?, 1, NOW())",
+    ["s", $key_upload_715, "i", $private_col, "i", $userref, "i", $usergroup]
+);
+ps_query(
+    "INSERT INTO external_access_keys (resource, access_key, collection, user, usergroup, access, date) VALUES (?, ?, ?, ?, ?, 0, NOW())",
+    ["i", $private_res, "s", $key_orphan_715, "i", $private_col, "i", $other_user_715, "i", $usergroup]
+);
+// The cookie a visitor holds once they have given the share password, see check_share_password()
+$password_hash_715   = hash("sha256", $key_password_715 . $share_password_715 . $scramble_key);
+$password_cookie_715 = hash("sha256", date("Ymd") . $key_password_715 . $password_hash_715 . $scramble_key);
 
 // A smart collection whose saved search matches one resource that is not yet a member
 $smart_node_715 = set_node(null, $view_title_field, "test715 smart collection", "", 1000);
@@ -129,7 +152,8 @@ function test_000715_search($collection, bool $return_disk_usage = false)
 }
 
 // "admin" runs with the administrator's permissions; otherwise the user holds 's' plus "permissions".
-// "globals" sets $k, $ignore_collection_access or $upload_share_active for the case.
+// "globals" sets $k, $ignore_collection_access or $upload_share_active for the case and "cookie" the share access
+// cookie.
 $cases_715 = [
     ["name" => "administrator, another user's private collection", "admin" => true,
         "collection" => $private_col, "expected" => [$private_res]],
@@ -167,12 +191,31 @@ $cases_715 = [
 
     ["name" => "private collection with \$ignore_collection_access", "globals" => ["ignore_collection_access" => true],
         "collection" => $private_col, "expected" => [$private_res]],
-    // Surprising: the search only tests that a share key is present. This key does not exist, yet it opens the
-    // collection. Validating the key is left to the page, see check_access_key_collection() in pages/search.php.
-    ["name" => "private collection with a share key that does not exist", "globals" => ["k" => "test715key"],
+    // A share key opens the collection it was issued for and no other. The search checks the key itself and does
+    // not rely on the page having done so: a signed in user can put any key in the URL.
+    ["name" => "private collection with its own share key", "globals" => ["k" => $key_private_715],
         "collection" => $private_col, "expected" => [$private_res]],
-    ["name" => "private collection during an upload share", "globals" => ["k" => "test715key", "upload_share_active" => 1],
+    ["name" => "private collection with a share key that does not exist", "globals" => ["k" => "test715key"],
         "collection" => $private_col, "expected" => []],
+    ["name" => "private collection with the share key of another collection", "globals" => ["k" => $key_own_715],
+        "collection" => $private_col, "expected" => []],
+    ["name" => "private collection with an expired share key", "globals" => ["k" => $key_expired_715],
+        "collection" => $private_col, "expected" => []],
+    ["name" => "private collection with a share key whose user no longer exists", "globals" => ["k" => $key_orphan_715],
+        "collection" => $private_col, "expected" => []],
+    ["name" => "private collection with an upload link key", "globals" => ["k" => $key_upload_715],
+        "collection" => $private_col, "expected" => []],
+    ["name" => "private collection with a password protected share key", "globals" => ["k" => $key_password_715],
+        "collection" => $private_col, "expected" => []],
+    ["name" => "private collection with a password protected share key and the share access cookie",
+        "globals" => ["k" => $key_password_715], "cookie" => $password_cookie_715,
+        "collection" => $private_col, "expected" => [$private_res]],
+    ["name" => "private collection with its own share key during an upload share",
+        "globals" => ["k" => $key_private_715, "upload_share_active" => 1],
+        "collection" => $private_col, "expected" => []],
+    // A key that does not exist takes nothing away from a user who may search the collection anyway
+    ["name" => "own collection with a share key that does not exist", "globals" => ["k" => "test715key"],
+        "collection" => $own_col, "expected" => [$own_res]],
 
     ["name" => "administrator, own upload review collection", "admin" => true,
         "collection" => $upload_col_715, "expected" => [$upload_res_715]],
@@ -192,6 +235,10 @@ foreach ($cases_715 as $case) {
     if (isset($case["globals"]["upload_share_active"])) {
         $upload_share_active = $case["globals"]["upload_share_active"];
     }
+    unset($_COOKIE["share_access"]);
+    if (isset($case["cookie"])) {
+        $_COOKIE["share_access"] = $case["cookie"];
+    }
 
     $results = test_000715_search($case["collection"]);
     if ($results != $case["expected"]) {
@@ -203,7 +250,7 @@ $userpermissions = $saved_000715["userpermissions"];
 $hidden_fields_cache = $saved_000715["hidden_fields_cache"];
 $k = "";
 $ignore_collection_access = false;
-unset($upload_share_active);
+unset($upload_share_active, $_COOKIE["share_access"]);
 
 // A smart collection is refreshed from its saved search before it is listed: the matching resource joins and the
 // stale member leaves. Nothing is refreshed when only the disk usage is asked for, or when smart collections are off.
@@ -227,6 +274,7 @@ if ($results != [$smart_match_res]) {
 }
 
 // Tear down
+ps_query("DELETE FROM external_access_keys WHERE collection IN (?, ?)", ["i", $private_col, "i", $own_col]);
 ps_query("DELETE FROM collection_savedsearch WHERE ref = ?", ["i", $smart_search_715]);
 ps_query("DELETE FROM research_request WHERE ref = ?", ["i", $research_request_715]);
 ps_query("DELETE FROM user_collection WHERE collection = ?", ["i", $shared_col]);
@@ -250,6 +298,9 @@ $ignore_collection_access = $saved_000715["ignore_collection_access"];
 $k = $saved_000715["k"];
 if ($saved_000715["upload_share_active"] !== null) {
     $upload_share_active = $saved_000715["upload_share_active"];
+}
+if ($saved_000715["share_access_cookie"] !== null) {
+    $_COOKIE["share_access"] = $saved_000715["share_access_cookie"];
 }
 if ($saved_000715["smartsearch_ref_cache"] !== null) {
     $GLOBALS["smartsearch_ref_cache"] = $saved_000715["smartsearch_ref_cache"];

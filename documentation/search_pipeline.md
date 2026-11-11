@@ -491,7 +491,7 @@ search builders, each of which declares the configuration globals it reads.
 | `tests/test_list/000712_do_search_special_flags.php` | `!integrityfail`, `!locked`, `!nopreview`, `!hasdata`, `!contributions` and `!last` against resource columns written directly. |
 | `tests/test_list/000713_do_search_special_collection.php` | `!collection` members in every archive state, collection columns and ordering, `$collections_omit_archived`, a node restriction and access for a non-administrator. |
 | `tests/test_list/000714_do_search_special_results.php` | Row limit padding, no padding when every row is requested, chunked fetchrows, a search matching nothing, the reduced refs-only query with and without a row limit, disk usage and returned SQL for a special search. |
-| `tests/test_list/000715_do_search_collection_access.php` | Who may search a collection: an administrator, the owner, a user or group it is shared with, public and featured collections with each 'j' permission, requested and research collections, `$ignore_collection_access`, a share key, an upload share and the upload review collection. Also the smart collection refresh. |
+| `tests/test_list/000715_do_search_collection_access.php` | Who may search a collection: an administrator, the owner, a user or group it is shared with, public and featured collections with each 'j' permission, requested and research collections, `$ignore_collection_access`, share keys (issued for the collection, made up, issued for another collection, expired, password protected, an upload link), an upload share and the upload review collection. Also the smart collection refresh. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -536,6 +536,13 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
 - `!colour` wrote its two patterns as `a OR b AND filter`, so the base filter applied to the second pattern only
   and a resource matching the first was returned whatever its archive state, access or type permissions. The
   patterns are now bracketed.
+- `!collectionN` accepted any non-empty external share key from a user without the 'a' permission, so a signed in
+  user could list another user's private collection by adding a made up key to the URL. The search page checks
+  the key only to decide whether to ask for a login, and leaves a failed key in place. The builder now asks
+  `collection_access_key_valid()`, which accepts a key that was issued for that collection, has not expired, is
+  not an upload link, belongs to an approved user and, for a share with a password, comes with the share access
+  cookie. It only reads the key: `check_access_key_collection()` also emulates the sharing user and redirects,
+  and without its resource check accepts a key issued for any collection.
 
 One function was removed: `set_search_order_by()` had no callers in core or the bundled plugins. A site plugin
 that calls it should call `resolve_search_order_by()` and read `order_by` from the result.
