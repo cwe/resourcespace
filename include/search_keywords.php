@@ -401,15 +401,18 @@ function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $
         $val = str_replace("|", "-", $val);
 
         if ($fieldinfo['type'] == FIELD_TYPE_DATE_RANGE) {
-            // Find where the searched value is between the range values
+            // Find where the searched value is between the range values. The value may be a year or a year and
+            // month, and then any range overlapping that period is found. Range nodes are named YYYY-MM-DD, so
+            // they compare as text: the value is the earliest name in its period and, padded, the latest.
+            $period_end = str_pad($val, 10, "-99");
             $query->addJoin(
                 " JOIN resource_node drrn{$c}s ON drrn{$c}s.resource=r.ref"
                 . " JOIN node drn{$c}s ON drn{$c}s.ref=drrn{$c}s.node"
                 . " AND drn{$c}s.resource_type_field = ? AND drn{$c}s.name >= ?"
                 . " JOIN resource_node drrn{$c}e ON drrn{$c}e.resource=r.ref"
                 . " JOIN node drn{$c}e ON drn{$c}e.ref=drrn{$c}e.node"
-                . " AND drn{$c}e.resource_type_field = ? AND DATE(drn{$c}e.name) <= ?",
-                ["i", $datefield, "i", $datefield, "s", $val, "s", $val]
+                . " AND drn{$c}e.resource_type_field = ? AND drn{$c}e.name <= ?",
+                ["i", $datefield, "s", $val, "i", $datefield, "s", $period_end]
             );
         } else {
             $query->addJoin(

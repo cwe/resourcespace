@@ -369,10 +369,8 @@ $cases = [
     ["name" => "classify date any month",         "search" => "snapdate:2024|nn|17"],
     ["name" => "classify date quoted",            "search" => "\"snapdate:2024\""],
     ["name" => "classify date range end only",    "search" => "snapdate:rangeend2024-12-31"],
-    // Defect, also on master: the join for a date range field binds field, field, date, date to placeholders that
-    // read field, date, field, date. The field reference bound as a date is named through "stray_fields".
-    ["name" => "classify date range field",       "search" => "snaprange:2024|05|17",
-                                                   "stray_fields" => [$snaprange => "snaprange"]],
+    ["name" => "classify date range field",       "search" => "snaprange:2024|05|17"],
+    ["name" => "classify date range field month", "search" => "snaprange:2024|05"],
     ["name" => "classify date range field range", "search" => "snaprange:rangestart2024-01-01end2024-12-31"],
     ["name" => "classify restricted date",        "search" => "snapdate:2024", "permissions" => $restricted_permissions],
     ["name" => "classify restricted fulltext",    "search" => "\"" . FULLTEXT_SEARCH_PREFIX . ":alpha beta\"",
@@ -456,14 +454,12 @@ function test_000705_token(string $kind, $value, array $maps)
  * Whitespace is collapsed, field columns and fixture IDs are replaced with named tokens so that the snapshot is stable
  * across test databases. Bound parameters are classified by the SQL immediately preceding their placeholder.
  *
- * @param mixed $result       Return value of do_search()
- * @param array $maps         Fixture ID maps
- * @param array $stray_fields Field refs to name wherever they are bound, for a case whose query binds a field
- *                            reference to a placeholder that is not a field: ref => short name
+ * @param mixed $result Return value of do_search()
+ * @param array $maps   Fixture ID maps
  *
  * @return array
  */
-function test_000705_normalise($result, array $maps, array $stray_fields = []): array
+function test_000705_normalise($result, array $maps): array
 {
     if (!($result instanceof PreparedStatementQuery)) {
         return ["result" => $result];
@@ -495,8 +491,6 @@ function test_000705_normalise($result, array $maps, array $stray_fields = []): 
         if (preg_match($pattern, $tail, $m)) {
             $kind = in_array(strtolower($m[1]), ["ref", "related"]) ? "resource" : strtolower($m[1]);
             $value = test_000705_token($kind, $value, $maps);
-        } elseif (is_int_loose($value) && isset($stray_fields[(int) $value])) {
-            $value = "{F:" . $stray_fields[(int) $value] . "}";
         }
         $normalised_params[] = $type . ":" . (is_scalar($value) || is_null($value) ? var_export($value, true) : json_encode($value));
         $before .= "?";
@@ -513,7 +507,6 @@ function test_000705_normalise($result, array $maps, array $stray_fields = []): 
 // Run the corpus
 // ---------------------------------------------------------------------------------------------------------------------
 $raw_results = [];
-$stray_fields_000705 = [];
 foreach ($cases as $case) {
     // Reset to a known state for every case
     $userpermissions = $case["permissions"] ?? $admin_permissions;
@@ -542,7 +535,6 @@ foreach ($cases as $case) {
 
     $args = array_merge($default_args, $case["args"] ?? []);
     $raw_results[$case["name"]] = call_user_func_array("do_search", array_merge([$case["search"]], array_values($args)));
-    $stray_fields_000705[$case["name"]] = $case["stray_fields"] ?? [];
 }
 
 // Restore state
@@ -560,7 +552,7 @@ foreach ($maps_000705["keyword"] as $keyword_ref => $keyword_text) {
 
 $actual = [];
 foreach ($raw_results as $case_name => $raw_result) {
-    $actual[$case_name] = test_000705_normalise($raw_result, $maps_000705, $stray_fields_000705[$case_name] ?? []);
+    $actual[$case_name] = test_000705_normalise($raw_result, $maps_000705);
 }
 
 // Tear down the fixtures now that their IDs have been mapped
@@ -1642,8 +1634,12 @@ function test_000705_expected(): array
             'params' => ['i:\'{F:snapdate}\'', 's:\'2024-12-31 23:59:59\'', 'i:\'0\''],
         ],
         'classify date range field' => [
-            'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN resource_node drrn1s ON drrn1s.resource=r.ref JOIN node drn1s ON drn1s.ref=drrn1s.node AND drn1s.resource_type_field = ? AND drn1s.name >= ? JOIN resource_node drrn1e ON drrn1e.resource=r.ref JOIN node drn1e ON drn1e.ref=drrn1e.node AND drn1e.resource_type_field = ? AND DATE(drn1e.name) <= ? WHERE archive IN (?) AND r.ref>0 GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
-            'params' => ['i:\'{F:snaprange}\'', 'i:\'{F:snaprange}\'', 's:\'2024-05-17\'', 's:\'2024-05-17\'', 'i:\'0\''],
+            'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN resource_node drrn1s ON drrn1s.resource=r.ref JOIN node drn1s ON drn1s.ref=drrn1s.node AND drn1s.resource_type_field = ? AND drn1s.name >= ? JOIN resource_node drrn1e ON drrn1e.resource=r.ref JOIN node drn1e ON drn1e.ref=drrn1e.node AND drn1e.resource_type_field = ? AND drn1e.name <= ? WHERE archive IN (?) AND r.ref>0 GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{F:snaprange}\'', 's:\'2024-05-17\'', 'i:\'{F:snaprange}\'', 's:\'2024-05-17\'', 'i:\'0\''],
+        ],
+        'classify date range field month' => [
+            'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN resource_node drrn1s ON drrn1s.resource=r.ref JOIN node drn1s ON drn1s.ref=drrn1s.node AND drn1s.resource_type_field = ? AND drn1s.name >= ? JOIN resource_node drrn1e ON drrn1e.resource=r.ref JOIN node drn1e ON drn1e.ref=drrn1e.node AND drn1e.resource_type_field = ? AND drn1e.name <= ? WHERE archive IN (?) AND r.ref>0 GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'{F:snaprange}\'', 's:\'2024-05\'', 'i:\'{F:snaprange}\'', 's:\'2024-05-99\'', 'i:\'0\''],
         ],
         'classify date range field range' => [
             'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref JOIN resource_node drrn1s ON drrn1s.resource=r.ref JOIN node drn1s ON drn1s.ref=drrn1s.node AND drn1s.resource_type_field = ? AND drn1s.name>= ? JOIN resource_node drrn1e ON drrn1e.resource=r.ref JOIN node drn1e ON drn1e.ref=drrn1e.node AND drn1e.resource_type_field = ? AND drn1e.name <= ? WHERE archive IN (?) AND r.ref>0 GROUP BY r.ref, user_access, group_access ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
