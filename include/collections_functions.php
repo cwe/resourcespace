@@ -768,16 +768,16 @@ function collection_readable($collection)
 {
     global $userref, $usergroup, $ignore_collection_access, $collection_commenting;
 
-    $k = getval('k', '');
-    if ($k != '') {
-        # Silent check on access key - not updating lastused in external_access_keys
+    $k = (string) getval('k', '');
+    $valid_external_access_key = false;
+    if ($k != '' && is_int_loose($collection)) {
+        # Check that the access key was issued for this collection, without acting on it: the sharing user is not
+        # emulated and lastused in external_access_keys is not updated
         #  *** This check should not replace access checking on load of the page ***
         if (!isset($GLOBALS['collection_readable_key_check_cache'][$collection . $k])) {
-            $GLOBALS['collection_readable_key_check_cache'][$collection . $k] = check_access_key_collection($collection, $k, false);
+            $GLOBALS['collection_readable_key_check_cache'][$collection . $k] = collection_access_key_valid((int) $collection, $k);
         }
         $valid_external_access_key = $GLOBALS['collection_readable_key_check_cache'][$collection . $k];
-    } else {
-        $valid_external_access_key = false;
     }
 
     # Fetch collection details.
