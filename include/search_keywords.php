@@ -147,9 +147,9 @@ function search_query_keywords(ParsedSearch $parsed, SearchContext $ctx, SearchQ
 /**
  * Inspect a keyword and decide how it is matched.
  *
- * Handles the fulltext prefix, "field:" resolution (with field view access), the date / numeric range / fixed
- * list special forms, automatic quoting of field specific terms containing special characters, the
- * customsearchkeywordfilter hook and the non-field matches (resource ID, resource type name, contributor).
+ * Handles the fulltext prefix, quoted phrases and "!" prefixed terms itself. A term that names a field goes to
+ * search_keyword_classify_field(). Any other term is a standard keyword, carrying its non-field matches (resource
+ * ID, resource type name, contributor), unless the characters in it make it a phrase.
  *
  * @param string        $raw    Keyword as parsed
  * @param int           $index  Position in the keyword list
@@ -172,57 +172,127 @@ function search_keyword_classify(string $raw, int $index, ParsedSearch $parsed, 
         }
         return new Keyword(KeywordKind::Fulltext, $index, $fulltext_string);
     }
-    // The non-field matches are made against the term as typed, before any field prefix is removed
-    $non_field_text = $keyword;
+
+    $names_field = strpos($keyword, ":") !== false;
+    if ($quoted_string && !$names_field) {
+        return new Keyword(KeywordKind::Phrase, $index, $keyword);
+    }
+    if (substr($keyword, 0, 1) == "!" && substr($keyword, 0, 6) != "!empty") {
+        return new Keyword(KeywordKind::Ignored, $index, $keyword);
+    }
+
+    // If quoted string with a field specified we first need to try and resolve it to a node instead of working out keyword positions etc.
+    if ($names_field) {
+        return search_keyword_classify_field($keyword, $quoted_string, $index, $parsed, $ctx);
+    }
+
+    if (search_keyword_needs_quoting($keyword)) {
+        return new Keyword(KeywordKind::Phrase, $index, "\"$keyword\"");
+    }
+    return new Keyword(
+        KeywordKind::Standard,
+        $index,
+        $keyword,
+        non_field_union: search_keyword_non_field($keyword, $parsed, $ctx)
+    );
+}
+
+/**
+ * Classify a keyword that contains a colon, as "field:value" does.
+ *
+ * Resolves the field, with field view access, then picks the date, numeric range or fixed list form, a phrase, or
+ * a standard keyword restricted to the field. The customsearchkeywordfilter hook may claim what would otherwise be
+ * a standard keyword.
+ *
+ * @param string        $keyword       Keyword, including the field prefix and any surrounding quotes
+ * @param bool          $quoted_string Whether the keyword is a quoted string
+ * @param int           $index         Position in the keyword list
+ * @param ParsedSearch  $parsed        Parsed search
+ * @param SearchContext $ctx           Search context
+ *
+ * @return Keyword|SearchStop A Requeue keyword when the text before the colon is not a field; a stop (do_search()
+ *                            returns false) when the user may not search the named field
+ */
+function search_keyword_classify_field(
+    string $keyword,
+    bool $quoted_string,
+    int $index,
+    ParsedSearch $parsed,
+    SearchContext $ctx
+): Keyword|SearchStop {
+    [$field_name, $keystring] = explode(":", ($quoted_string ? substr($keyword, 1, -1) : $keyword), 2);
+    debug("do_search(): \$fieldname = {$field_name}");
+    debug("do_search(): \$keystring = {$keystring}");
+    $field = search_keyword_field_info($field_name);
+    $basic_date = false;
+    if ($field === null && in_array($field_name, ['basicyear', 'basicmonth', 'basicday'])) {
+        // Date parts from simple search: there is no field of that name, the configured date field is meant
+        $field = search_keyword_field_info_by_ref($ctx->date_field);
+        $basic_date = $field !== null;
+    }
+    if ($field === null) {
+        // Search may just happen to include a colon - treat the colon as a space and process the parts separately
+        return new Keyword(KeywordKind::Requeue, $index, $keyword, requeue: explode(":", $keyword));
+    }
+    if (!metadata_field_view_access($field['ref'])) {
+        // User can't search against a metadata field they don't have access to
+        return new SearchStop(false, 'no_field_access');
+    }
 
     $kind = null;
-    $field = null;
-    $field_name = '';
-    $keystring = '';
     $nodes = [];
-    $basic_date = false;
-
-    if (
-        // If quoted string with a field specified we first need to try and resolve it to a node instead of working out keyword positions etc.
-        (!$quoted_string || strpos($keyword, ":") !== false)
-        && (substr($keyword, 0, 1) != "!" || substr($keyword, 0, 6) == "!empty")
-    ) {
-        if (strpos($keyword, ":") !== false) {
-            [$field_name, $keystring] = explode(":", ($quoted_string ? substr($keyword, 1, -1) : $keyword), 2);
-            debug("do_search(): \$fieldname = {$field_name}");
-            debug("do_search(): \$keystring = {$keystring}");
-            $field = search_keyword_field_info($field_name);
-            if ($field === null && in_array($field_name, ['basicyear', 'basicmonth', 'basicday'])) {
-                // Date parts from simple search: there is no field of that name, the configured date field is meant
-                $field = search_keyword_field_info_by_ref($ctx->date_field);
-                $basic_date = $field !== null;
-            }
-            if ($field === null) {
-                // Search may just happen to include a colon - treat the colon as a space and process the parts separately
-                return new Keyword(KeywordKind::Requeue, $index, $keyword, requeue: explode(":", $keyword));
-            }
-            if (!metadata_field_view_access($field['ref'])) {
-                // User can't search against a metadata field they don't have access to
-                return new SearchStop(false, 'no_field_access');
-            }
+    if (!$quoted_string && !$ctx->ignore_filters && in_array($field['type'], $ctx->date_field_types)) {
+        $kind = KeywordKind::Date;
+    } elseif (substr($keystring, 0, 8) == "numrange" && !$quoted_string && !$ctx->ignore_filters && $field['type'] == 0) {
+        // Text field numrange search ie mynumberfield:numrange1|1234 indicates that mynumberfield needs a numrange search for 1 to 1234.
+        $kind = KeywordKind::NumRange;
+    } elseif (!$ctx->ignore_filters && in_array($field['type'], $ctx->fixed_list_field_types)) {
+        // Legacy fixed list field search (fieldShortName:keyword): resolve to nodes, as if @@NodeID had been given
+        $nodes = search_keyword_fixed_list_nodes($field['ref'], $keystring);
+        if ($nodes !== []) {
+            $kind = KeywordKind::FixedList;
         }
+    } elseif (!$quoted_string && search_keyword_needs_quoting($keyword)) {
+        $quoted_string = true;
+    }
 
-        if ($field !== null && !$quoted_string && !$ctx->ignore_filters && in_array($field['type'], $ctx->date_field_types)) {
-            $kind = KeywordKind::Date;
-        } elseif ($field !== null && substr($keystring, 0, 8) == "numrange" && !$quoted_string && !$ctx->ignore_filters && $field['type'] == 0) {
-            // Text field numrange search ie mynumberfield:numrange1|1234 indicates that mynumberfield needs a numrange search for 1 to 1234.
-            $kind = KeywordKind::NumRange;
-        } elseif ($field !== null && !$ctx->ignore_filters && in_array($field['type'], $ctx->fixed_list_field_types)) {
-            // Legacy fixed list field search (fieldShortName:keyword): resolve to nodes, as if @@NodeID had been given
-            $nodes = search_keyword_fixed_list_nodes($field['ref'], $keystring);
-            if ($nodes !== []) {
-                $kind = KeywordKind::FixedList;
-            }
-        } elseif (
-            !$quoted_string
-            && substr($keyword, 0, 6) != "!empty"
-            && preg_match(
-                '/^                   # Start of the string
+    if ($kind === null && !$quoted_string && !hook('customsearchkeywordfilter', null, array([$field_name, $keystring]))) {
+        $kind = KeywordKind::Standard;
+    }
+    if ($kind === null) {
+        $kind = $quoted_string ? KeywordKind::Phrase : KeywordKind::Ignored;
+    }
+
+    // The value is matched within the named field. The non-field matches are made against the term as typed.
+    return new Keyword(
+        $kind,
+        $index,
+        $keystring,
+        $field,
+        $field_name,
+        $nodes,
+        non_field_union: $kind === KeywordKind::Standard
+            ? search_keyword_non_field($keyword, $parsed, $ctx)
+            : new PreparedStatementQuery(),
+        basic_date: $basic_date
+    );
+}
+
+/**
+ * Whether an unquoted keyword is matched as a phrase because of the characters in it.
+ *
+ * Keywords that contain special characters and no spaces are quoted unless a wildcard is present. An !empty search
+ * names a field, whose short name may contain such characters, and is never a phrase.
+ *
+ * @param string $keyword Unquoted keyword, including any field prefix
+ *
+ * @return bool
+ */
+function search_keyword_needs_quoting(string $keyword): bool
+{
+    return substr($keyword, 0, 6) != "!empty"
+        && preg_match(
+            '/^                   # Start of the string
                 [^-]                  # Not a negative keyword search
                 (?!.*[\*;])           # Negative lookahead: Ensure no asterisk (*) or semi colon exists in the string
                 (?=                   # Positive lookahead: Ensure at least one special character exists
@@ -232,41 +302,8 @@ function search_keyword_classify(string $raw, int $index, ParsedSearch $parsed, 
                 [^ \t\n]*             # Match any number of characters that are not space, tab, or newline
                 $                     # End of the string
                 /x',
-                $keyword
-            ) === 1
-        ) {
-            // Quote keywords that contain special characters and no spaces unless a wildcard is present. An !empty
-            // search names a field, whose short name may contain such characters, and is never a phrase.
-            $keyword = "\"$keyword\"";
-            $quoted_string = true;
-        }
-
-        if ($field !== null) {
-            // Match the value within the named field
-            $keyword = $keystring;
-        }
-
-        if ($kind === null && !$quoted_string && !($field !== null && hook('customsearchkeywordfilter', null, array([$field_name, $keystring])))) {
-            $kind = KeywordKind::Standard;
-        }
-    }
-
-    if ($kind === null) {
-        $kind = $quoted_string ? KeywordKind::Phrase : KeywordKind::Ignored;
-    }
-
-    return new Keyword(
-        $kind,
-        $index,
-        $keyword,
-        $field,
-        $field_name,
-        $nodes,
-        non_field_union: $kind === KeywordKind::Standard
-            ? search_keyword_non_field($non_field_text, $parsed, $ctx)
-            : new PreparedStatementQuery(),
-        basic_date: $basic_date
-    );
+            $keyword
+        ) === 1;
 }
 
 /**
@@ -520,25 +557,17 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
     $keywords_expanded_or = count($keywords_expanded) > 1;
 
     # Omit resources containing this keyword?
-    $omit = false;
-    if (substr($text, 0, 1) == "-") {
-        $omit = true;
+    $omit = substr($text, 0, 1) == "-";
+    if ($omit) {
         $text = substr($text, 1);
     }
 
     # Search for resources with an empty field, ex: !empty18  or  !emptycaption
-    $empty = false;
-    $nodatafield = null;
-    if (substr($text, 0, 6) == "!empty") {
-        $nodatafield = str_replace("!empty", "", $text);
-        if (!is_numeric($nodatafield)) {
-            $nodatafield = ps_value("SELECT ref value FROM resource_type_field WHERE name = ?", ["s", $nodatafield], "", "schema");
-        }
-        if ($nodatafield == "" || !is_numeric($nodatafield)) {
-            debug("do_search(): !empty search names no field: {$text}");
-            return new SearchStop(false, 'invalid_empty_search');
-        }
-        $empty = true;
+    $empty = substr($text, 0, 6) == "!empty";
+    $nodatafield = $empty ? search_keyword_empty_field($text) : null;
+    if ($empty && $nodatafield === null) {
+        debug("do_search(): !empty search names no field: {$text}");
+        return new SearchStop(false, 'invalid_empty_search');
     }
 
     if (in_array($text, $ctx->noadd)) { # skip common words that are excluded from indexing
@@ -546,33 +575,20 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         return null;
     }
 
-    $wildcards = false;
-    if (strpos($text, "*") !== false || $ctx->wildcard_always_applied) {
-        if ($ctx->wildcard_always_applied && strpos($text, "*") === false) {
-            # Suffix asterisk if none supplied and using $wildcard_always_applied mode.
-            $text = $text . "*";
-        }
-        $wildcards = true;
+    if ($ctx->wildcard_always_applied && strpos($text, "*") === false) {
+        # Suffix asterisk if none supplied and using $wildcard_always_applied mode.
+        $text = $text . "*";
     }
+    $wildcards = strpos($text, "*") !== false;
 
-    # Resolve keyword. Ignore any wildcards when resolving. We need wildcards to be present later but not here.
-    $keyref = resolve_keyword(str_replace('*', '', $text), false, true, true);
-    if ($keyref === false && $ctx->stemming) {
-        // Attempt to find match for original keyword
-        $keyref = resolve_keyword(str_replace('*', '', $text), false, true, false);
-    }
-    if ($keyref === false && !$empty && !$keywords_expanded_or && strpos($text, "*") === false && preg_match('/\\s/', $parsed->search) !== 1) {
+    $keyref = search_keyword_resolve($text, $ctx->stemming);
+    if ($keyref === false && !$empty && !$keywords_expanded_or && !$wildcards && preg_match('/\\s/', $parsed->search) !== 1) {
         // Check keyword for defined separators and if found each part of the value is added as a keyword for checking.
         // Not for wildcards with no spaces, nor for an !empty search whose field name may contain a separator
-        foreach ($ctx->separators as $separator) {
-            if (strpos($text, $separator) !== false) {
-                $keyword_split = split_keywords($text);
-                if ($keyword->field !== null) {
-                    $keyword_split = array_map(prefix_value($keyword->field_name . ":"), $keyword_split);
-                }
-                $query->addKeywords($keyword_split);
-                return null;
-            }
+        $keyword_split = search_keyword_separator_parts($keyword, $text, $ctx->separators);
+        if ($keyword_split !== null) {
+            $query->addKeywords($keyword_split);
+            return null;
         }
     }
 
@@ -594,14 +610,7 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
     $exclude_fields = hook("excludefieldsfromkeywordsearch");
 
     if ($omit) {
-        # Exclude matching resources from query (omit feature): check that keyword does not exist via
-        # resource_node->node_keyword relationship
-        $query->andFilter(
-            "`r`.`ref` NOT IN (SELECT `resource` FROM `resource_node`"
-            . " JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node`"
-            . " WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?)",
-            ["i", $keyref]
-        );
+        search_keyword_omit($keyref, $query);
         return null;
     }
 
@@ -616,31 +625,136 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         return null;
     }
 
-    // ----- resource_node -> node_keyword sub query -----
-    $union = new PreparedStatementQuery();
-    $union->sql = " SELECT resource, [bit_or_condition] hit_count AS score"
-        . " FROM resource_node rn[union_index]"
-        . " WHERE rn[union_index].node IN (SELECT node FROM `node_keyword` nk[union_index]"
-        . " WHERE ((nk[union_index].keyword = ? " . $relatedsql->sql . ") " . $restriction->sql . ")"
-        . ($alternative_keywords_sql->sql != "" ? $alternative_keywords_sql->sql . $restriction->sql : "")
-        . ") GROUP BY resource "
-        . $keyword->non_field_union->sql;
-
-    $union->parameters = array_merge(["i", $keyref], $relatedsql->parameters, $restriction->parameters);
-    if ($alternative_keywords_sql->sql != "") {
-        $union->parameters = array_merge($union->parameters, $alternative_keywords_sql->parameters, $restriction->parameters);
-    }
-    if ($keyword->non_field_union->sql != "") {
-        $union->parameters = array_merge($union->parameters, $keyword->non_field_union->parameters);
-    }
-
     // Alternatives ("red;blue") are OR'd with neighbouring alternative keywords
+    $union = search_keyword_union($keyref, $relatedsql, $restriction, $alternative_keywords_sql, $keyword->non_field_union);
     $query->addUnion(new KeywordUnion($union, $keywords_expanded_or));
 
     if ($ctx->stats_logging && !$ctx->go) {
         $query->keywords_used[] = $keyref;
     }
     return null;
+}
+
+/**
+ * The field an "!empty18" or "!emptycaption" keyword names.
+ *
+ * @param string $text Keyword text starting with "!empty"
+ *
+ * @return int|null Field ref, or null when the keyword names no field or a short name that does not exist
+ */
+function search_keyword_empty_field(string $text): ?int
+{
+    $nodatafield = str_replace("!empty", "", $text);
+    if (!is_numeric($nodatafield)) {
+        $nodatafield = ps_value("SELECT ref value FROM resource_type_field WHERE name = ?", ["s", $nodatafield], "", "schema");
+    }
+    if ($nodatafield == "" || !is_numeric($nodatafield)) {
+        return null;
+    }
+    return (int) $nodatafield;
+}
+
+/**
+ * Find the indexed keyword for a search term, without creating it.
+ *
+ * Wildcards are ignored when resolving. With stemming on, the term as typed is tried when its stem is not indexed.
+ *
+ * @param string $text     Keyword text, which may contain wildcards
+ * @param bool   $stemming Whether stemming is in use
+ *
+ * @return int|false Keyword ref, or false when the term is not indexed
+ */
+function search_keyword_resolve(string $text, bool $stemming): int|false
+{
+    # Resolve keyword. Ignore any wildcards when resolving. We need wildcards to be present later but not here.
+    $keyref = resolve_keyword(str_replace('*', '', $text), false, true, true);
+    if ($keyref === false && $stemming) {
+        // Attempt to find match for original keyword
+        $keyref = resolve_keyword(str_replace('*', '', $text), false, true, false);
+    }
+    return $keyref;
+}
+
+/**
+ * Split a keyword that contains a configured separator into the keywords to process in its place.
+ *
+ * @param Keyword $keyword    Keyword, whose field prefix is put back on each part
+ * @param string  $text       Keyword text without any "-" prefix
+ * @param array   $separators Configured separator characters
+ *
+ * @return array|null The parts, or null when the text contains no separator
+ */
+function search_keyword_separator_parts(Keyword $keyword, string $text, array $separators): ?array
+{
+    foreach ($separators as $separator) {
+        if (strpos($text, $separator) !== false) {
+            $keyword_split = split_keywords($text);
+            if ($keyword->field !== null) {
+                $keyword_split = array_map(prefix_value($keyword->field_name . ":"), $keyword_split);
+            }
+            return $keyword_split;
+        }
+    }
+    return null;
+}
+
+/**
+ * Exclude the resources matching a keyword (the "-keyword" form).
+ *
+ * @param int         $keyref Keyword ref
+ * @param SearchQuery $query  Query under construction
+ *
+ * @return void
+ */
+function search_keyword_omit(int $keyref, SearchQuery $query): void
+{
+    # Exclude matching resources from query (omit feature): check that keyword does not exist via
+    # resource_node->node_keyword relationship
+    $query->andFilter(
+        "`r`.`ref` NOT IN (SELECT `resource` FROM `resource_node`"
+        . " JOIN `node_keyword` ON `resource_node`.`node`=`node_keyword`.`node`"
+        . " WHERE `resource_node`.`resource`=`r`.`ref` AND `node_keyword`.`keyword` = ?)",
+        ["i", $keyref]
+    );
+}
+
+/**
+ * Build the union member for a plain keyword: the resources holding a node indexed under the keyword, a related
+ * keyword or one of its alternatives.
+ *
+ * @param int                    $keyref          Keyword ref
+ * @param PreparedStatementQuery $related         Related keyword clause from search_keyword_related()
+ * @param PreparedStatementQuery $restriction     Field restriction from search_keyword_restriction()
+ * @param PreparedStatementQuery $alternatives    Alternatives clause from search_keyword_alternatives()
+ * @param PreparedStatementQuery $non_field_union UNION members from search_keyword_non_field()
+ *
+ * @return PreparedStatementQuery
+ */
+function search_keyword_union(
+    int $keyref,
+    PreparedStatementQuery $related,
+    PreparedStatementQuery $restriction,
+    PreparedStatementQuery $alternatives,
+    PreparedStatementQuery $non_field_union
+): PreparedStatementQuery {
+    // ----- resource_node -> node_keyword sub query -----
+    $union = new PreparedStatementQuery();
+    $union->sql = " SELECT resource, [bit_or_condition] hit_count AS score"
+        . " FROM resource_node rn[union_index]"
+        . " WHERE rn[union_index].node IN (SELECT node FROM `node_keyword` nk[union_index]"
+        . " WHERE ((nk[union_index].keyword = ? " . $related->sql . ") " . $restriction->sql . ")"
+        . ($alternatives->sql != "" ? $alternatives->sql . $restriction->sql : "")
+        . ") GROUP BY resource "
+        . $non_field_union->sql;
+
+    $union->parameters = array_merge(["i", $keyref], $related->parameters, $restriction->parameters);
+    if ($alternatives->sql != "") {
+        $union->parameters = array_merge($union->parameters, $alternatives->parameters, $restriction->parameters);
+    }
+    if ($non_field_union->sql != "") {
+        $union->parameters = array_merge($union->parameters, $non_field_union->parameters);
+    }
+    return $union;
 }
 
 /**
