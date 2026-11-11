@@ -542,7 +542,9 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   `collection_access_key_valid()`, which accepts a key that was issued for that collection, has not expired, is
   not an upload link, belongs to an approved user and, for a share with a password, comes with the share access
   cookie. It only reads the key: `check_access_key_collection()` also emulates the sharing user and redirects,
-  and without its resource check accepts a key issued for any collection.
+  and without its resource check accepts a key issued for any collection. `collection_readable()` made that
+  call without the resource check, so a key from sharing any collection made every collection readable. It now
+  uses the same function; `tests/test_list/000885_collection_readable_access_key.php` covers it.
 
 One function was removed: `set_search_order_by()` had no callers in core or the bundled plugins. A site plugin
 that calls it should call `resolve_search_order_by()` and read `order_by` from the result.
