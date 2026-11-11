@@ -6539,6 +6539,66 @@ function get_default_user_collection($setactive = false)
 }
 
 /**
+ * Bring a smart collection up to date with its saved search, as a collection search does before listing it.
+ *
+ * Does nothing unless $allow_smart_collections is on and the collection has a saved search. With
+ * $smart_collections_async and a PHP binary at $php_path the update is started in the background, so the caller may
+ * still read the previous members. A smart featured collection is then updated at most once every two hours.
+ *
+ * @param int $collection Collection ID
+ *
+ * @return void
+ */
+function refresh_smart_collection(int $collection): void
+{
+    global $allow_smart_collections, $smart_collections_async, $smartsearch_ref_cache, $php_path, $remote_config, $host;
+
+    if (!$allow_smart_collections) {
+        return;
+    }
+
+    if (isset($smartsearch_ref_cache[$collection])) {
+        $smartsearch_ref = $smartsearch_ref_cache[$collection]; // this value is pretty much constant
+    } else {
+        $smartsearch_ref = ps_query('SELECT savedsearch, `type` FROM collection WHERE ref = ?', ['i', $collection], '');
+        $smartsearch_ref_cache[$collection] = $smartsearch_ref;
+    }
+    if (!isset($smartsearch_ref[0]) || $smartsearch_ref[0]['savedsearch'] == '') {
+        return;
+    }
+    $smartsearch_collection_type = $smartsearch_ref[0]['type'];
+    $smartsearch_ref = $smartsearch_ref[0]['savedsearch'];
+
+    if (!$smart_collections_async || !isset($php_path) || !file_exists($php_path . '/php')) {
+        update_smart_collection($smartsearch_ref);
+        return;
+    }
+
+    if (isset($remote_config, $host)) {
+        putenv("RESOURCESPACE_URL=" . $host); // To keep context if remote config is used
+    }
+    $command = $php_path . '/php ' . dirname(__FILE__) . '/../pages/ajax/update_smart_collection.php '
+        . escapeshellarg($smartsearch_ref) . ' ' . '> /dev/null 2>&1 &';
+
+    if ($smartsearch_collection_type !== COLLECTION_TYPE_FEATURED) {
+        exec($command);
+        return;
+    }
+
+    # Limit rate of updating smart collections async to avoid CPU / db connections becoming overwhelmed.
+    # This can occur if smart collections are used as featured collections or dash tiles.
+    # Smart collections should not be used as featured collections - use smart featured collections instead.
+    $last_updated = ps_value("SELECT last_updated `value` FROM collection_savedsearch WHERE ref = ?;", array('i', $smartsearch_ref), '') ?? '1970-01-01';
+    if (time() - strtotime($last_updated) < 2 * 60 * 60) {
+        debug("Async skipping update of smart search ref $smartsearch_ref - last updated at $last_updated. 2 hour update interval.");
+        return;
+    }
+    debug("Async updating smart search ref $smartsearch_ref - last updated at $last_updated.");
+    exec($command);
+    ps_query('UPDATE collection_savedsearch SET last_updated = NOW() WHERE ref = ?;', array('i', $smartsearch_ref));
+}
+
+/**
  * Update a smart collection with or without the $smart_collections_async option.
  *
  * @param  int   $smartsearch_ref   Id of 'savedsearch'.

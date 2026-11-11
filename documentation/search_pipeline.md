@@ -387,6 +387,16 @@ A special search answers instead of the standard query: the `!` searches, a reso
    the reduced query that counts rows or lists references. It then runs them through `search_fetch()`, fires
    `beforereturnresults` and pads a row limited result with `search_pad_rows()`.
 
+The `!collection` builder is the only one with rules of its own before the query, so it is in three parts:
+
+- `search_special_collection()` reads the collection number, asks the two functions below and writes the query.
+- `search_special_collection_denied()` returns the reason a user may not search the collection, or null. A user
+  with the 'a' permission always may. Anyone else needs the collection to be on their list, which
+  `search_special_collection_listed()` builds, and readable, or to hold an external share key issued for it.
+- `refresh_smart_collection()` in `include/collections_functions.php` brings a smart collection up to date with
+  its saved search, in the background when `$smart_collections_async` is on. It is skipped when only the disk
+  usage is asked for.
+
 ### The shared result tail
 
 The standard query and a special search end the same way, through two functions in `do_search.php`:
