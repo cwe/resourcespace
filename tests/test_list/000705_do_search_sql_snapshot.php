@@ -280,6 +280,9 @@ $cases = [
     ["name" => "special list empty",             "search" => "!listabc"],
     ["name" => "special properties",             "search" => "!propertieshmin:100;wmax:200;fmin:1;fmax:2;fext:-.jp*;pi:1;cu:" . $userref . ";orientation:portrait"],
     ["name" => "special properties unknown",     "search" => "!propertiesbogus:1"],
+    // Parts that are not a known "name:value" are skipped without leaving a gap between the others
+    ["name" => "special properties skipped parts",
+        "search" => "!propertiesbogus:1;hmax:100;orientation:round;nocolon;wmin:50;a:b:c;fext:t*;orientation:square"],
     ["name" => "special integrityfail",          "search" => "!integrityfail"],
     ["name" => "special locked",                 "search" => "!locked"],
     ["name" => "special noningested",            "search" => "!noningested"],
@@ -1187,6 +1190,10 @@ function test_000705_expected(): array
         'special properties unknown' => [
             'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.blurhash, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE r.ref > 0 AND archive IN (?) AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
             'params' => ['i:\'0\''],
+        ],
+        'special properties skipped parts' => [
+            'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.blurhash, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource AND rdim.preview_size IS NULL WHERE r.ref > 0 AND archive IN (?) AND r.ref>0 AND rdim.height <= ? AND rdim.width >= ? AND r.file_extension LIKE ? AND COALESCE(rdim.height, 0) = COALESCE(rdim.width, 0) GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
+            'params' => ['i:\'0\'', 'i:\'100\'', 'i:\'50\'', 's:\'t%\''],
         ],
         'special integrityfail' => [
             'sql' => 'SELECT DISTINCT r.hit_count score, r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating, r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green, r.image_blue, r.blurhash, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified, r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path, r.modified, r.file_size, null group_access, null user_access, r.access resultant_access, r.field{F:country}, r.field{F:title}, r.field{F:date}, rty.order_by, r.hit_count total_hit_count FROM resource r JOIN resource_type AS rty ON r.resource_type = rty.ref WHERE integrity_fail=1 AND no_file=0 AND r.ref>0 GROUP BY r.ref ORDER BY score desc, user_rating desc, total_hit_count desc, field{F:date} desc, r.ref desc',
