@@ -239,7 +239,8 @@ function search_query_filter_archive(string $search, SearchContext $ctx, SearchQ
  *
  * Whatever the search, a user without the 'v' permission does not see resources pending submission or review
  * (archive states -2 and -1) unless they contributed them or the resource type is covered by an 'ert'
- * permission. The exception is a collection shared with a key when $collection_allow_not_approved_share is set.
+ * permission. The exception is a collection shared with a key when $collection_allow_not_approved_share is set:
+ * the key must be one issued for that collection, because a signed in user can put any value in the URL.
  *
  * @param string        $search Search string
  * @param SearchContext $ctx    Search context
@@ -254,7 +255,8 @@ function search_query_filter_pending(string $search, SearchContext $ctx, SearchQ
     }
     $shared_collection = str_starts_with($search, "!collection")
         && $ctx->external_share
-        && $ctx->collection_allow_not_approved_share;
+        && $ctx->collection_allow_not_approved_share
+        && collection_access_key_valid(search_special_collection_ref($search), $ctx->share_key);
     if ($shared_collection) {
         return;
     }

@@ -464,11 +464,7 @@ function search_special_duplicates(SpecialSearch $s): SpecialSearch|SearchStop
  */
 function search_special_collection(SpecialSearch $s): SpecialSearch|SearchStop
 {
-    # Extract the collection number
-    $collection = explode(' ', $s->search);
-    $collection = str_replace('!collection', '', $collection[0]);
-    $collection = explode(',', $collection); // just get the number
-    $collection = (int)$collection[0];
+    $collection = search_special_collection_ref($s->search);
 
     $denied = search_special_collection_denied($collection);
     if ($denied !== null) {
@@ -499,6 +495,21 @@ function search_special_collection(SpecialSearch $s): SpecialSearch|SearchStop
         $s->sql = $collectionsearchsql;
     }
     return $s;
+}
+
+/**
+ * The collection a "!collectionN" search names.
+ *
+ * @param string $search Search string starting with "!collection"
+ *
+ * @return int Collection ID, 0 when the search gives no number
+ */
+function search_special_collection_ref(string $search): int
+{
+    $collection = explode(' ', $search);
+    $collection = str_replace('!collection', '', $collection[0]);
+    $collection = explode(',', $collection); // just get the number
+    return (int)$collection[0];
 }
 
 /**
