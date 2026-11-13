@@ -448,6 +448,13 @@ finish step needs beyond the template: `order_by_params` and `hard_limit` for `!
 `!hasdata`. The four searches that only add a condition on the resource row (`!archivepending`, `!images`,
 `!integrityfail`, `!locked`) share `search_special_where()`.
 
+The `!properties` builder reads the `name:value` parts and asks `search_special_property_condition()` for the
+condition of each one. That function holds the table of plain comparisons (`hmin`, `hmax`, `wmin`, `wmax`, `pi`,
+`cu`), converts megabytes for `fmin` and `fmax`, and hands `fext` and `orientation` to
+`search_special_property_extension()` and `search_special_property_orientation()`. It returns null for a part
+that is not a known property, and the builder skips it. A new property is one more entry in the table or one more
+case.
+
 `search_special()` in `search_functions.php` keeps its thirteen-argument signature for plugins and for test 1210;
 it builds the `SpecialSearch` and calls `search_special_execute()`, the same entry `search_run_special()` uses.
 

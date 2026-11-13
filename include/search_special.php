@@ -1168,6 +1168,8 @@ function search_special_hasdata(SpecialSearch $s): SpecialSearch
  * fmin, fmax (MB), fext (extension, "-" to exclude, "*" as a wildcard), pi (has preview), cu (contributor) and
  * orientation (portrait, landscape, square). Unknown properties are ignored.
  *
+ * The condition of each property comes from search_special_property_condition(); the conditions are joined with AND.
+ *
  * @param SpecialSearch $s Special search
  *
  * @return SpecialSearch
@@ -1178,89 +1180,27 @@ function search_special_properties(SpecialSearch $s): SpecialSearch
     $searches_array = explode(' ', $s->search);
     $properties     = explode(';', substr($searches_array[0], 11));
 
-    // Use a new variable to ensure nothing changes $sql_filter unless this is a valid property search
-    $propertiessql = new PreparedStatementQuery();
+    // Collect the conditions first so that nothing changes the filter unless this is a valid property search
+    $conditions = [];
+    $parameters = [];
     foreach ($properties as $property) {
         $propertycheck = explode(":", $property);
-        if (count($propertycheck) == 2) {
-            $propertyname   = $propertycheck[0];
-            $propertyval    = $propertycheck[1];
-
-            $sql_filter_properties_and = $propertiessql->sql != "" ? " AND "  : "";
-            switch ($propertyname) {
-                case "hmin":
-                    $propertiessql->sql .= $sql_filter_properties_and . " rdim.height >= ?";
-                    array_push($propertiessql->parameters, "i", $propertyval);
-                    break;
-                case "hmax":
-                    $propertiessql->sql .= $sql_filter_properties_and . " rdim.height <= ?";
-                    array_push($propertiessql->parameters, "i", $propertyval);
-                    break;
-                case "wmin":
-                    $propertiessql->sql .= $sql_filter_properties_and . " rdim.width >= ?";
-                    array_push($propertiessql->parameters, "i", $propertyval);
-                    break;
-                case "wmax":
-                    $propertiessql->sql .= $sql_filter_properties_and . " rdim.width <= ?";
-                    array_push($propertiessql->parameters, "i", $propertyval);
-                    break;
-                case "fmin":
-                    // Need to convert MB value to bytes
-                    $propertiessql->sql .= $sql_filter_properties_and . " r.file_size >= ?";
-                    array_push($propertiessql->parameters, "i", floatval($propertyval) * 1024 * 1024);
-                    break;
-                case "fmax":
-                    // Need to convert MB value to bytes
-                    $propertiessql->sql .= $sql_filter_properties_and . " COALESCE(r.file_size, 0) <= ?";
-                    array_push($propertiessql->parameters, "i", floatval($propertyval) * 1024 * 1024);
-                    break;
-                case "fext":
-                    $propertyval = str_replace("*", "%", $propertyval);
-                    $propertiessql->sql .= $sql_filter_properties_and . " r.file_extension ";
-                    if (substr($propertyval, 0, 1) == "-") {
-                        $propertyval = substr($propertyval, 1);
-                        $propertiessql->sql .= " NOT ";
-                    }
-                    if (substr($propertyval, 0, 1) == ".") {
-                        $propertyval = substr($propertyval, 1);
-                    }
-                    $propertiessql->sql .= " LIKE ?";
-                    array_push($propertiessql->parameters, "s", $propertyval);
-                    break;
-                case "pi":
-                    $propertiessql->sql .= $sql_filter_properties_and . " r.has_image = ?";
-                    array_push($propertiessql->parameters, "i", $propertyval);
-                    break;
-                case "cu":
-                    $propertiessql->sql .= $sql_filter_properties_and . " r.created_by = ?";
-                    array_push($propertiessql->parameters, "i", $propertyval);
-                    break;
-
-                case "orientation":
-                    $orientation_filters = array(
-                        "portrait"  => "COALESCE(rdim.height, 0) > COALESCE(rdim.width, 0)",
-                        "landscape" => "COALESCE(rdim.height, 0) < COALESCE(rdim.width, 0)",
-                        "square"    => "COALESCE(rdim.height, 0) = COALESCE(rdim.width, 0)",
-                    );
-
-                    if (!in_array($propertyval, array_keys($orientation_filters))) {
-                        break;
-                    }
-                    $propertiessql->sql .= $sql_filter_properties_and .  $orientation_filters[$propertyval];
-                    break;
-            }
+        if (count($propertycheck) != 2) {
+            continue;
         }
+        $condition = search_special_property_condition($propertycheck[0], $propertycheck[1]);
+        if ($condition === null) {
+            continue;
+        }
+        $conditions[] = $condition->sql;
+        $parameters = array_merge($parameters, $condition->parameters);
     }
-    if ($propertiessql->sql != "") {
+    if (count($conditions) > 0) {
         if (strpos($s->join->sql, "LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource") === false) {
             $s->join->sql .= " LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource AND rdim.preview_size IS NULL";
         }
-        if ($s->filter->sql == "") {
-            $s->filter->sql .= " WHERE " . $propertiessql->sql;
-        } else {
-            $s->filter->sql .= " AND " . $propertiessql->sql;
-        }
-        $s->filter->parameters = array_merge($s->filter->parameters, $propertiessql->parameters);
+        $s->filter->sql .= ($s->filter->sql == "" ? " WHERE " : " AND ") . implode(" AND ", $conditions);
+        $s->filter->parameters = array_merge($s->filter->parameters, $parameters);
     }
 
     $s->select->sql = "DISTINCT r.hit_count score, {$s->select->sql}";
@@ -1268,6 +1208,90 @@ function search_special_properties(SpecialSearch $s): SpecialSearch
         . " WHERE r.ref > 0 AND " . $s->filter->sql . " [GROUP_BY_SQL] [ORDER_BY_SQL] {$s->suffix}";
     $s->sql->parameters = array_merge($s->select->parameters, $s->join->parameters, $s->filter->parameters);
     return $s;
+}
+
+/**
+ * The condition of one "!properties" property.
+ *
+ * @param string $name  Property name, e.g. "hmin"
+ * @param string $value Value searched for
+ *
+ * @return PreparedStatementQuery|null Condition on the resource (r) or its original dimensions (rdim), or null when
+ *                                     the property is unknown or its value is not one it accepts
+ */
+function search_special_property_condition(string $name, string $value): ?PreparedStatementQuery
+{
+    // Properties compared with a whole number as given
+    $comparisons = [
+        "hmin" => " rdim.height >= ?",
+        "hmax" => " rdim.height <= ?",
+        "wmin" => " rdim.width >= ?",
+        "wmax" => " rdim.width <= ?",
+        "pi"   => " r.has_image = ?",
+        "cu"   => " r.created_by = ?",
+    ];
+    if (isset($comparisons[$name])) {
+        return new PreparedStatementQuery($comparisons[$name], ["i", $value]);
+    }
+
+    switch ($name) {
+        case "fmin":
+            // Need to convert MB value to bytes
+            return new PreparedStatementQuery(" r.file_size >= ?", ["i", floatval($value) * 1024 * 1024]);
+        case "fmax":
+            // Need to convert MB value to bytes
+            return new PreparedStatementQuery(
+                " COALESCE(r.file_size, 0) <= ?",
+                ["i", floatval($value) * 1024 * 1024]
+            );
+        case "fext":
+            return search_special_property_extension($value);
+        case "orientation":
+            return search_special_property_orientation($value);
+    }
+    return null;
+}
+
+/**
+ * The condition of the "fext" property of "!properties": the file extension.
+ *
+ * @param string $value Extension, with or without a leading dot; "*" is a wildcard and a leading "-" excludes
+ *                      the extension
+ *
+ * @return PreparedStatementQuery
+ */
+function search_special_property_extension(string $value): PreparedStatementQuery
+{
+    $value = str_replace("*", "%", $value);
+    $sql = " r.file_extension ";
+    if (substr($value, 0, 1) == "-") {
+        $value = substr($value, 1);
+        $sql .= " NOT ";
+    }
+    if (substr($value, 0, 1) == ".") {
+        $value = substr($value, 1);
+    }
+    return new PreparedStatementQuery($sql . " LIKE ?", ["s", $value]);
+}
+
+/**
+ * The condition of the "orientation" property of "!properties", from the original dimensions of the resource.
+ *
+ * @param string $value "portrait", "landscape" or "square"
+ *
+ * @return PreparedStatementQuery|null Null for any other value
+ */
+function search_special_property_orientation(string $value): ?PreparedStatementQuery
+{
+    $orientation_filters = [
+        "portrait"  => "COALESCE(rdim.height, 0) > COALESCE(rdim.width, 0)",
+        "landscape" => "COALESCE(rdim.height, 0) < COALESCE(rdim.width, 0)",
+        "square"    => "COALESCE(rdim.height, 0) = COALESCE(rdim.width, 0)",
+    ];
+    if (!isset($orientation_filters[$value])) {
+        return null;
+    }
+    return new PreparedStatementQuery($orientation_filters[$value]);
 }
 
 /**
