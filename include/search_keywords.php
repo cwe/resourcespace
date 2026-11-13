@@ -77,6 +77,36 @@ final class Keyword
 }
 
 /**
+ * The form of a standard keyword once its text has been read, see search_keyword_standard_form().
+ */
+final class StandardKeyword
+{
+    /**
+     * @param string   $text                 Text to match: without the "-" prefix, with alternatives that are common
+     *                                       words removed, and with "*" added when wildcards always apply
+     * @param bool     $omit                 "-keyword": exclude the resources that match
+     * @param int|null $empty_field          Field ref of an "!empty" keyword, otherwise null
+     * @param bool     $or                   The keyword is a group of alternatives ("red;blue"), even if only one
+     *                                       of them is left
+     * @param array    $alternatives         The alternatives left to match; empty unless $or
+     * @param bool     $wildcards            Match through search_keyword_wildcard(): the text has a "*", or the
+     *                                       alternatives are literal
+     * @param bool     $literal_alternatives The alternatives contain punctuation, so they are matched in node
+     *                                       names as well as through the keyword index
+     */
+    public function __construct(
+        public readonly string $text,
+        public readonly bool $omit,
+        public readonly ?int $empty_field,
+        public readonly bool $or,
+        public readonly array $alternatives,
+        public readonly bool $wildcards,
+        public readonly bool $literal_alternatives,
+    ) {
+    }
+}
+
+/**
  * Pipeline step: add keyword matching to the query.
  *
  * Iterates SearchQuery::$keywords by index because keywords may be queued while it runs (a term containing a
@@ -543,9 +573,9 @@ function search_keyword_numrange(Keyword $keyword, SearchQuery $query): void
 /**
  * Standard keyword: -omit, !empty, wildcard and plain forms, optionally restricted to a field.
  *
- * Resolves the keyword (with stemming and alternatives such as "red;blue"), queues the parts of a keyword
- * containing configured separators, records an unmatched plain keyword for suggestions, and otherwise adds the
- * union or filter for the keyword.
+ * Reads the form of the keyword with search_keyword_standard_form(), resolves it (with stemming), queues the parts
+ * of a keyword containing configured separators, records an unmatched plain keyword for suggestions, and otherwise
+ * adds the union or filter for the keyword.
  *
  * @param Keyword       $keyword Keyword
  * @param ParsedSearch  $parsed  Parsed search
@@ -557,62 +587,16 @@ function search_keyword_numrange(Keyword $keyword, SearchQuery $query): void
  */
 function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchContext $ctx, SearchQuery $query): ?SearchStop
 {
-    $text = $keyword->text;
-    $keywords_expanded = explode(';', $text);
-    $keywords_expanded_or = count($keywords_expanded) > 1;
-
-    # Omit resources containing this keyword?
-    $omit = substr($text, 0, 1) == "-";
-    if ($omit) {
-        $text = substr($text, 1);
+    $form = search_keyword_standard_form($keyword->text, $ctx, $query);
+    if (!($form instanceof StandardKeyword)) {
+        // Nothing to match, or an !empty search that names no field
+        return $form;
     }
-
-    if ($keywords_expanded_or) {
-        // Filter complete alternatives once, for both indexed and literal matching.
-        // Keep identifiers containing ignored words (e.g. the.123) intact.
-        $keywords_expanded = array_values(array_filter(
-            array_map('trim', explode(';', $text)),
-            static fn($alternative) => $alternative !== ''
-                && !in_array(mb_strtolower($alternative), $ctx->noadd, true)
-        ));
-        if ($keywords_expanded === []) {
-            if (!$omit) {
-                // An empty positive OR group must not become an unrestricted search.
-                $query->filter->sql = ($query->filter->sql === '' ? '' : '(' . $query->filter->sql . ') AND ')
-                    . '1 = 0';
-            }
-            return null;
-        }
-        $text = implode(';', $keywords_expanded);
-    }
-
-    # Search for resources with an empty field, ex: !empty18  or  !emptycaption
-    $empty = substr($text, 0, 6) == "!empty";
-    $nodatafield = $empty ? search_keyword_empty_field($text) : null;
-    if ($empty && $nodatafield === null) {
-        debug("do_search(): !empty search names no field: {$text}");
-        return new SearchStop(false, 'invalid_empty_search');
-    }
-
-    if (in_array($text, $ctx->noadd)) { # skip common words that are excluded from indexing
-        debug("do_search(): skipped common word: {$text}");
-        return null;
-    }
-
-    // Punctuated alternatives may not exist as intact indexed keywords.
-    // Use the existing RLIKE path to match each value in the field text.
-    $literal_alternatives = $keywords_expanded_or && preg_match('/[^\p{L}\p{N};]/u', $text) === 1;
-    if ($ctx->wildcard_always_applied && strpos($text, "*") === false) {
-        # Suffix asterisk if none supplied and using $wildcard_always_applied mode.
-        $text = $text . "*";
-    }
-    if (strpos($text, "*") !== false) {
-        $literal_alternatives = false;
-    }
-    $wildcards = $literal_alternatives || strpos($text, "*") !== false;
+    $text = $form->text;
+    $empty = $form->empty_field !== null;
 
     $keyref = search_keyword_resolve($text, $ctx->stemming);
-    if ($keyref === false && !$empty && !$keywords_expanded_or && !$wildcards && preg_match('/\\s/', $parsed->search) !== 1) {
+    if ($keyref === false && !$empty && !$form->or && !$form->wildcards && preg_match('/\\s/', $parsed->search) !== 1) {
         // Check keyword for defined separators and if found each part of the value is added as a keyword for checking.
         // Not for wildcards with no spaces, nor for an !empty search whose field name may contain a separator
         $keyword_split = search_keyword_separator_parts($keyword, $text, $ctx->separators);
@@ -623,8 +607,8 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
     }
 
     if (
-        $keyref === false && !$omit && !$empty && !$wildcards
-        && $keyword->field === null && !$keyword->matchesNonField() && !$keywords_expanded_or
+        $keyref === false && !$form->omit && !$empty && !$form->wildcards
+        && $keyword->field === null && !$keyword->matchesNonField() && !$form->or
     ) {
         // No match: suggest dropping the word, or a word that sounds like it
         $soundex = resolve_soundex($text);
@@ -632,7 +616,7 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         return null;
     }
 
-    $alternative_keywords = search_keyword_alternative_refs($keywords_expanded_or ? $keywords_expanded : []);
+    $alternative_keywords = search_keyword_alternative_refs($form->alternatives);
     $alternative_keywords_sql = search_keyword_alternatives($alternative_keywords);
     if ($keyref === false) {
         # make a new keyword
@@ -643,36 +627,116 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
     $relatedsql = search_keyword_related($keyref, $text, $keyword->field, $ctx);
     $exclude_fields = hook("excludefieldsfromkeywordsearch");
 
-    if ($omit) {
+    if ($form->omit) {
         search_keyword_omit($keyref, $query);
         return null;
     }
 
     // These restrictions apply to !empty searches as well as normal keyword searches
-    $restriction = search_keyword_restriction($exclude_fields, $ctx, $keyword->field['ref'] ?? null, $wildcards);
+    $restriction = search_keyword_restriction($exclude_fields, $ctx, $keyword->field['ref'] ?? null, $form->wildcards);
 
-    if ($empty) {
-        return search_keyword_empty((int)$nodatafield, $exclude_fields, $ctx, $query);
+    if ($form->empty_field !== null) {
+        return search_keyword_empty($form->empty_field, $exclude_fields, $ctx, $query);
     }
-    if ($wildcards) {
+    if ($form->wildcards) {
         search_keyword_wildcard(
             $text,
             $restriction,
             $keyword->non_field_union,
             $query,
-            $literal_alternatives ? $alternative_keywords : null
+            $form->literal_alternatives ? $alternative_keywords : null
         );
         return null;
     }
 
     // Alternatives ("red;blue") are OR'd with neighbouring alternative keywords
     $union = search_keyword_union($keyref, $relatedsql, $restriction, $alternative_keywords_sql, $keyword->non_field_union);
-    $query->addUnion(new KeywordUnion($union, $keywords_expanded_or));
+    $query->addUnion(new KeywordUnion($union, $form->or));
 
     if ($ctx->stats_logging && !$ctx->go) {
         $query->keywords_used[] = $keyref;
     }
     return null;
+}
+
+/**
+ * Read the form of a standard keyword from its text: the "-" prefix, alternatives, !empty and wildcards.
+ *
+ * A group of alternatives with nothing left in it after common words are removed matches nothing. For a group that
+ * is not omitted, that is written to the query here, so that the search does not become an unrestricted one.
+ *
+ * @param string        $text  Keyword text, see Keyword::$text
+ * @param SearchContext $ctx   Search context
+ * @param SearchQuery   $query Query under construction; its filter is restricted for an empty group of alternatives
+ *
+ * @return StandardKeyword|SearchStop|null Null when there is nothing to match: a common word that is not indexed, or
+ *                                         an empty group of alternatives. A stop (do_search() returns false) for
+ *                                         an !empty search that names no field
+ */
+function search_keyword_standard_form(string $text, SearchContext $ctx, SearchQuery $query): StandardKeyword|SearchStop|null
+{
+    $or = count(explode(';', $text)) > 1;
+    $alternatives = [];
+
+    # Omit resources containing this keyword?
+    $omit = substr($text, 0, 1) == "-";
+    if ($omit) {
+        $text = substr($text, 1);
+    }
+
+    if ($or) {
+        // Filter complete alternatives once, for both indexed and literal matching.
+        // Keep identifiers containing ignored words (e.g. the.123) intact.
+        $alternatives = array_values(array_filter(
+            array_map('trim', explode(';', $text)),
+            static fn($alternative) => $alternative !== ''
+                && !in_array(mb_strtolower($alternative), $ctx->noadd, true)
+        ));
+        if ($alternatives === []) {
+            if (!$omit) {
+                // An empty positive OR group must not become an unrestricted search.
+                $query->restrictFilter('1 = 0');
+            }
+            return null;
+        }
+        $text = implode(';', $alternatives);
+    }
+
+    # Search for resources with an empty field, ex: !empty18  or  !emptycaption
+    $empty_field = null;
+    if (substr($text, 0, 6) == "!empty") {
+        $empty_field = search_keyword_empty_field($text);
+        if ($empty_field === null) {
+            debug("do_search(): !empty search names no field: {$text}");
+            return new SearchStop(false, 'invalid_empty_search');
+        }
+    }
+
+    if (in_array($text, $ctx->noadd)) { # skip common words that are excluded from indexing
+        debug("do_search(): skipped common word: {$text}");
+        return null;
+    }
+
+    // Punctuated alternatives may not exist as intact indexed keywords.
+    // Use the existing RLIKE path to match each value in the field text.
+    $literal_alternatives = $or && preg_match('/[^\p{L}\p{N};]/u', $text) === 1;
+    if ($ctx->wildcard_always_applied && strpos($text, "*") === false) {
+        # Suffix asterisk if none supplied and using $wildcard_always_applied mode.
+        $text = $text . "*";
+    }
+    if (strpos($text, "*") !== false) {
+        $literal_alternatives = false;
+    }
+
+    return new StandardKeyword(
+        $text,
+        $omit,
+        $empty_field,
+        $or,
+        $alternatives,
+        $literal_alternatives || strpos($text, "*") !== false,
+        $literal_alternatives
+    );
 }
 
 /**
@@ -1013,7 +1077,7 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
 
 /**
  * Wildcard keyword: matched against node names with a full text search where possible, otherwise a LIKE on the
- * keyword table or a word-boundary RLIKE on node names.
+ * keyword table or a word-boundary RLIKE on node names. Each of the three builds its union in its own function.
  *
  * Alternatives that contain punctuation ("123.456;234.567") also come here, without a wildcard. Such values may
  * not exist as intact indexed keywords, so each one is matched in the node names by the RLIKE path, together with
@@ -1033,21 +1097,18 @@ function search_keyword_wildcard(
     SearchQuery $query,
     ?array $literal_alternatives = null
 ): void {
-    $keyword = $text;
-    $union = new PreparedStatementQuery();
-    $literal_alternative_parameters = [];
     preg_match_all('/
                                 (?=             # Positive lookahead
                                     [a-zA-Z0-9] # Match a single character that is a letter or digit
                                 )
                                 [a-zA-Z0-9*]{3,}   # Match a group of 3 or more characters that are letters, digits, or asterisks
-                                /x', $keyword, $matches);
+                                /x', $text, $matches);
     $stop_words = search_keyword_stop_words($matches[0]);
 
     if (
-        substr($keyword, 0, 1) != "*"
-        && strlen(trim($keyword, '*')) >= 3
-        && preg_match('/[-+@<>().;]/', $keyword) !== 1
+        substr($text, 0, 1) != "*"
+        && strlen(trim($text, '*')) >= 3
+        && preg_match('/[-+@<>().;]/', $text) !== 1
         && empty($stop_words)
     ) {
         // Use fulltext search as a preference, but not if
@@ -1055,90 +1116,184 @@ function search_keyword_wildcard(
         // or the search is too short
         // or the search contains any of +,-,@,<,>,(,),.;
         // or contains any words InnoDB considers a stop word
-        $union->sql = " SELECT resource, [bit_or_condition] hit_count AS score"
+        $union = search_keyword_wildcard_fulltext($text, $restriction, $non_field_union);
+    } elseif (preg_match('/\W/', str_replace("*", "", $text)) !== 1) {
+        // Use a LIKE search, unless there is any whitespace
+        $union = search_keyword_wildcard_like($text, $restriction, $non_field_union);
+    } else {
+        // Use RLIKE to search between word boundaries in the node names
+        $union = search_keyword_wildcard_regex($text, $restriction, $non_field_union, $stop_words, $literal_alternatives);
+    }
+    $query->addUnion(new KeywordUnion($union, false));
+}
+
+/**
+ * Wildcard union using a full text search of node names.
+ *
+ * @param string                 $keyword         Keyword with "*" wildcards
+ * @param PreparedStatementQuery $restriction     Field restriction clause
+ * @param PreparedStatementQuery $non_field_union Non-field UNION members
+ *
+ * @return PreparedStatementQuery
+ */
+function search_keyword_wildcard_fulltext(
+    string $keyword,
+    PreparedStatementQuery $restriction,
+    PreparedStatementQuery $non_field_union
+): PreparedStatementQuery {
+    return new PreparedStatementQuery(
+        " SELECT resource, [bit_or_condition] hit_count AS score"
             . " FROM resource_node rn[union_index]"
             . " WHERE rn[union_index].node IN (SELECT ref FROM `node` WHERE MATCH(name) AGAINST (? IN BOOLEAN MODE) "
             . $restriction->sql . ") GROUP BY resource "
-            . $non_field_union->sql;
-        $keyword = "+" . $keyword;
-    } elseif (preg_match('/\W/', str_replace("*", "", $keyword)) !== 1) {
-        // Use a LIKE search, unless there is any whitespace
-        $keyword = str_replace("*", "%", $keyword);
-        $union->sql = " SELECT resource, [bit_or_condition] hit_count AS score"
+            . $non_field_union->sql,
+        search_keyword_wildcard_parameters(["s", "+" . $keyword], $restriction, $non_field_union)
+    );
+}
+
+/**
+ * Wildcard union using LIKE on the keyword table, for a keyword made of word characters only.
+ *
+ * @param string                 $keyword         Keyword with "*" wildcards
+ * @param PreparedStatementQuery $restriction     Field restriction clause
+ * @param PreparedStatementQuery $non_field_union Non-field UNION members
+ *
+ * @return PreparedStatementQuery
+ */
+function search_keyword_wildcard_like(
+    string $keyword,
+    PreparedStatementQuery $restriction,
+    PreparedStatementQuery $non_field_union
+): PreparedStatementQuery {
+    return new PreparedStatementQuery(
+        " SELECT resource, [bit_or_condition] hit_count AS score"
             . " FROM resource_node rn[union_index]"
             . " WHERE rn[union_index].node IN (SELECT n.ref FROM keyword k"
             . " JOIN node_keyword nk ON nk.keyword=k.ref JOIN `node` n ON n.ref=nk.node"
             . " WHERE k.keyword LIKE ? " . $restriction->sql . ") GROUP BY resource "
-            . $non_field_union->sql;
-    } else {
-        // Use RLIKE to search between word boundaries in the node names
-        $union->sql = "SELECT resource, [bit_or_condition] SUM(hit_count) AS score"
-            . " FROM resource_node rn[union_index]"
-            . " WHERE rn[union_index].node IN (SELECT ref FROM `node` WHERE ";
+            . $non_field_union->sql,
+        search_keyword_wildcard_parameters(["s", str_replace("*", "%", $keyword)], $restriction, $non_field_union)
+    );
+}
 
-        // Full text matching is used to reduce the rows checked by regex where possible
-        $pattern = '/
+/**
+ * Wildcard union using RLIKE between word boundaries in node names, with a full text prefilter where that is safe.
+ * Literal alternatives are matched here too, alongside those that are indexed.
+ *
+ * @param string                 $keyword              Keyword with "*" wildcards, or literal alternatives
+ * @param PreparedStatementQuery $restriction          Field restriction clause
+ * @param PreparedStatementQuery $non_field_union      Non-field UNION members
+ * @param array                  $stop_words           InnoDB stop words found in the keyword
+ * @param array|null             $literal_alternatives Keyword refs of the indexed alternatives, or null when the
+ *                                                     keyword is not a list of literal alternatives
+ *
+ * @return PreparedStatementQuery
+ */
+function search_keyword_wildcard_regex(
+    string $keyword,
+    PreparedStatementQuery $restriction,
+    PreparedStatementQuery $non_field_union,
+    array $stop_words,
+    ?array $literal_alternatives
+): PreparedStatementQuery {
+    $sql = "SELECT resource, [bit_or_condition] SUM(hit_count) AS score"
+        . " FROM resource_node rn[union_index]"
+        . " WHERE rn[union_index].node IN (SELECT ref FROM `node` WHERE ";
+    $parameters = [];
+
+    // Full text matching is used to reduce the rows checked by regex where possible.
+    // Literal OR matches must not depend on database full-text tokenisation.
+    // ASCII fragments of Unicode words are also unsafe prefilter terms.
+    $prefilter = '';
+    if ($literal_alternatives === null && preg_match('/[^\x00-\x7F]/', $keyword) === 0) {
+        $prefilter = search_keyword_wildcard_prefilter($keyword, $stop_words);
+    }
+    if ($prefilter !== '') {
+        $sql .= "MATCH(name) AGAINST (? IN BOOLEAN MODE) AND ";
+        $parameters = ['s', $prefilter];
+    }
+
+    $sql .= "(name RLIKE ?";
+    $literal_alternative_parameters = [];
+    if ($literal_alternatives !== null && count($literal_alternatives) > 0) {
+        // Keep stemmed, normalised and verbatim index matches alongside literals.
+        $sql .= ' OR ref IN (SELECT node FROM node_keyword WHERE keyword IN ('
+            . ps_param_insert(count($literal_alternatives)) . '))';
+        $literal_alternative_parameters = ps_param_fill($literal_alternatives, 'i');
+    }
+    $sql .= ') ' . $restriction->sql . ") GROUP BY resource " . $non_field_union->sql;
+
+    return new PreparedStatementQuery(
+        $sql,
+        search_keyword_wildcard_parameters(
+            array_merge($parameters, ["s", prepare_regex_search_string($keyword)], $literal_alternative_parameters),
+            $restriction,
+            $non_field_union
+        )
+    );
+}
+
+/**
+ * The boolean full text query that narrows the rows an RLIKE has to check: every alternative must contain each of
+ * its words of three or more characters.
+ *
+ * @param string $keyword    Keyword, with alternatives separated by ";"
+ * @param array  $stop_words InnoDB stop words found in the keyword
+ *
+ * @return string The query, or an empty string when any alternative has no word the prefilter can use
+ */
+function search_keyword_wildcard_prefilter(string $keyword, array $stop_words): string
+{
+    $pattern = '/
                                         (
                                         [a-zA-Z0-9_] # First character cannot be a wildcard
                                         [a-zA-Z0-9_*]{2,} # Must be three characters long for full text min length
                                         )
                                         /x';
-        $boolean_terms = [];
-        foreach (explode(";", $keyword) as $or_part) {
-            $or_part = trim($or_part);
-            if (empty($or_part)) {
-                // At least one part of the OR terms lacks enough words to prefilter
-                $boolean_terms = [];
-                break;
-            }
-            $and_matches = [];
-            if (preg_match_all($pattern, $or_part, $matches)) {
-                foreach (array_unique($matches[1]) as $match) {
-                    if (preg_match('/[a-zA-Z0-9_]{3,}/', $match) && !in_array($match, $stop_words)) {
-                        $and_matches[] = '+' . $match; // + means required
-                    }
+    $boolean_terms = [];
+    foreach (explode(";", $keyword) as $or_part) {
+        $or_part = trim($or_part);
+        if (empty($or_part)) {
+            // At least one part of the OR terms lacks enough words to prefilter
+            return '';
+        }
+        $and_matches = [];
+        if (preg_match_all($pattern, $or_part, $matches)) {
+            foreach (array_unique($matches[1]) as $match) {
+                if (preg_match('/[a-zA-Z0-9_]{3,}/', $match) && !in_array($match, $stop_words)) {
+                    $and_matches[] = '+' . $match; // + means required
                 }
             }
-            if (!empty($and_matches)) {
-                $boolean_terms[] = '(' . implode(" ", $and_matches) . ')';
-            } else {
-                // Every alternative must be represented in the prefilter.
-                $boolean_terms = [];
-                break;
-            }
         }
-        // Literal OR matches must not depend on database full-text tokenisation.
-        // ASCII fragments of Unicode words are also unsafe prefilter terms.
-        if (
-            $literal_alternatives === null
-            && preg_match('/[^\x00-\x7F]/', $keyword) === 0
-            && !empty($boolean_terms)
-        ) {
-            $union->sql .= "MATCH(name) AGAINST (? IN BOOLEAN MODE) AND ";
-            $union->parameters = array_merge(['s', implode(' ', $boolean_terms)], $union->parameters);
+        if (empty($and_matches)) {
+            // Every alternative must be represented in the prefilter.
+            return '';
         }
-
-        $union->sql .= "(name RLIKE ?";
-        if ($literal_alternatives !== null && count($literal_alternatives) > 0) {
-            // Keep stemmed, normalised and verbatim index matches alongside literals.
-            $union->sql .= ' OR ref IN (SELECT node FROM node_keyword WHERE keyword IN ('
-                . ps_param_insert(count($literal_alternatives)) . '))';
-            $literal_alternative_parameters = ps_param_fill($literal_alternatives, 'i');
-        }
-        $union->sql .= ') ' . $restriction->sql . ") GROUP BY resource " . $non_field_union->sql;
-        $keyword = prepare_regex_search_string($keyword);
+        $boolean_terms[] = '(' . implode(" ", $and_matches) . ')';
     }
+    return implode(' ', $boolean_terms);
+}
 
-    $union->parameters = array_merge(
-        $union->parameters,
-        ["s", $keyword],
-        $literal_alternative_parameters,
-        $restriction->parameters
-    );
+/**
+ * The parameters of a wildcard union in placeholder order: those of the match itself, the field restriction, then
+ * the non-field UNION members when there are any.
+ *
+ * @param array                  $match           Parameters of the match (type/value pairs)
+ * @param PreparedStatementQuery $restriction     Field restriction clause
+ * @param PreparedStatementQuery $non_field_union Non-field UNION members
+ *
+ * @return array
+ */
+function search_keyword_wildcard_parameters(
+    array $match,
+    PreparedStatementQuery $restriction,
+    PreparedStatementQuery $non_field_union
+): array {
+    $parameters = array_merge($match, $restriction->parameters);
     if ($non_field_union->sql != "") {
-        $union->parameters = array_merge($union->parameters, $non_field_union->parameters);
+        $parameters = array_merge($parameters, $non_field_union->parameters);
     }
-    $query->addUnion(new KeywordUnion($union, false));
+    return $parameters;
 }
 
 /**
