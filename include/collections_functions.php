@@ -990,6 +990,24 @@ function refresh_collection_frame($collection = "")
 }
 
 /**
+ * The user groups whose public collections the current user sees when $public_collections_confine_group is set:
+ * the user's own group, its children, its parent and its siblings (the other groups with the same parent).
+ *
+ * @return array User group references. The parent comes as stored, so it can be 0 or null for a top level group
+ */
+function public_collections_confined_groups(): array
+{
+    global $usergroup;
+
+    $groups = array($usergroup); # Start with user's own group
+    $usergroupparams = ["i",$usergroup];
+    $groups = array_merge($groups, ps_array("SELECT ref value FROM usergroup WHERE parent=?", $usergroupparams, 'usergroup')); # Children
+    $groups = array_merge($groups, ps_array("SELECT parent value FROM usergroup WHERE ref=?", $usergroupparams, 'usergroup')); # Parent
+    $groups = array_merge($groups, ps_array("SELECT ref value FROM usergroup WHERE parent<>0 AND parent=(SELECT parent FROM usergroup WHERE ref=?)", $usergroupparams, 'usergroup')); # Siblings (same parent)
+    return $groups;
+}
+
+/**
  * Performs a search for featured collections / public collections.
  *
  * @param  string $search
@@ -1137,12 +1155,7 @@ function search_public_collections($search = "", $order_by = "name", $sort = "AS
 
     # Restrict to parent, child and sibling groups?
     if ($public_collections_confine_group && !$override_group_restrict) {
-        # Form a list of all applicable groups
-        $groups = array($usergroup); # Start with user's own group
-        $usergroupparams = ["i",$usergroup];
-        $groups = array_merge($groups, ps_array("SELECT ref value FROM usergroup WHERE parent=?", $usergroupparams, 'usergroup')); # Children
-        $groups = array_merge($groups, ps_array("SELECT parent value FROM usergroup WHERE ref=?", $usergroupparams, 'usergroup')); # Parent
-        $groups = array_merge($groups, ps_array("SELECT ref value FROM usergroup WHERE parent<>0 AND parent=(SELECT parent FROM usergroup WHERE ref=?)", $usergroupparams, 'usergroup')); # Siblings (same parent)
+        $groups = public_collections_confined_groups();
 
         $sql .= " AND u.usergroup IN (" . ps_param_insert(count($groups)) . ")";
         $sql_params = array_merge($sql_params, ps_param_fill($groups, "i"));

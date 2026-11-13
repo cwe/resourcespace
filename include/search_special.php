@@ -554,6 +554,10 @@ function search_special_collection_denied(int $collection): ?string
  * session instead. The user's upload review collection is always on it, and a featured collection counts when the
  * user's 'j' permissions open it.
  *
+ * The list is not built: the one collection is tested against each rule, so the cost does not grow with the number
+ * of collections. tests/test_list/000718_do_search_collection_listed.php checks that the answer is the one the
+ * list functions give.
+ *
  * @param int $collection Collection ID
  *
  * @return bool
@@ -562,45 +566,180 @@ function search_special_collection_listed(int $collection): bool
 {
     global $userref, $USER_SELECTION_COLLECTION;
 
-    if (upload_share_active() !== false) {
-        $validcollections = get_session_collections(get_rs_session_id(), $userref);
-    } else {
-        $user_collections = array_column(get_user_collections($userref, "", "name", "ASC", -1, false), "ref");
-        $public_collections = array_column(search_public_collections('', 'name', 'ASC', true, false, false), 'ref');
-        # include collections of requested resources
-        $request_collections = array();
-        if (checkperm("R")) {
-            include_once 'request_functions.php';
-            $request_collections = array_column(get_requests(), 'collection');
-            $externally_requested_collections = array_column(
-                ps_query('SELECT ref FROM collection WHERE user = -2'),
-                'ref'
-            );
-            $request_collections = array_merge($request_collections, $externally_requested_collections);
-        }
-        # include collections of research resources
-        $research_collections = array();
-        if (checkperm("r")) {
-            include_once 'research_functions.php';
-            $research_collections = array_column(get_research_requests(), 'collection');
-        }
-        $validcollections = array_unique(array_merge(
-            $user_collections,
-            array($USER_SELECTION_COLLECTION),
-            $public_collections,
-            $request_collections,
-            $research_collections
-        ));
+    // The upload review collection of a user has the negated user reference
+    if ($collection === 0 - (int) $userref) {
+        return true;
+    }
+    $upload_share = upload_share_active() !== false;
+    if ($upload_share && in_array($collection, get_session_collections(get_rs_session_id(), $userref))) {
+        return true;
+    }
+    if (!$upload_share && $collection === (int) $USER_SELECTION_COLLECTION) {
+        return true;
     }
 
-    // Attach the negated user reference special collection
-    $validcollections[] = (0 - $userref);
+    $details = search_special_collection_details($collection);
+    if ($details === null) {
+        return false;
+    }
+    if (
+        !$upload_share
+        && (
+            search_special_collection_in_user_collections($details)
+            || search_special_collection_public($details)
+            || search_special_collection_requested($collection, $details)
+            || search_special_collection_researched($collection)
+        )
+    ) {
+        return true;
+    }
+    return (int) $details["type"] === COLLECTION_TYPE_FEATURED && featured_collection_check_access_control($collection);
+}
 
-    return in_array($collection, $validcollections)
-        || (
-            in_array($collection, array_column(get_all_featured_collections(), 'ref'))
-            && featured_collection_check_access_control($collection)
-        );
+/**
+ * What search_special_collection_listed() needs to know about a collection, read in one query.
+ *
+ * @param int $collection Collection ID
+ *
+ * @return array|null Null when there is no such collection, otherwise:
+ *                    - user, type, session_id: columns of the collection
+ *                    - owner_group: user group of the owner, null when the owner is not a user
+ *                    - shared_with_user, shared_with_group: 1 when the collection is attached to the current user or
+ *                      to their user group
+ *                    - has_resources: 1 when the collection holds a resource
+ */
+function search_special_collection_details(int $collection): ?array
+{
+    global $userref, $usergroup;
+
+    $details = ps_query(
+        "SELECT c.`user`,
+                c.`type`,
+                c.session_id,
+                u.usergroup AS owner_group,
+                EXISTS (SELECT 1 FROM user_collection uc WHERE uc.collection = c.ref AND uc.`user` = ?)
+                    AS shared_with_user,
+                EXISTS (SELECT 1 FROM usergroup_collection gc WHERE gc.collection = c.ref AND gc.usergroup = ?)
+                    AS shared_with_group,
+                EXISTS (SELECT 1 FROM collection_resource cr WHERE cr.collection = c.ref AND cr.resource IS NOT NULL)
+                    AS has_resources
+           FROM collection c
+      LEFT JOIN user u ON u.ref = c.`user`
+          WHERE c.ref = ?",
+        ["i", $userref, "i", $usergroup, "i", $collection]
+    );
+    return $details[0] ?? null;
+}
+
+/**
+ * Whether get_user_collections() would return the collection for the current user: a standard, public or request
+ * collection that the user owns, or that another user owns and has shared with the user or their user group.
+ *
+ * With $themes_in_my_collections a featured collection counts as well, unless it is empty (a category). With
+ * $anonymous_user_session_collection the anonymous user owns only the collections of the current session.
+ *
+ * @param array $details Collection details from search_special_collection_details()
+ *
+ * @return bool
+ */
+function search_special_collection_in_user_collections(array $details): bool
+{
+    global $userref, $username, $themes_in_my_collections, $anonymous_login, $anonymous_user_session_collection,
+        $rs_session;
+
+    $type = (int) $details["type"];
+    if ($type === COLLECTION_TYPE_FEATURED) {
+        if (!$themes_in_my_collections || !$details["has_resources"]) {
+            return false;
+        }
+    } elseif (!in_array($type, [COLLECTION_TYPE_STANDARD, COLLECTION_TYPE_PUBLIC, COLLECTION_TYPE_REQUEST], true)) {
+        return false;
+    }
+
+    if ($details["user"] === null) {
+        return false;
+    }
+    if ((int) $details["user"] !== (int) $userref) {
+        return $details["shared_with_user"] || $details["shared_with_group"];
+    }
+    if (isset($anonymous_login) && $username == $anonymous_login && $anonymous_user_session_collection) {
+        return $details["session_id"] !== null && (int) $details["session_id"] === (int) $rs_session;
+    }
+    return true;
+}
+
+/**
+ * Whether search_public_collections() would return the collection for the current user: a public collection and,
+ * with $public_collections_confine_group, one whose owner is in a user group close to the user's own, see
+ * public_collections_confined_groups().
+ *
+ * @param array $details Collection details from search_special_collection_details()
+ *
+ * @return bool
+ */
+function search_special_collection_public(array $details): bool
+{
+    global $public_collections_confine_group;
+
+    if ((int) $details["type"] !== COLLECTION_TYPE_PUBLIC) {
+        return false;
+    }
+    if (!$public_collections_confine_group) {
+        return true;
+    }
+    if ($details["owner_group"] === null) {
+        return false;
+    }
+    foreach (public_collections_confined_groups() as $group) {
+        // A top level group has no parent to compare with
+        if ($group !== null && (int) $group === (int) $details["owner_group"]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Whether the 'R' permission puts the collection on the list: a collection requested by an external user (owned
+ * by user -2), or the collection of a resource request that get_requests() would return. That is every request,
+ * unless the user may accept requests ('Rb') but not assign them ('Ra'), and then those assigned to the user.
+ *
+ * @param int   $collection Collection ID
+ * @param array $details    Collection details from search_special_collection_details()
+ *
+ * @return bool
+ */
+function search_special_collection_requested(int $collection, array $details): bool
+{
+    global $userref;
+
+    if (!checkperm("R")) {
+        return false;
+    }
+    if ($details["user"] !== null && (int) $details["user"] === -2) {
+        return true;
+    }
+
+    $sql = "SELECT ref value FROM request WHERE collection = ?";
+    $parameters = ["i", $collection];
+    if (checkperm("Rb") && !checkperm("Ra")) {
+        $sql .= " AND assigned_to = ?";
+        $parameters = array_merge($parameters, ["i", $userref]);
+    }
+    return ps_value($sql . " LIMIT 1", $parameters, 0) > 0;
+}
+
+/**
+ * Whether the 'r' permission puts the collection on the list: the collection of a research request.
+ *
+ * @param int $collection Collection ID
+ *
+ * @return bool
+ */
+function search_special_collection_researched(int $collection): bool
+{
+    return checkperm("r")
+        && ps_value("SELECT ref value FROM research_request WHERE collection = ? LIMIT 1", ["i", $collection], 0) > 0;
 }
 
 /**

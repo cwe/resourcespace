@@ -400,13 +400,22 @@ A special search answers instead of the standard query: the `!` searches, a reso
    the reduced query that counts rows or lists references. It then runs them through `search_fetch()`, fires
    `beforereturnresults` and pads a row limited result with `search_pad_rows()`.
 
-The `!collection` builder is the only one with rules of its own before the query, so it is in three parts:
+The `!collection` builder is the only one with rules of its own before the query, so it is in four parts:
 
 - `search_special_collection()` reads the collection number with `search_special_collection_ref()`, asks the two
   functions below and writes the query.
 - `search_special_collection_denied()` returns the reason a user may not search the collection, or null. A user
-  with the 'a' permission always may. Anyone else needs the collection to be on their list, which
-  `search_special_collection_listed()` builds, and readable, or to hold an external share key issued for it.
+  with the 'a' permission always may. Anyone else needs the collection to be on their list and readable, or to
+  hold an external share key issued for it.
+- `search_special_collection_listed()` answers whether the collection is on that list. It does not build the
+  list: it reads the collection once with `search_special_collection_details()` and tests it against each rule
+  with `search_special_collection_in_user_collections()`, `search_special_collection_public()`,
+  `search_special_collection_requested()` and `search_special_collection_researched()`. The rules are those of
+  `get_user_collections()`, `search_public_collections()`, `get_requests()` and `get_research_requests()`, so a
+  change to one of those functions needs the same change here, and test 718 fails when they disagree. The
+  group list of `$public_collections_confine_group` is shared: both read `public_collections_confined_groups()`.
+  Building the list loaded every public collection for each collection search. With 3,000 public collections
+  the single test took the database time of a collection search from 16 ms to 1 ms.
 - `refresh_smart_collection()` in `include/collections_functions.php` brings a smart collection up to date with
   its saved search, in the background when `$smart_collections_async` is on. It is skipped when only the disk
   usage is asked for.
@@ -518,6 +527,7 @@ search builders, each of which declares the configuration globals it reads.
 | `tests/test_list/000715_do_search_collection_access.php` | Who may search a collection: an administrator, the owner, a user or group it is shared with, public and featured collections with each 'j' permission, requested and research collections, `$ignore_collection_access`, share keys (issued for the collection, made up, issued for another collection, expired, password protected, an upload link), an upload share and the upload review collection. Also the smart collection refresh. |
 | `tests/test_list/000716_do_search_date_range_field.php` | A date range field searched with a single date: inside, on the first and last day of, and outside two ranges, written with vertical bars and with hyphens. Also a month or a year, which finds every range overlapping it, and a range whose start is a year only. |
 | `tests/test_list/000717_do_search_editable_edit_access.php` | Editable-only searches of an archive state the user cannot edit, with the contributor option and 'ert' permissions in each combination, compared with `get_edit_access()` for every fixture. Also `$edit_only_own_contributions` with and without those exceptions. |
+| `tests/test_list/000718_do_search_collection_listed.php` | The list of collections a user may search without a share key, for 35 collections and 17 kinds of user: the 'R', 'Ra', 'Rb', 'r' and 'j' permissions, `$themes_in_my_collections`, `$public_collections_confine_group`, the anonymous user with session collections and an upload share. Each answer is compared with the expected one and with the list built from the list functions. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
