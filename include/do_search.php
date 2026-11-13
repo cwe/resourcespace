@@ -44,6 +44,7 @@
 * @param boolean     $returnsql               Returns the query as a PreparedStatementQuery instance
 * @param integer     $access                  Search for resources with this access
 * @param boolean     $smartsearch
+* @param int|null    $resource_collection Restrict results to members of this collection, when an integer is supplied.
 *
 * @return null|string|array|PreparedStatementQuery
 */
@@ -65,7 +66,8 @@ function do_search(
     $editable_only = false,
     $returnsql = false,
     $access = null,
-    $smartsearch = false
+    $smartsearch = false,
+    $resource_collection = null
 ) {
     debug_function_call("do_search", func_get_args());
 
@@ -88,6 +90,7 @@ function do_search(
         'returnsql'              => $returnsql,
         'access'                 => $access,
         'smartsearch'            => $smartsearch,
+        'resource_collection'    => $resource_collection,
     ];
     $ctx = search_context_create($options);
 

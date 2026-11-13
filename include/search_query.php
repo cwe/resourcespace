@@ -233,6 +233,12 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
 
     // The base filter: what was asked for and what the user may see; the same clauses apply to special searches
     search_query_filter($parsed->search, $ctx, $query);
+    if ($ctx->resource_collection !== null) {
+        // Restrict the results to the members of a collection, whatever the search
+        $query->filter->sql = '(' . $query->filter->sql . ') AND r.ref IN'
+            . ' (SELECT resource FROM collection_resource WHERE collection = ?)';
+        $query->filter->parameters = array_merge($query->filter->parameters, ['i', $ctx->resource_collection]);
+    }
 
     # If returning disk used by the resources in the search results then wrap the returned SQL in an outer query that
     # sums disk usage.
@@ -325,7 +331,8 @@ function search_query_select(SearchContext $ctx, SearchQuery $query): void
     $query->addSelect(
         "r.ref, r.resource_type, r.has_image, r.is_transcoding, r.creation_date, r.rating, r.user_rating,"
         . " r.user_rating_count, r.user_rating_total, r.file_extension, r.preview_extension, r.image_red, r.image_green,"
-        . " r.image_blue, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by, r.file_modified,"
+        . " r.image_blue, r.blurhash, r.thumb_width, r.thumb_height, r.archive, r.access, r.colour_key, r.created_by,"
+        . " r.file_modified,"
         . " r.file_checksum, r.request_count, r.new_hit_count, r.expiry_notification_sent, r.preview_tweaks, r.file_path,"
         . " r.modified, r.file_size "
     );

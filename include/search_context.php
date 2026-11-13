@@ -30,6 +30,7 @@ final class SearchContext
         public readonly bool $returnsql,
         public readonly ?int $access,
         public readonly bool $smartsearch,
+        public readonly ?int $resource_collection,
         // Caller identity and permissions
         public readonly int $userref,
         public readonly int $usergroup,
@@ -84,7 +85,8 @@ final class SearchContext
  *
  * @param array $options Call options keyed by do_search() parameter name: restypes, order_by, archive, fetchrows,
  *                       sort, access_override, ignore_filters, return_disk_usage, recent_search_daylimit, go,
- *                       stats_logging, return_refs_only, editable_only, returnsql, access, smartsearch.
+ *                       stats_logging, return_refs_only, editable_only, returnsql, access, smartsearch,
+ *                       resource_collection.
  *                       Missing keys take the do_search() defaults.
  *
  * @return SearchContext
@@ -169,6 +171,8 @@ function search_context_create(array $options): SearchContext
         returnsql: (bool) $options['returnsql'],
         access: is_numeric($options['access']) ? (int) $options['access'] : null,
         smartsearch: (bool) $options['smartsearch'],
+        // Ignore legacy extra boolean arguments; only an explicit collection ID restricts the search.
+        resource_collection: is_int($options['resource_collection'] ?? null) ? $options['resource_collection'] : null,
         userref: (int) $userref,
         usergroup: (int) $usergroup,
         sees_all_access: $sees_all_access,

@@ -256,6 +256,11 @@ function search_keyword_classify_field(
         $quoted_string = true;
     }
 
+    if ($kind === null && strpos($keystring, ';') !== false) {
+        // Semicolons separate alternatives, including in quoted field searches.
+        $quoted_string = false;
+    }
+
     if ($kind === null && !$quoted_string && !hook('customsearchkeywordfilter', null, array([$field_name, $keystring]))) {
         $kind = KeywordKind::Standard;
     }
@@ -562,6 +567,25 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         $text = substr($text, 1);
     }
 
+    if ($keywords_expanded_or) {
+        // Filter complete alternatives once, for both indexed and literal matching.
+        // Keep identifiers containing ignored words (e.g. the.123) intact.
+        $keywords_expanded = array_values(array_filter(
+            array_map('trim', explode(';', $text)),
+            static fn($alternative) => $alternative !== ''
+                && !in_array(mb_strtolower($alternative), $ctx->noadd, true)
+        ));
+        if ($keywords_expanded === []) {
+            if (!$omit) {
+                // An empty positive OR group must not become an unrestricted search.
+                $query->filter->sql = ($query->filter->sql === '' ? '' : '(' . $query->filter->sql . ') AND ')
+                    . '1 = 0';
+            }
+            return null;
+        }
+        $text = implode(';', $keywords_expanded);
+    }
+
     # Search for resources with an empty field, ex: !empty18  or  !emptycaption
     $empty = substr($text, 0, 6) == "!empty";
     $nodatafield = $empty ? search_keyword_empty_field($text) : null;
@@ -575,11 +599,17 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         return null;
     }
 
+    // Punctuated alternatives may not exist as intact indexed keywords.
+    // Use the existing RLIKE path to match each value in the field text.
+    $literal_alternatives = $keywords_expanded_or && preg_match('/[^\p{L}\p{N};]/u', $text) === 1;
     if ($ctx->wildcard_always_applied && strpos($text, "*") === false) {
         # Suffix asterisk if none supplied and using $wildcard_always_applied mode.
         $text = $text . "*";
     }
-    $wildcards = strpos($text, "*") !== false;
+    if (strpos($text, "*") !== false) {
+        $literal_alternatives = false;
+    }
+    $wildcards = $literal_alternatives || strpos($text, "*") !== false;
 
     $keyref = search_keyword_resolve($text, $ctx->stemming);
     if ($keyref === false && !$empty && !$keywords_expanded_or && !$wildcards && preg_match('/\\s/', $parsed->search) !== 1) {
@@ -592,14 +622,18 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         }
     }
 
-    if ($keyref === false && !$omit && !$empty && !$wildcards && $keyword->field === null && !$keyword->matchesNonField()) {
+    if (
+        $keyref === false && !$omit && !$empty && !$wildcards
+        && $keyword->field === null && !$keyword->matchesNonField() && !$keywords_expanded_or
+    ) {
         // No match: suggest dropping the word, or a word that sounds like it
         $soundex = resolve_soundex($text);
         $query->unresolved[$keyword->index] = ($soundex === false) ? "" : "<i>" . $soundex . "</i>";
         return null;
     }
 
-    $alternative_keywords_sql = search_keyword_alternatives($keywords_expanded_or ? $keywords_expanded : []);
+    $alternative_keywords = search_keyword_alternative_refs($keywords_expanded_or ? $keywords_expanded : []);
+    $alternative_keywords_sql = search_keyword_alternatives($alternative_keywords);
     if ($keyref === false) {
         # make a new keyword
         $keyref = resolve_keyword(str_replace('*', '', $text), true, true, false);
@@ -621,7 +655,13 @@ function search_keyword_standard(Keyword $keyword, ParsedSearch $parsed, SearchC
         return search_keyword_empty((int)$nodatafield, $exclude_fields, $ctx, $query);
     }
     if ($wildcards) {
-        search_keyword_wildcard($text, $restriction, $keyword->non_field_union, $query);
+        search_keyword_wildcard(
+            $text,
+            $restriction,
+            $keyword->non_field_union,
+            $query,
+            $literal_alternatives ? $alternative_keywords : null
+        );
         return null;
     }
 
@@ -758,15 +798,14 @@ function search_keyword_union(
 }
 
 /**
- * Build the "OR nk.keyword IN (...)" clause for the alternatives of a "red;blue" keyword.
+ * Resolve the alternatives of a "red;blue" keyword to the keywords that are indexed.
  *
  * @param array $alternatives Alternative keyword texts; empty when the keyword has no alternatives
  *
- * @return PreparedStatementQuery Empty when no alternative resolves to a keyword
+ * @return array Keyword refs; an alternative that is not indexed is left out
  */
-function search_keyword_alternatives(array $alternatives): PreparedStatementQuery
+function search_keyword_alternative_refs(array $alternatives): array
 {
-    $sql = new PreparedStatementQuery();
     $keyrefs = [];
     foreach ($alternatives as $alternative) {
         $keyref = resolve_keyword($alternative, false, true, true);
@@ -774,6 +813,19 @@ function search_keyword_alternatives(array $alternatives): PreparedStatementQuer
             $keyrefs[] = $keyref;
         }
     }
+    return $keyrefs;
+}
+
+/**
+ * Build the "OR nk.keyword IN (...)" clause for the alternatives of a "red;blue" keyword.
+ *
+ * @param array $keyrefs Keyword refs from search_keyword_alternative_refs()
+ *
+ * @return PreparedStatementQuery Empty when there are no keyword refs
+ */
+function search_keyword_alternatives(array $keyrefs): PreparedStatementQuery
+{
+    $sql = new PreparedStatementQuery();
     if (count($keyrefs) > 0) {
         $sql->sql = " OR nk[union_index].keyword IN (" . ps_param_insert(count($keyrefs)) . ")";
         $sql->parameters = ps_param_fill($keyrefs, "i");
@@ -906,7 +958,7 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
 
     $selectedrestypes = [];
     $restypes_requested = trim($ctx->restypes);
-    if ($restypes_requested != "") {
+    if ($restypes_requested !== '' && substr($restypes_requested, 0, 6) !== 'Global') {
         $selectedrestypes = explode(",", $restypes_requested);
     }
 
@@ -919,7 +971,7 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
     $nodatarestypes = ($nodatarestypes != "") ? explode(",", $nodatarestypes) : [];
 
     $restypesql = new PreparedStatementQuery();
-    if ($nodatafieldinfo["global"] === 1) {
+    if ((int) $nodatafieldinfo["global"] === 1) {
         // Global field empty search
         // Candidate resources are those which exist in selected resource types
         if (count($selectedrestypes) > 0) {
@@ -937,21 +989,23 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
         }
         if (count($candidaterestypes) > 0) {
             $restypesql->sql = " AND r[union_index].resource_type IN ("
-                . ps_param_insert(count($candidaterestypes)) . ") ";
+                . ps_param_insert(count($candidaterestypes)) . ")";
             $restypesql->parameters = ps_param_fill($candidaterestypes, "i");
         } else {
-            // No searched resource type can hold the field, so no resource has a value in it: every candidate matches
-            $restypesql->sql = " AND 0 ";
+            // No searched resource type can hold the field, so there is no candidate resource
+            $restypesql->sql = " AND 1=0";
         }
     }
 
-    // Check that nodes are empty
+    // Check that nodes are empty. The resource type condition limits the candidates, so it belongs to the outer
+    // query: inside the subquery it would let through every resource of another type.
     $union = new PreparedStatementQuery();
     $union->sql = "SELECT ref AS resource, [bit_or_condition] 1 AS score FROM resource r[union_index]"
         . " WHERE r[union_index].ref NOT IN ("
         . " SELECT rn.resource FROM node n RIGHT JOIN resource_node rn ON rn.node=n.ref"
-        . " WHERE n.resource_type_field = ? " . $restypesql->sql
-        . " GROUP BY rn.resource )";
+        . " WHERE n.resource_type_field = ?"
+        . " GROUP BY rn.resource )"
+        . $restypesql->sql;
     $union->parameters = array_merge(["i", $nodatafield], $restypesql->parameters);
     $query->addUnion(new KeywordUnion($union, false));
     return null;
@@ -961,15 +1015,27 @@ function search_keyword_empty(int $nodatafield, $exclude_fields, SearchContext $
  * Wildcard keyword: matched against node names with a full text search where possible, otherwise a LIKE on the
  * keyword table or a word-boundary RLIKE on node names.
  *
- * @param string                 $text            Keyword with "*" wildcards
- * @param PreparedStatementQuery $restriction     Field restriction clause from search_keyword_restriction()
- * @param PreparedStatementQuery $non_field_union Non-field UNION members from the Keyword
- * @param SearchQuery            $query           Query under construction
+ * Alternatives that contain punctuation ("123.456;234.567") also come here, without a wildcard. Such values may
+ * not exist as intact indexed keywords, so each one is matched in the node names by the RLIKE path, together with
+ * any of the alternatives that are indexed.
+ *
+ * @param string                 $text                 Keyword with "*" wildcards, or literal alternatives
+ * @param PreparedStatementQuery $restriction          Field restriction clause from search_keyword_restriction()
+ * @param PreparedStatementQuery $non_field_union      Non-field UNION members from the Keyword
+ * @param SearchQuery            $query                Query under construction
+ * @param array|null             $literal_alternatives Keyword refs of the indexed alternatives when $text is a
+ *                                                     list of literal alternatives, otherwise null
  */
-function search_keyword_wildcard(string $text, PreparedStatementQuery $restriction, PreparedStatementQuery $non_field_union, SearchQuery $query): void
-{
+function search_keyword_wildcard(
+    string $text,
+    PreparedStatementQuery $restriction,
+    PreparedStatementQuery $non_field_union,
+    SearchQuery $query,
+    ?array $literal_alternatives = null
+): void {
     $keyword = $text;
     $union = new PreparedStatementQuery();
+    $literal_alternative_parameters = [];
     preg_match_all('/
                                 (?=             # Positive lookahead
                                     [a-zA-Z0-9] # Match a single character that is a letter or digit
@@ -1022,6 +1088,7 @@ function search_keyword_wildcard(string $text, PreparedStatementQuery $restricti
             $or_part = trim($or_part);
             if (empty($or_part)) {
                 // At least one part of the OR terms lacks enough words to prefilter
+                $boolean_terms = [];
                 break;
             }
             $and_matches = [];
@@ -1034,18 +1101,40 @@ function search_keyword_wildcard(string $text, PreparedStatementQuery $restricti
             }
             if (!empty($and_matches)) {
                 $boolean_terms[] = '(' . implode(" ", $and_matches) . ')';
+            } else {
+                // Every alternative must be represented in the prefilter.
+                $boolean_terms = [];
+                break;
             }
         }
-        if (!empty($boolean_terms)) {
+        // Literal OR matches must not depend on database full-text tokenisation.
+        // ASCII fragments of Unicode words are also unsafe prefilter terms.
+        if (
+            $literal_alternatives === null
+            && preg_match('/[^\x00-\x7F]/', $keyword) === 0
+            && !empty($boolean_terms)
+        ) {
             $union->sql .= "MATCH(name) AGAINST (? IN BOOLEAN MODE) AND ";
             $union->parameters = array_merge(['s', implode(' ', $boolean_terms)], $union->parameters);
         }
 
-        $union->sql .= "name RLIKE ? " . $restriction->sql . ") GROUP BY resource " . $non_field_union->sql;
+        $union->sql .= "(name RLIKE ?";
+        if ($literal_alternatives !== null && count($literal_alternatives) > 0) {
+            // Keep stemmed, normalised and verbatim index matches alongside literals.
+            $union->sql .= ' OR ref IN (SELECT node FROM node_keyword WHERE keyword IN ('
+                . ps_param_insert(count($literal_alternatives)) . '))';
+            $literal_alternative_parameters = ps_param_fill($literal_alternatives, 'i');
+        }
+        $union->sql .= ') ' . $restriction->sql . ") GROUP BY resource " . $non_field_union->sql;
         $keyword = prepare_regex_search_string($keyword);
     }
 
-    $union->parameters = array_merge($union->parameters, ["s", $keyword], $restriction->parameters);
+    $union->parameters = array_merge(
+        $union->parameters,
+        ["s", $keyword],
+        $literal_alternative_parameters,
+        $restriction->parameters
+    );
     if ($non_field_union->sql != "") {
         $union->parameters = array_merge($union->parameters, $non_field_union->parameters);
     }
