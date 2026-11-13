@@ -140,7 +140,8 @@ function search_context_create(array $options): SearchContext
     $sees_all_access = checkperm('v');
     $sees_restricted = checkperm('g');
     $internal_share = (bool) $internal_share_access;
-    $resource_types = get_resource_types();
+    // The list is cached for the request, as it is for the editable-only filter
+    $resource_types = get_resource_types("", true, false, true);
 
     // Resource types restricted by the X permission. search_query_select() only consults them for a user who does
     // not see every resource but does see restricted ones (or is using an internal share), so they are resolved
