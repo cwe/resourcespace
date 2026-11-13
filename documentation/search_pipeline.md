@@ -22,7 +22,7 @@ A step that must end the search early (no access to a field, or a suggested sear
 | `include/search_parse.php` | `ParsedSearch`, `search_parse()`, `resolve_given_nodes()` |
 | `include/search_query.php` | `SearchQuery`, `KeywordUnion`, `SearchStop`, `search_query_build()` and the non-keyword pipeline steps, `search_query_compile()`, `search_query_compile_count()` |
 | `include/search_order.php` | The ORDER BY step `search_query_order()`, `resolve_search_order_by()` with the named orderings, `search_order_by_field()` |
-| `include/search_keywords.php` | `KeywordKind`, `Keyword`, `search_query_keywords()`, `search_keyword_classify()` and one function per keyword kind |
+| `include/search_keywords.php` | `KeywordKind`, `Keyword`, `StandardKeyword`, `search_query_keywords()`, `search_keyword_classify()` and one function per keyword kind |
 | `include/search_filter.php` | `search_query_filter()` and one `search_query_filter_<concern>()` step per clause of the base filter |
 | `include/search_special.php` | `SpecialSearch`, `search_special_execute()`, `search_special_builder()`, `search_special_build()`, `search_special_finish()`, `search_special_compile()` and one builder function per special search |
 | `include/search_functions.php` | Helpers kept from the previous implementation: `search_filter()` (which now wraps `search_query_filter()`), `search_special()` (which now wraps `search_special_execute()`), `resolve_keyword()`, `get_filter_sql()`, `setup_search_chunks()`, `log_keyword_usage()` |
@@ -234,9 +234,10 @@ Each kind has one handler:
 | Requeue | (loop) | the split tokens are appended to the keyword list |
 | Ignored | (none) | |
 
-`search_keyword_standard()` resolves the keyword (stemmed, then unstemmed, in `search_keyword_resolve()`), queues
-separator-split parts (`search_keyword_separator_parts()`), records an unmatched plain keyword for the suggestion,
-then adds one of:
+`search_keyword_standard()` first reads the form of the keyword with `search_keyword_standard_form()`: the `-`
+prefix, alternatives, `!empty` and wildcards, returned as a `StandardKeyword`. It then resolves the keyword
+(stemmed, then unstemmed, in `search_keyword_resolve()`), queues separator-split parts
+(`search_keyword_separator_parts()`), records an unmatched plain keyword for the suggestion, then adds one of:
 
 ```mermaid
 flowchart LR
@@ -255,6 +256,10 @@ Three helpers are shared by the handlers: `search_keyword_restriction()` builds 
 fields, fields excluded by the `excludefieldsfromkeywordsearch` hook and, for field-specific terms, every other
 field (the phrase handler passes the alias of each word's `node_keyword` join); `search_keyword_alternatives()`
 handles `red;blue`; `search_keyword_related()` adds related keywords, including stems when stemming is on.
+
+`search_keyword_wildcard()` only chooses how to match and leaves the union to one of three functions:
+`search_keyword_wildcard_fulltext()`, `search_keyword_wildcard_like()` and `search_keyword_wildcard_regex()`. The
+last takes its full text prefilter from `search_keyword_wildcard_prefilter()`.
 
 ## Union assembly
 
@@ -333,6 +338,8 @@ classDiagram
         +addSelect(sql, params)
 
         +andFilter(sql, params)
+
+        +restrictFilter(sql, params)
 
         +prependFilter(sql, params)
 
@@ -529,8 +536,8 @@ same SQL as this structure, apart from the behaviour changes listed in the next 
 | A reduced count statement for paging | Already present as `search_query_compile_count()`, which selects the same columns; trunk's version was not copied |
 | Dimensions join limited to the original file (`rdim.preview_size IS NULL`) | `search_special_properties()` |
 | A quoted field search containing `;` is a set of alternatives, not a phrase | `search_keyword_classify_field()` |
-| Alternatives are filtered once, an empty group matches nothing, and a group never produces a suggestion | `search_keyword_standard()` |
-| Alternatives containing punctuation are matched literally in node names, together with any that are indexed | `search_keyword_standard()` passes them to `search_keyword_wildcard()`, whose RLIKE path handles them; `search_keyword_alternative_refs()` supplies the indexed ones |
+| Alternatives are filtered once, an empty group matches nothing, and a group never produces a suggestion | `search_keyword_standard_form()` and `search_keyword_standard()` |
+| Alternatives containing punctuation are matched literally in node names, together with any that are indexed | `search_keyword_standard()` passes them to `search_keyword_wildcard()`, where `search_keyword_wildcard_regex()` handles them; `search_keyword_alternative_refs()` supplies the indexed ones |
 | `!empty`: `Global` in the requested types, candidates limited in the outer query, no candidates means no results | `search_keyword_empty()` |
 
 Trunk's changes to `split_keywords()`, `prepare_regex_search_string()` and `refine_searchstring()` merged without

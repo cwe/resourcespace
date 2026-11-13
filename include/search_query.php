@@ -141,6 +141,19 @@ final class SearchQuery
     }
 
     /**
+     * Bracket the conditions so far and AND a condition to them, so that it limits the results whatever those
+     * conditions contain.
+     *
+     * @param string $sql        Condition, with placeholders
+     * @param array  $parameters Bound parameters for the condition (type/value pairs)
+     */
+    public function restrictFilter(string $sql, array $parameters = []): void
+    {
+        $this->filter->sql = ($this->filter->sql === '' ? '' : '(' . $this->filter->sql . ') AND ') . $sql;
+        $this->filter->parameters = array_merge($this->filter->parameters, $parameters);
+    }
+
+    /**
      * Place a condition at the start of the WHERE clause, AND'd with the existing conditions. Empty SQL is ignored.
      *
      * @param string $sql        Condition, with placeholders
@@ -235,9 +248,10 @@ function search_query_build(ParsedSearch $parsed, SearchContext $ctx): SearchQue
     search_query_filter($parsed->search, $ctx, $query);
     if ($ctx->resource_collection !== null) {
         // Restrict the results to the members of a collection, whatever the search
-        $query->filter->sql = '(' . $query->filter->sql . ') AND r.ref IN'
-            . ' (SELECT resource FROM collection_resource WHERE collection = ?)';
-        $query->filter->parameters = array_merge($query->filter->parameters, ['i', $ctx->resource_collection]);
+        $query->restrictFilter(
+            'r.ref IN (SELECT resource FROM collection_resource WHERE collection = ?)',
+            ['i', $ctx->resource_collection]
+        );
     }
 
     # If returning disk used by the resources in the search results then wrap the returned SQL in an outer query that
