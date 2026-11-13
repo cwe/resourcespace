@@ -260,6 +260,7 @@ function search_special_compile(SpecialSearch $s, bool $return_refs_only): array
         "r.image_red",
         "r.image_green",
         "r.image_blue",
+        "r.blurhash",
         "r.thumb_width",
         "r.thumb_height",
         "r.colour_key",
@@ -1113,7 +1114,7 @@ function search_special_properties(SpecialSearch $s): SpecialSearch
     }
     if ($propertiessql->sql != "") {
         if (strpos($s->join->sql, "LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource") === false) {
-            $s->join->sql .= " LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource";
+            $s->join->sql .= " LEFT JOIN resource_dimensions rdim on r.ref=rdim.resource AND rdim.preview_size IS NULL";
         }
         if ($s->filter->sql == "") {
             $s->filter->sql .= " WHERE " . $propertiessql->sql;

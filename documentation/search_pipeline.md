@@ -516,6 +516,26 @@ search builders, each of which declares the configuration globals it reads.
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
 page through real results.
 
+## Upstream changes carried into this structure
+
+The branch was rebased onto trunk as of 2026-11-13. Trunk had changed code that this structure moved, so those
+changes were applied by hand in their new places. Running the snapshot cases against trunk's own code gives the
+same SQL as this structure, apart from the behaviour changes listed in the next section.
+
+| Trunk change | Where it lives here |
+| --- | --- |
+| `do_search()` parameter `$resource_collection`, limiting results to one collection | `SearchContext::$resource_collection`, applied in `search_query_build()` straight after the base filter, so special searches get it too |
+| `r.blurhash` in the result columns | `search_query_select()` and the column list in `search_special_compile()` |
+| A reduced count statement for paging | Already present as `search_query_compile_count()`, which selects the same columns; trunk's version was not copied |
+| Dimensions join limited to the original file (`rdim.preview_size IS NULL`) | `search_special_properties()` |
+| A quoted field search containing `;` is a set of alternatives, not a phrase | `search_keyword_classify_field()` |
+| Alternatives are filtered once, an empty group matches nothing, and a group never produces a suggestion | `search_keyword_standard()` |
+| Alternatives containing punctuation are matched literally in node names, together with any that are indexed | `search_keyword_standard()` passes them to `search_keyword_wildcard()`, whose RLIKE path handles them; `search_keyword_alternative_refs()` supplies the indexed ones |
+| `!empty`: `Global` in the requested types, candidates limited in the outer query, no candidates means no results | `search_keyword_empty()` |
+
+Trunk's changes to `split_keywords()`, `prepare_regex_search_string()` and `refine_searchstring()` merged without
+conflict, as those functions were not moved.
+
 ## Behaviour changes made during the restructuring
 
 Each of these was a defect in the previous code, confirmed by a failing test or by reading:
@@ -534,7 +554,9 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   the user may not see) instead of ending the page with `exit()`. An unloadable user search filter still exits,
   because that is a configuration fault administrators must notice.
 - An `!empty` search on a non-global field whose resource types are not among the searched types built `IN ()`,
-  a syntax error. It now matches every searched resource, since none of them can hold the field.
+  a syntax error. It now matches no resource, since no searched resource can hold the field. Upstream made the
+  same fix and also moved the resource type condition out of the subquery, where it let through every resource
+  of another type.
 - A wildcard keyword that takes the LIKE path and also matches a resource type or contributor name merged the
   parameters of that match without its SQL. The match is now appended to the union, as on the other wildcard paths.
 - `!emptyFIELDNAME` with a special character in the short name (`!emptysnap_under`) was quoted into a phrase
