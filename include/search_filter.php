@@ -349,6 +349,7 @@ function search_query_filter_access_level(SearchContext $ctx, SearchQuery $query
  * - search_editable_states(): archive states the user has no 'e' permission for
  * - search_editable_allowed_types(): resource types allowed by 'XE-' permissions
  * - search_editable_blocked_types(): resource types blocked by 'XE' permissions
+ * - search_editable_own_contributions(): only the user's own resources, with $edit_only_own_contributions
  *
  * @param SearchContext $ctx   Search context
  * @param SearchQuery   $query Query being built
@@ -365,6 +366,7 @@ function search_query_filter_editable(SearchContext $ctx, SearchQuery $query): v
         search_editable_states($ctx, $ert_types),
         search_editable_allowed_types($ctx, $resource_types),
         search_editable_blocked_types($ctx, $resource_types),
+        search_editable_own_contributions($ctx),
     ];
 
     $editable_filter = new PreparedStatementQuery();
@@ -544,6 +546,22 @@ function search_editable_blocked_types(SearchContext $ctx, array $resource_types
         return null;
     }
     return search_editable_type_part("resource_type NOT IN", $blocked, $ctx);
+}
+
+/**
+ * Editable-only part: with $edit_only_own_contributions nobody can edit a resource they did not contribute,
+ * whatever their permissions. get_edit_access() applies the same rule before it looks at any permission.
+ *
+ * @param SearchContext $ctx Search context
+ *
+ * @return PreparedStatementQuery|null The part, or null when the option is off
+ */
+function search_editable_own_contributions(SearchContext $ctx): ?PreparedStatementQuery
+{
+    if (!$ctx->edit_only_own_contributions) {
+        return null;
+    }
+    return new PreparedStatementQuery("created_by = ?", ["i", $ctx->userref]);
 }
 
 /**

@@ -49,6 +49,7 @@ final class SearchContext
         public readonly array $created_by_filter,
         public readonly bool $uploader_view_override,
         public readonly bool $edit_access_for_contributor,
+        public readonly bool $edit_only_own_contributions,
         public readonly array $additional_archive_states,
         public readonly string $heightmin,
         public readonly bool $search_all_workflow_states,
@@ -96,7 +97,7 @@ function search_context_create(array $options): SearchContext
         $DATE_FIELD_TYPES, $FIXED_LIST_FIELD_TYPES, $view_title_field,
         $resource_created_by_filter, $uploader_view_override, $edit_access_for_contributor,
         $additional_archive_states, $heightmin, $search_all_workflow_states, $collections_omit_archived,
-        $collection_allow_not_approved_share, $archive_standard;
+        $collection_allow_not_approved_share, $archive_standard, $edit_only_own_contributions;
 
     $defaults = [
         'restypes'               => '',
@@ -185,6 +186,7 @@ function search_context_create(array $options): SearchContext
         created_by_filter: is_array($resource_created_by_filter ?? null) ? $resource_created_by_filter : [],
         uploader_view_override: (bool) $uploader_view_override,
         edit_access_for_contributor: (bool) $edit_access_for_contributor,
+        edit_only_own_contributions: (bool) $edit_only_own_contributions,
         additional_archive_states: is_array($additional_archive_states) ? $additional_archive_states : [],
         heightmin: (string) ($heightmin ?? ''),
         search_all_workflow_states: (bool) $search_all_workflow_states,

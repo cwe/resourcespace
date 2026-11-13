@@ -7,6 +7,9 @@
  * Such a resource can still be edited by its contributor when $edit_access_for_contributor is set, and by anyone
  * holding an 'ert' permission for its resource type. Either reason is enough.
  *
+ * With $edit_only_own_contributions set, nobody can edit a resource they did not contribute, whatever their
+ * permissions.
+ *
  * Each case searches the archived state as a user who may edit only active resources, and compares the result
  * with the expected resources and with get_edit_access() for every fixture.
  */
@@ -16,6 +19,7 @@ command_line_only();
 $saved_000717 = [
     "userpermissions"             => $userpermissions,
     "edit_access_for_contributor" => $edit_access_for_contributor,
+    "edit_only_own_contributions" => $edit_only_own_contributions,
     "usereditfilter"              => $usereditfilter,
     "resource_deletion_state"     => $resource_deletion_state ?? null,
 ];
@@ -47,6 +51,20 @@ $cases_717 = [
         "expected" => [$own_type1_717, $own_type2_717, $other_type2_717]],
     ["name" => "contributor and ert for both types", "contributor" => true, "permissions" => ["ert1", "ert2"],
         "expected" => $fixtures_717],
+
+    // $edit_only_own_contributions: "own" sets it
+    ["name" => "permission for the state", "contributor" => false, "permissions" => ["e2"],
+        "expected" => $fixtures_717],
+    ["name" => "own contributions only, permission for the state", "own" => true, "contributor" => false,
+        "permissions" => ["e2"], "expected" => [$own_type1_717, $own_type2_717]],
+    ["name" => "own contributions only, permission for the state and ert for type 1", "own" => true,
+        "contributor" => false, "permissions" => ["e2", "ert1"], "expected" => [$own_type1_717, $own_type2_717]],
+    ["name" => "own contributions only, ert for type 1", "own" => true, "contributor" => false,
+        "permissions" => ["ert1"], "expected" => [$own_type1_717]],
+    ["name" => "own contributions only, contributor", "own" => true, "contributor" => true, "permissions" => [],
+        "expected" => [$own_type1_717, $own_type2_717]],
+    ["name" => "own contributions only, no permission for the state", "own" => true, "contributor" => false,
+        "permissions" => [], "expected" => []],
 ];
 
 $errors_000717 = [];
@@ -57,6 +75,7 @@ if (in_array(false, $fixtures_717, true)) {
 foreach ($cases_717 as $case) {
     $userpermissions = array_merge(["s", "e0"], $case["permissions"]);
     $edit_access_for_contributor = $case["contributor"];
+    $edit_only_own_contributions = $case["own"] ?? false;
 
     $results = do_search("", "", "resourceid", "2", -1, "asc", false, DEPRECATED_STARSEARCH, false, false, "", false, false, false, true);
     $results = is_array($results) ? array_column($results, "ref") : [];
@@ -81,6 +100,7 @@ foreach ($cases_717 as $case) {
 // Tear down
 $userpermissions = $saved_000717["userpermissions"];
 $edit_access_for_contributor = $saved_000717["edit_access_for_contributor"];
+$edit_only_own_contributions = $saved_000717["edit_only_own_contributions"];
 $usereditfilter = $saved_000717["usereditfilter"];
 foreach ($fixtures_717 as $resource) {
     if ($resource !== false) {
