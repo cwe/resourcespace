@@ -226,7 +226,7 @@ Each kind has one handler:
 | Kind | Handler | Adds |
 | --- | --- | --- |
 | Fulltext | `search_keyword_fulltext()` | union: `MATCH(name) AGAINST` over node names |
-| Date | `search_keyword_date()` | joins and filters on the date field; basicyear/month/day share one join |
+| Date | `search_keyword_date()` | joins and filters on the date field, by one function per form: `search_keyword_date_basic()` for basicyear/month/day, which share one join, `search_keyword_date_range()` for `rangestart...end...` and `search_keyword_date_value()` for a date or part of one. The last two share `search_keyword_date_bound()`, the join that requires a date on or after, or on or before, another |
 | NumRange | `search_keyword_numrange()` | join and range filter on a text field |
 | FixedList | (inline) | the resolved nodes go to `SearchQuery::$node_bucket` |
 | Phrase | `search_keyword_phrase()` | union requiring adjacent keyword positions in one node, or a NOT IN filter for `-"..."` |
