@@ -163,7 +163,7 @@ the dispatch table in `search_special.php`, returns a `SearchArchiveStates` valu
 collections, lists and the pending searches, `AllWorkflow` for related resources, `!hasdata` and integrity
 failures, and `Requested` for everything else. The only special search the filter still names is `!collection`,
 which has three rules of its own that configuration controls: resource types are ignored, archived members can be
-omitted, and a collection shared with a key can show pending resources.
+omitted, and a collection shared with a key issued for it can show pending resources.
 
 The editable-only clause is built from parts, one function each, joined with AND in this order and left out when
 they do not apply: `search_editable_restricted()`, `search_editable_pending()`, `search_editable_states()`,
@@ -394,7 +394,8 @@ A special search answers instead of the standard query: the `!` searches, a reso
 
 The `!collection` builder is the only one with rules of its own before the query, so it is in three parts:
 
-- `search_special_collection()` reads the collection number, asks the two functions below and writes the query.
+- `search_special_collection()` reads the collection number with `search_special_collection_ref()`, asks the two
+  functions below and writes the query.
 - `search_special_collection_denied()` returns the reason a user may not search the collection, or null. A user
   with the 'a' permission always may. Anyone else needs the collection to be on their list, which
   `search_special_collection_listed()` builds, and readable, or to hold an external share key issued for it.
@@ -493,7 +494,7 @@ search builders, each of which declares the configuration globals it reads.
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 208 searches, including every special search branch, every base filter clause and every branch of the keyword classifier and the standard keyword path, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 209 searches, including every special search branch, every base filter clause and every branch of the keyword classifier and the standard keyword path, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
@@ -561,6 +562,11 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   and without its resource check accepts a key issued for any collection. `collection_readable()` made that
   call without the resource check, so a key from sharing any collection made every collection readable. It now
   uses the same function; `tests/test_list/000885_collection_readable_access_key.php` covers it.
+- With `$collection_allow_not_approved_share` on, a collection search with any non-empty key dropped the filter
+  that hides other users' pending resources. A signed in user could add a made up key to the search of a
+  collection they may see, such as a public one, and be shown them. `search_query_filter_pending()` now drops
+  the filter only for a key that `collection_access_key_valid()` accepts for that collection. The key is held in
+  `SearchContext::$share_key`.
 - A date range field searched with a single date (`field:2024-05-17`) bound its four parameters as field, field,
   date, date against placeholders that read field, date, field, date. The second join then looked for a field
   numbered after the year, so the search never found anything. The parameters are now in placeholder order and

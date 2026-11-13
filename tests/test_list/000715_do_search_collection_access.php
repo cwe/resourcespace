@@ -25,6 +25,7 @@ $saved_000715 = [
     "upload_share_active"      => $upload_share_active ?? null,
     "allow_smart_collections"  => $allow_smart_collections,
     "smart_collections_async"  => $smart_collections_async,
+    "collection_allow_not_approved_share" => $collection_allow_not_approved_share,
     "smartsearch_ref_cache"    => $GLOBALS["smartsearch_ref_cache"] ?? null,
     "share_access_cookie"      => $_COOKIE["share_access"] ?? null,
 ];
@@ -98,6 +99,14 @@ ps_query(
 $password_hash_715   = hash("sha256", $key_password_715 . $share_password_715 . $scramble_key);
 $password_cookie_715 = hash("sha256", date("Ymd") . $key_password_715 . $password_hash_715 . $scramble_key);
 
+// A public collection holding an active resource and one that another user has left pending review. The share key
+// is made before the pending resource joins, because a shared collection refuses such a resource by default.
+[$pending_col, $pending_active_res] = test_000715_collection($other_user_715, "public with a pending resource", true);
+$key_pending_715 = generate_collection_access_key($pending_col, 0, "", 0);
+$pending_res = create_resource(1, -1);
+ps_query("UPDATE resource SET created_by = ? WHERE ref = ?", ["i", $other_user_715, "i", $pending_res]);
+ps_query("INSERT INTO collection_resource (collection, resource) VALUES (?, ?)", ["i", $pending_col, "i", $pending_res]);
+
 // A smart collection whose saved search matches one resource that is not yet a member
 $smart_node_715 = set_node(null, $view_title_field, "test715 smart collection", "", 1000);
 $smart_match_res = create_resource(1, 0);
@@ -111,7 +120,7 @@ ps_query("UPDATE collection SET savedsearch = ? WHERE ref = ?", ["i", $smart_sea
 
 $fixtures_715 = [
     $own_res, $private_res, $public_res, $shared_res, $group_res, $featured_res, $request_res, $research_res,
-    $smart_stale_res, $smart_match_res, $upload_res_715,
+    $smart_stale_res, $smart_match_res, $upload_res_715, $pending_active_res, $pending_res,
 ];
 clear_query_cache("featured_collections");
 
@@ -152,8 +161,8 @@ function test_000715_search($collection, bool $return_disk_usage = false)
 }
 
 // "admin" runs with the administrator's permissions; otherwise the user holds 's' plus "permissions".
-// "globals" sets $k, $ignore_collection_access or $upload_share_active for the case and "cookie" the share access
-// cookie.
+// "globals" sets $k, $ignore_collection_access, $upload_share_active or $collection_allow_not_approved_share for the
+// case and "cookie" the share access cookie.
 $cases_715 = [
     ["name" => "administrator, another user's private collection", "admin" => true,
         "collection" => $private_col, "expected" => [$private_res]],
@@ -217,6 +226,26 @@ $cases_715 = [
     ["name" => "own collection with a share key that does not exist", "globals" => ["k" => "test715key"],
         "collection" => $own_col, "expected" => [$own_res]],
 
+    // A user without the 'v' permission does not see the pending resources of other users. A collection shared
+    // with a key shows them when $collection_allow_not_approved_share is on, but only to a key of that collection.
+    ["name" => "collection holding a pending resource",
+        "collection" => $pending_col, "expected" => [$pending_active_res]],
+    ["name" => "collection holding a pending resource, pending shares allowed, no key",
+        "globals" => ["collection_allow_not_approved_share" => true],
+        "collection" => $pending_col, "expected" => [$pending_active_res]],
+    ["name" => "collection holding a pending resource, pending shares allowed, a share key that does not exist",
+        "globals" => ["k" => "test715key", "collection_allow_not_approved_share" => true],
+        "collection" => $pending_col, "expected" => [$pending_active_res]],
+    ["name" => "collection holding a pending resource, pending shares allowed, the share key of another collection",
+        "globals" => ["k" => $key_own_715, "collection_allow_not_approved_share" => true],
+        "collection" => $pending_col, "expected" => [$pending_active_res]],
+    ["name" => "collection holding a pending resource, pending shares allowed, its own share key",
+        "globals" => ["k" => $key_pending_715, "collection_allow_not_approved_share" => true],
+        "collection" => $pending_col, "expected" => [$pending_active_res, $pending_res]],
+    ["name" => "collection holding a pending resource, its own share key, pending shares not allowed",
+        "globals" => ["k" => $key_pending_715],
+        "collection" => $pending_col, "expected" => [$pending_active_res]],
+
     ["name" => "administrator, own upload review collection", "admin" => true,
         "collection" => $upload_col_715, "expected" => [$upload_res_715]],
     ["name" => "own upload review collection", "collection" => $upload_col_715, "expected" => [$upload_res_715]],
@@ -231,6 +260,7 @@ foreach ($cases_715 as $case) {
     $hidden_fields_cache = null;
     $k = $case["globals"]["k"] ?? "";
     $ignore_collection_access = $case["globals"]["ignore_collection_access"] ?? false;
+    $collection_allow_not_approved_share = $case["globals"]["collection_allow_not_approved_share"] ?? false;
     unset($upload_share_active);
     if (isset($case["globals"]["upload_share_active"])) {
         $upload_share_active = $case["globals"]["upload_share_active"];
@@ -274,7 +304,11 @@ if ($results != [$smart_match_res]) {
 }
 
 // Tear down
-ps_query("DELETE FROM external_access_keys WHERE collection IN (?, ?)", ["i", $private_col, "i", $own_col]);
+ps_query(
+    "DELETE FROM external_access_keys WHERE collection IN (?, ?, ?)",
+    ["i", $private_col, "i", $own_col, "i", $pending_col]
+);
+delete_collection($pending_col);
 ps_query("DELETE FROM collection_savedsearch WHERE ref = ?", ["i", $smart_search_715]);
 ps_query("DELETE FROM research_request WHERE ref = ?", ["i", $research_request_715]);
 ps_query("DELETE FROM user_collection WHERE collection = ?", ["i", $shared_col]);
@@ -295,6 +329,7 @@ clear_query_cache("featured_collections");
 $allow_smart_collections = $saved_000715["allow_smart_collections"];
 $smart_collections_async = $saved_000715["smart_collections_async"];
 $ignore_collection_access = $saved_000715["ignore_collection_access"];
+$collection_allow_not_approved_share = $saved_000715["collection_allow_not_approved_share"];
 $k = $saved_000715["k"];
 if ($saved_000715["upload_share_active"] !== null) {
     $upload_share_active = $saved_000715["upload_share_active"];
