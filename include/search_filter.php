@@ -454,7 +454,7 @@ function search_editable_pending(SearchContext $ctx, array $ert_types): ?Prepare
  * $additional_archive_states.
  *
  * The exception is a resource the user contributed when $edit_access_for_contributor is set, or a resource of a
- * type covered by an 'ert' permission. When both apply the resource must satisfy both.
+ * type covered by an 'ert' permission. Either is enough, as it is for get_edit_access().
  *
  * @param SearchContext $ctx       Search context
  * @param array         $ert_types Resource types from search_filter_ert_types()
@@ -480,7 +480,7 @@ function search_editable_states(SearchContext $ctx, array $ert_types): ?Prepared
         $exception_params = ["i", $ctx->userref];
     }
     if (count($ert_types) > 0) {
-        $exception .= ($exception != "" ? " AND " : "") . "resource_type IN (" . ps_param_insert(count($ert_types)) . ")";
+        $exception .= ($exception != "" ? " OR " : "") . "resource_type IN (" . ps_param_insert(count($ert_types)) . ")";
         $exception_params = array_merge($exception_params, ps_param_fill($ert_types, "i"));
     }
 

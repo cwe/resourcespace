@@ -509,6 +509,7 @@ search builders, each of which declares the configuration globals it reads.
 | `tests/test_list/000714_do_search_special_results.php` | Row limit padding, no padding when every row is requested, chunked fetchrows, a search matching nothing, the reduced refs-only query with and without a row limit, disk usage and returned SQL for a special search. |
 | `tests/test_list/000715_do_search_collection_access.php` | Who may search a collection: an administrator, the owner, a user or group it is shared with, public and featured collections with each 'j' permission, requested and research collections, `$ignore_collection_access`, share keys (issued for the collection, made up, issued for another collection, expired, password protected, an upload link), an upload share and the upload review collection. Also the smart collection refresh. |
 | `tests/test_list/000716_do_search_date_range_field.php` | A date range field searched with a single date: inside, on the first and last day of, and outside two ranges, written with vertical bars and with hyphens. Also a month or a year, which finds every range overlapping it, and a range whose start is a year only. |
+| `tests/test_list/000717_do_search_editable_edit_access.php` | Editable-only searches of an archive state the user cannot edit, with the contributor option and 'ert' permissions in each combination, compared with `get_edit_access()` for every fixture. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -567,6 +568,10 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   collection they may see, such as a public one, and be shown them. `search_query_filter_pending()` now drops
   the filter only for a key that `collection_access_key_valid()` accepts for that collection. The key is held in
   `SearchContext::$share_key`.
+- An editable-only search hid resources that `get_edit_access()` lets the user edit. In an archive state the user
+  has no 'e' permission for, a resource is editable by its contributor when `$edit_access_for_contributor` is on
+  and by anyone holding an 'ert' permission for its type. When both could apply, the search required both. It now
+  accepts either, as `get_edit_access()` does.
 - A date range field searched with a single date (`field:2024-05-17`) bound its four parameters as field, field,
   date, date against placeholders that read field, date, field, date. The second join then looked for a field
   numbered after the year, so the search never found anything. The parameters are now in placeholder order and
