@@ -167,7 +167,8 @@ omitted, and a collection shared with a key issued for it can show pending resou
 
 The editable-only clause is built from parts, one function each, joined with AND in this order and left out when
 they do not apply: `search_editable_restricted()`, `search_editable_pending()`, `search_editable_states()`,
-`search_editable_allowed_types()` and `search_editable_blocked_types()`. `search_filter_ert_types()` lists the
+`search_editable_allowed_types()`, `search_editable_blocked_types()` and `search_editable_own_contributions()`.
+`search_filter_ert_types()` lists the
 resource types the user's 'ert' permissions name, which are exceptions in both pending rules and in the state rule.
 
 `search_query_compile()` produces:
@@ -494,7 +495,7 @@ search builders, each of which declares the configuration globals it reads.
 
 | Check | What it does |
 | --- | --- |
-| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 209 searches, including every special search branch, every base filter clause and every branch of the keyword classifier and the standard keyword path, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
+| `tests/test_list/000705_do_search_sql_snapshot.php` | Runs 210 searches, including every special search branch, every base filter clause and every branch of the keyword classifier and the standard keyword path, with `$returnsql` for three permission profiles and compares the normalised SQL and parameters with the generated `test_000705_expected()` block at the end of the same file. Any change to the generated SQL fails it. Regenerate only on code known to be correct: `RS_TEST_UPDATE_SNAPSHOTS=1 php tests/test.php 705` rewrites the block in place. |
 | `tests/test_list/000706_do_search_keyword_restrictions.php` | Excluded and hidden fields are both bound in every keyword union, with matching placeholders. |
 | `tests/test_list/000707_do_search_zero_result_suggestion.php` | A search whose keywords never occur together suggests dropping the least used one. |
 | `tests/test_list/000708_do_search_editable_states.php` | Editable-only searches exclude each configured additional archive state the user cannot edit. |
@@ -509,7 +510,7 @@ search builders, each of which declares the configuration globals it reads.
 | `tests/test_list/000714_do_search_special_results.php` | Row limit padding, no padding when every row is requested, chunked fetchrows, a search matching nothing, the reduced refs-only query with and without a row limit, disk usage and returned SQL for a special search. |
 | `tests/test_list/000715_do_search_collection_access.php` | Who may search a collection: an administrator, the owner, a user or group it is shared with, public and featured collections with each 'j' permission, requested and research collections, `$ignore_collection_access`, share keys (issued for the collection, made up, issued for another collection, expired, password protected, an upload link), an upload share and the upload review collection. Also the smart collection refresh. |
 | `tests/test_list/000716_do_search_date_range_field.php` | A date range field searched with a single date: inside, on the first and last day of, and outside two ranges, written with vertical bars and with hyphens. Also a month or a year, which finds every range overlapping it, and a range whose start is a year only. |
-| `tests/test_list/000717_do_search_editable_edit_access.php` | Editable-only searches of an archive state the user cannot edit, with the contributor option and 'ert' permissions in each combination, compared with `get_edit_access()` for every fixture. |
+| `tests/test_list/000717_do_search_editable_edit_access.php` | Editable-only searches of an archive state the user cannot edit, with the contributor option and 'ert' permissions in each combination, compared with `get_edit_access()` for every fixture. Also `$edit_only_own_contributions` with and without those exceptions. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -572,6 +573,10 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   has no 'e' permission for, a resource is editable by its contributor when `$edit_access_for_contributor` is on
   and by anyone holding an 'ert' permission for its type. When both could apply, the search required both. It now
   accepts either, as `get_edit_access()` does.
+- An editable-only search ignored `$edit_only_own_contributions`, which `get_edit_access()` applies before any
+  permission. With the option on it returned other users' resources, so a batch edit of the results was refused
+  as a whole and a collection looked fully editable when it was not. `search_editable_own_contributions()` now
+  adds the rule.
 - A date range field searched with a single date (`field:2024-05-17`) bound its four parameters as field, field,
   date, date against placeholders that read field, date, field, date. The second join then looked for a field
   numbered after the year, so the search never found anything. The parameters are now in placeholder order and
