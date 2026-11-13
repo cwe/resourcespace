@@ -449,92 +449,130 @@ function search_keyword_fulltext(Keyword $keyword, SearchContext $ctx, SearchQue
 }
 
 /**
- * Date field keyword: field:YYYY-MM-DD (prefix match), field:rangestartYYYY-MM-DDendYYYY-MM-DD, or the simple
- * search parts basicyear/basicmonth/basicday which are combined into one filter on the configured date field.
+ * Date field keyword, in one of three forms:
+ *
+ * - basicyear/basicmonth/basicday, the simple search parts: search_keyword_date_basic()
+ * - field:rangestartYYYY-MM-DDendYYYY-MM-DD: search_keyword_date_range()
+ * - field:YYYY-MM-DD, or only the year or the year and month: search_keyword_date_value()
  *
  * @param Keyword       $keyword Keyword; text is the value
+ * @param SearchContext $ctx     Search context
+ * @param SearchQuery   $query   Query under construction
+ */
+function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $query): void
+{
+    if ($keyword->basic_date) {
+        search_keyword_date_basic($keyword, $ctx, $query);
+    } elseif (substr($keyword->text, 0, 5) == "range") {
+        search_keyword_date_range($keyword, $query);
+    } else {
+        search_keyword_date_value($keyword, $query);
+    }
+}
+
+/**
+ * Date keyword field:YYYY-MM-DD. The value may stop after the year or the month, and "nn" stands for any month or
+ * day. A date field must start with the value. A date range field must have a range overlapping the value.
+ *
+ * @param Keyword     $keyword Keyword; text is the value, with "|" between its parts
+ * @param SearchQuery $query   Query under construction
+ */
+function search_keyword_date_value(Keyword $keyword, SearchQuery $query): void
+{
+    $c = ++$query->join_count;
+    $datefield = $keyword->field['ref'];
+
+    $val = str_replace("n", "_", $keyword->text);
+    $val = str_replace("|", "-", $val);
+
+    if ($keyword->field['type'] == FIELD_TYPE_DATE_RANGE) {
+        // Find where the searched value is between the range values. The value may be a year or a year and
+        // month, and then any range overlapping that period is found. Range nodes are named YYYY-MM-DD, so
+        // they compare as text: the value is the earliest name in its period and, padded, the latest.
+        search_keyword_date_bound($query, $c, $datefield, ">=", $val);
+        search_keyword_date_bound($query, $c, $datefield, "<=", str_pad($val, 10, "-99"));
+        return;
+    }
+
+    $query->addJoin(
+        " JOIN resource_node rnd{$c} ON rnd{$c}.resource=r.ref"
+        . " JOIN node dn{$c} ON dn{$c}.ref=rnd{$c}.node AND dn{$c}.resource_type_field = ?",
+        ["i", $datefield]
+    );
+    $query->andFilter("dn" . $c . ".name like ?", ["s", $val . "%"]);
+}
+
+/**
+ * Simple search date part: basicyear, basicmonth or basicday. The parts of one search share one join to the
+ * configured date field, and search_query_keywords() combines them into one filter once every keyword is read.
+ *
+ * @param Keyword       $keyword Keyword; text is the year, month or day
  * @param SearchContext $ctx     Search context
  * @param SearchQuery   $query   Query under construction; basic_date_join and basic_date_parts are shared between
  *                               the basicyear/basicmonth/basicday keywords of one search
  */
-function search_keyword_date(Keyword $keyword, SearchContext $ctx, SearchQuery $query): void
+function search_keyword_date_basic(Keyword $keyword, SearchContext $ctx, SearchQuery $query): void
 {
-    $fieldname = $keyword->field_name;
-    $keystring = $keyword->text;
-    $fieldinfo = $keyword->field;
-    // basicyear/basicmonth/basicday, resolved to the configured date field by search_keyword_classify()
-    $basic_date = $keyword->basic_date;
-
-    if (!$basic_date && substr($keystring, 0, 5) != "range") {
-        $c = ++$query->join_count;
-        $datefield = $fieldinfo['ref'];
-
-        $val = str_replace("n", "_", $keystring);
-        $val = str_replace("|", "-", $val);
-
-        if ($fieldinfo['type'] == FIELD_TYPE_DATE_RANGE) {
-            // Find where the searched value is between the range values. The value may be a year or a year and
-            // month, and then any range overlapping that period is found. Range nodes are named YYYY-MM-DD, so
-            // they compare as text: the value is the earliest name in its period and, padded, the latest.
-            $period_end = str_pad($val, 10, "-99");
-            $query->addJoin(
-                " JOIN resource_node drrn{$c}s ON drrn{$c}s.resource=r.ref"
-                . " JOIN node drn{$c}s ON drn{$c}s.ref=drrn{$c}s.node"
-                . " AND drn{$c}s.resource_type_field = ? AND drn{$c}s.name >= ?"
-                . " JOIN resource_node drrn{$c}e ON drrn{$c}e.resource=r.ref"
-                . " JOIN node drn{$c}e ON drn{$c}e.ref=drrn{$c}e.node"
-                . " AND drn{$c}e.resource_type_field = ? AND drn{$c}e.name <= ?",
-                ["i", $datefield, "s", $val, "i", $datefield, "s", $period_end]
-            );
-        } else {
-            $query->addJoin(
-                " JOIN resource_node rnd{$c} ON rnd{$c}.resource=r.ref"
-                . " JOIN node dn{$c} ON dn{$c}.ref=rnd{$c}.node AND dn{$c}.resource_type_field = ?",
-                ["i", $datefield]
-            );
-            $query->andFilter("dn" . $c . ".name like ?", ["s", $val . "%"]);
-        }
-    } elseif ($basic_date) {
-        $c = ++$query->join_count;
-        if ($query->basic_date_join === null) {
-            // We only want to join once to the date_field
-            $query->addJoin(
-                " JOIN resource_node rdnf{$c} ON rdnf{$c}.resource=r.ref"
-                . " JOIN node rdn{$c} ON rdnf{$c}.node=rdn{$c}.ref AND rdn{$c}.resource_type_field = ?",
-                ["i", $ctx->date_field]
-            );
-            $query->basic_date_join = $c;
-        }
-        $query->basic_date_parts[substr($fieldname, 5)] = $keystring;   // day, month or year
-    } else {
-        # Additional date range filtering
-        $c = ++$query->join_count;
-        $rangestring = substr($keystring, 5);
-        if (strpos($rangestring, "start") !== false) {
-            $rangestartpos = strpos($rangestring, "start") + 5;
-            $rangeendpos = strpos($rangestring, "end");
-            $rangestartlen = $rangeendpos ? $rangeendpos - $rangestartpos : 10;
-            $rangestart = str_replace(" ", "-", substr($rangestring, $rangestartpos, $rangestartlen));
-            // Need to check for a date greater than the start date
-            $query->addJoin(
-                " JOIN resource_node drrn{$c}s ON drrn{$c}s.resource=r.ref"
-                . " JOIN node drn{$c}s ON drn{$c}s.ref=drrn{$c}s.node"
-                . " AND drn{$c}s.resource_type_field = ? AND drn{$c}s.name>= ? ",
-                ["i", $fieldinfo['ref'], "s", $rangestart]
-            );
-        }
-        if (strpos($keystring, "end") !== false) {
-            $rangeend = str_replace(" ", "-", $rangestring);
-            $rangeend = substr($rangeend, strpos($rangeend, "end") + 3, 10) . " 23:59:59";
-            // Need to check for a date earlier than the end date
-            $query->addJoin(
-                " JOIN resource_node drrn{$c}e ON drrn{$c}e.resource=r.ref"
-                . " JOIN node drn{$c}e ON drn{$c}e.ref=drrn{$c}e.node"
-                . " AND drn{$c}e.resource_type_field = ? AND drn{$c}e.name <= ? ",
-                ["i", $fieldinfo['ref'], "s", $rangeend]
-            );
-        }
+    $c = ++$query->join_count;
+    if ($query->basic_date_join === null) {
+        // We only want to join once to the date_field
+        $query->addJoin(
+            " JOIN resource_node rdnf{$c} ON rdnf{$c}.resource=r.ref"
+            . " JOIN node rdn{$c} ON rdnf{$c}.node=rdn{$c}.ref AND rdn{$c}.resource_type_field = ?",
+            ["i", $ctx->date_field]
+        );
+        $query->basic_date_join = $c;
     }
+    $query->basic_date_parts[substr($keyword->field_name, 5)] = $keyword->text;   // day, month or year
+}
+
+/**
+ * Date keyword field:rangestartYYYY-MM-DDendYYYY-MM-DD: the field must have a date on or after the start and a date
+ * on or before the end. Either part may be left out.
+ *
+ * @param Keyword     $keyword Keyword; text is the value, starting with "range"
+ * @param SearchQuery $query   Query under construction
+ */
+function search_keyword_date_range(Keyword $keyword, SearchQuery $query): void
+{
+    $c = ++$query->join_count;
+    $datefield = $keyword->field['ref'];
+    $rangestring = substr($keyword->text, 5);
+    if (strpos($rangestring, "start") !== false) {
+        $rangestartpos = strpos($rangestring, "start") + 5;
+        $rangeendpos = strpos($rangestring, "end");
+        $rangestartlen = $rangeendpos ? $rangeendpos - $rangestartpos : 10;
+        $rangestart = str_replace(" ", "-", substr($rangestring, $rangestartpos, $rangestartlen));
+        search_keyword_date_bound($query, $c, $datefield, ">=", $rangestart);
+    }
+    if (strpos($keyword->text, "end") !== false) {
+        $rangeend = str_replace(" ", "-", $rangestring);
+        $rangeend = substr($rangeend, strpos($rangeend, "end") + 3, 10) . " 23:59:59";
+        search_keyword_date_bound($query, $c, $datefield, "<=", $rangeend);
+    }
+}
+
+/**
+ * Require a date field to hold a date on or after, or on or before, a given date. Dates are node names starting
+ * YYYY-MM-DD, so they compare as text.
+ *
+ * @param SearchQuery $query    Query under construction
+ * @param int         $c        Join number of the keyword, for the table aliases
+ * @param int         $field    Metadata field ref
+ * @param string      $operator ">=" for on or after the date, "<=" for on or before it
+ * @param string      $date     Date to compare with
+ */
+function search_keyword_date_bound(SearchQuery $query, int $c, int $field, string $operator, string $date): void
+{
+    // The two bounds of one keyword need aliases of their own: "s" for the start and "e" for the end
+    $operator = $operator === ">=" ? ">=" : "<=";
+    $side = $operator === ">=" ? "s" : "e";
+    $query->addJoin(
+        " JOIN resource_node drrn{$c}{$side} ON drrn{$c}{$side}.resource=r.ref"
+        . " JOIN node drn{$c}{$side} ON drn{$c}{$side}.ref=drrn{$c}{$side}.node"
+        . " AND drn{$c}{$side}.resource_type_field = ? AND drn{$c}{$side}.name {$operator} ?",
+        ["i", $field, "s", $date]
+    );
 }
 
 /**
