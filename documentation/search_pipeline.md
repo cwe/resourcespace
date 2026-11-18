@@ -535,6 +535,7 @@ search builders, each of which declares the configuration globals it reads.
 | `tests/test_list/000716_do_search_date_range_field.php` | A date range field searched with a single date: inside, on the first and last day of, and outside two ranges, written with vertical bars and with hyphens. Also a month or a year, which finds every range overlapping it, and a range whose start is a year only. |
 | `tests/test_list/000717_do_search_editable_edit_access.php` | Editable-only searches of an archive state the user cannot edit, with the contributor option and 'ert' permissions in each combination, compared with `get_edit_access()` for every fixture. Also `$edit_only_own_contributions` with and without those exceptions. |
 | `tests/test_list/000718_do_search_collection_listed.php` | The list of collections a user may search without a share key, for 35 collections and 17 kinds of user: the 'R', 'Ra', 'Rb', 'r' and 'j' permissions, `$themes_in_my_collections`, `$public_collections_confine_group`, the anonymous user with session collections and an upload share. Each answer is compared with the expected one and with the list built from the list functions. |
+| `tests/test_list/000719_do_search_report_select_parameters.php` | A `!report` search by users whose select list has parameters: the 'g' permission with an 'X' permission, and a derestrict filter. Without the 't' permission, for a missing report and for a report with no thumbnail column the search returns nothing, and every query has as many parameters as placeholders. |
 | `tests/test_list/000460` to `000700` | The pre-existing behaviour tests. |
 
 The snapshot does not cover the count statement or execution. Those are covered by the behaviour tests, which
@@ -610,6 +611,11 @@ Each of these was a defect in the previous code, confirmed by a failing test or 
   and without its resource check accepts a key issued for any collection. `collection_readable()` made that
   call without the resource check, so a key from sharing any collection made every collection readable. It now
   uses the same function; `tests/test_list/000885_collection_readable_access_key.php` covers it.
+- `!report` threw `ArgumentCountError` where it should return no results, for a user whose select list has
+  parameters: one with the 'g' permission and an 'X' permission, or with a derestrict filter. The query
+  used when the user lacks the 't' permission, or the report cannot be shown as resources, left the
+  parameters of the select list out. It now binds them as every other special search does. Trunk has the
+  same fault in `search_special()`.
 - With `$collection_allow_not_approved_share` on, a collection search with any non-empty key dropped the filter
   that hides other users' pending resources. A signed in user could add a made up key to the search of a
   collection they may see, such as a public one, and be shown them. `search_query_filter_pending()` now drops

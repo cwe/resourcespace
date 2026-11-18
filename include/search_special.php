@@ -1367,7 +1367,7 @@ function search_special_report(SpecialSearch $s): SpecialSearch
         . $s->join->sql
         . ' WHERE 1 = 2 AND ' . $s->filter->sql
         . ' [GROUP_BY_SQL] [ORDER_BY_SQL] ' . $s->suffix,
-        array_merge($s->join->parameters, $s->filter->parameters)
+        array_merge($s->select->parameters, $s->join->parameters, $s->filter->parameters)
     );
 
     // Users with no access control to reports get no results back (ie []).
